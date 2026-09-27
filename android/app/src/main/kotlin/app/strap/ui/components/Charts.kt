@@ -1,0 +1,244 @@
+package app.strap.ui.components
+
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.unit.dp
+import app.strap.ui.theme.LocalMetricColors
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import kotlin.math.roundToInt
+
+/** A point on a day chart: epoch ms and value. */
+data class Point(val t: Long, val v: Double)
+
+/** A shaded span (sleep) on a day chart, epoch ms. */
+data class Span(val start: Long, val end: Long)
+
+private val CLOCK = DateTimeFormatter.ofPattern("HH:mm")
+
+internal fun clockOf(ms: Long): String = Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault()).format(CLOCK)
+
+/**
+ * Press-and-drag inspection: reports the horizontal fraction under the finger while pressed,
+ * null when released. Only HORIZONTAL drags are consumed, so the list still scrolls.
+ */
+internal fun Modifier.scrub(onScrub: (Float?) -> Unit): Modifier = this
+    .pointerInput(Unit) {
+        detectTapGestures(onPress = { o ->
+            onScrub(o.x / size.width)
+            tryAwaitRelease()
+            onScrub(null)
+        })
+    }
+    .pointerInput(Unit) {
+        detectHorizontalDragGestures(
+            onDragStart = { o -> onScrub(o.x / size.width) },
+            onDragEnd = { onScrub(null) },
+            onDragCancel = { onScrub(null) },
+            onHorizontalDrag = { change, _ -> onScrub((change.position.x / size.width).coerceIn(0f, 1f)) },
+        )
+    }
+
+/**
+ * A full local day, 00:00 to 24:00, as a line. The line breaks where readings are more
+ * than [maxGapMs] apart — a gap is a gap, never bridged. The peak is marked; faint labels
+ * give the low and high; press and drag to read any minute ([unit] names the value).
+ */
+@Composable
+fun DayLineChart(
+    points: List<Point>,
+    dayStart: Long,
+    color: Color,
+    maxGapMs: Long,
+    unit: String,
+    modifier: Modifier = Modifier,
+    shaded: List<Span> = emptyList(),
+) {
+    val dayEnd = dayStart + 24 * 3_600_000L
+    val track = LocalMetricColors.current.track
+    val sleepShade = LocalMetricColors.current.sleep.copy(alpha = 0.12f)
+    var scrub by remember { mutableStateOf<Float?>(null) }
+    val selected = scrub?.let { f -> nearest(points, dayStart + ((dayEnd - dayStart) * f).toLong(), maxGapMs) }
+    Column(modifier) {
+        ValueLabels(selected?.let { "${clockOf(it.t)} · ${it.v.roundToInt()} $unit" }, points.maxOfOrNull { it.v }, points.minOfOrNull { it.v })
+        // drawWithCache: the path is built once per size/data change, not on every frame.
+        Spacer(
+            Modifier.fillMaxWidth().height(140.dp).scrub { scrub = it }.drawWithCache {
+                val lo = (points.minOfOrNull { it.v } ?: 0.0) - 5
+                val hi = (points.maxOfOrNull { it.v } ?: 1.0) + 5
+                fun x(t: Long) = ((t - dayStart).toFloat() / (dayEnd - dayStart)) * size.width
+                fun y(v: Double) = size.height - ((v - lo) / (hi - lo)).toFloat() * size.height
+                val path = Path()
+                var prev: Point? = null
+                for (p in points) {
+                    if (prev == null || p.t - prev.t > maxGapMs) path.moveTo(x(p.t), y(p.v)) else path.lineTo(x(p.t), y(p.v))
+                    prev = p
+                }
+                val peak = points.maxByOrNull { it.v }?.let { Offset(x(it.t), y(it.v)) }
+                val shades = shaded.map { s -> x(s.start.coerceAtLeast(dayStart)) to x(s.end.coerceAtMost(dayEnd)) }
+                val gridX = listOf(6, 12, 18).map { x(dayStart + it * 3_600_000L) }
+                val stroke = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
+                val sel = selected?.let { Offset(x(it.t), y(it.v)) }
+                onDrawBehind {
+                    for ((l, r) in shades) drawRect(sleepShade, Offset(l, 0f), Size(r - l, size.height))
+                    for (gx in gridX) drawLine(track, Offset(gx, 0f), Offset(gx, size.height))
+                    drawPath(path, color, style = stroke)
+                    peak?.let { drawCircle(color, 5.dp.toPx(), it); drawCircle(Color.White, 2.dp.toPx(), it) }
+                    sel?.let {
+                        drawLine(color.copy(alpha = 0.5f), Offset(it.x, 0f), Offset(it.x, size.height), 1.dp.toPx())
+                        drawCircle(color, 6.dp.toPx(), it)
+                    }
+                }
+            },
+        )
+        HourAxis()
+    }
+}
+
+/** The reading nearest to [t], unless the nearest one is further away than a gap. */
+private fun nearest(points: List<Point>, t: Long, maxGapMs: Long): Point? {
+    if (points.isEmpty()) return null
+    var lo = 0
+    var hi = points.lastIndex
+    while (lo < hi) {
+        val mid = (lo + hi) / 2
+        if (points[mid].t < t) lo = mid + 1 else hi = mid
+    }
+    val candidates = listOfNotNull(points.getOrNull(lo - 1), points.getOrNull(lo))
+    return candidates.minByOrNull { kotlin.math.abs(it.t - t) }?.takeIf { kotlin.math.abs(it.t - t) <= maxGapMs }
+}
+
+/** The scrub readout when pressing, else faint high/low labels. */
+@Composable
+internal fun ValueLabels(scrubbed: String?, high: Double?, low: Double?) {
+    val faint = MaterialTheme.colorScheme.onSurfaceVariant
+    Box(Modifier.fillMaxWidth().height(18.dp)) {
+        if (scrubbed != null) {
+            Text(scrubbed, style = MaterialTheme.typography.labelMedium, modifier = Modifier.align(Alignment.CenterStart))
+        } else if (high != null && low != null) {
+            Row(Modifier.align(Alignment.CenterEnd)) {
+                Text("high ${high.roundToInt()}", style = MaterialTheme.typography.labelSmall, color = faint)
+                Spacer(Modifier.width(10.dp))
+                Text("low ${low.roundToInt()}", style = MaterialTheme.typography.labelSmall, color = faint)
+            }
+        }
+    }
+}
+
+/** Twenty-four bars for a local day (e.g. steps per hour). Hours with no data draw nothing. */
+@Composable
+fun DayBars(values: Map<Int, Double>, color: Color, unit: String, modifier: Modifier = Modifier) {
+    val track = LocalMetricColors.current.track
+    var scrub by remember { mutableStateOf<Float?>(null) }
+    val hour = scrub?.let { (it * 24).toInt().coerceIn(0, 23) }
+    Column(modifier) {
+        ValueLabels(hour?.let { "%02d:00 · %,d %s".format(it, (values[it] ?: 0.0).roundToInt(), unit) }, values.values.maxOrNull(), null)
+        Spacer(
+            Modifier.fillMaxWidth().height(90.dp).scrub { scrub = it }.drawWithCache {
+                val max = (values.values.maxOrNull() ?: 1.0).coerceAtLeast(1.0)
+                val slot = size.width / 24
+                onDrawBehind {
+                    for (h in 0 until 24) {
+                        val v = values[h] ?: continue
+                        val barH = (v / max).toFloat() * size.height
+                        val alpha = if (hour == null || hour == h) 1f else 0.4f
+                        drawRoundRect(color.copy(alpha = alpha), Offset(h * slot + slot * 0.18f, size.height - barH), Size(slot * 0.64f, barH), CornerRadius(3.dp.toPx()))
+                    }
+                    drawLine(track, Offset(0f, size.height), Offset(size.width, size.height))
+                }
+            },
+        )
+        HourAxis()
+    }
+}
+
+/** A night's stages as a labelled hypnogram: awake on top (bright), deep at the bottom. */
+@Composable
+fun Hypnogram(stages: List<Triple<Long, Long, Int>>, color: Color, modifier: Modifier = Modifier) {
+    if (stages.isEmpty()) return
+    val start = stages.first().first
+    val end = stages.last().second
+    // strap stage codes: 7 awake, 8 REM, 4 light, 5 deep
+    val rows = listOf(7 to "Awake", 8 to "REM", 4 to "Light", 5 to "Deep")
+    val shades = mapOf(7 to LocalMetricColors.current.stress, 8 to color.copy(alpha = 0.7f), 4 to color.copy(alpha = 0.45f), 5 to color)
+    Row(modifier.fillMaxWidth()) {
+        Column(Modifier.height(88.dp).padding(end = 8.dp)) {
+            rows.forEach { (_, label) ->
+                Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                    Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+        Spacer(
+            Modifier.weight(1f).height(88.dp).drawWithCache {
+                val rowH = size.height / rows.size
+                fun x(t: Long) = ((t - start).toFloat() / (end - start)) * size.width
+                val index = rows.withIndex().associate { (i, r) -> r.first to i }
+                onDrawBehind {
+                    for ((s, e, code) in stages) {
+                        val r = index[code] ?: continue
+                        drawRoundRect(shades.getValue(code), Offset(x(s), r * rowH + rowH * 0.18f),
+                            Size((x(e) - x(s)).coerceAtLeast(2f), rowH * 0.64f), CornerRadius(2.dp.toPx()))
+                    }
+                }
+            },
+        )
+    }
+}
+
+/** Hour labels centred under 00/06/12/18/24, clamped inside the chart's edges. */
+@Composable
+internal fun HourAxis() = EvenAxis(listOf("00", "06", "12", "18", "24"))
+
+/**
+ * Labels spread across the width: at the edges and evenly between ([slots] false), or
+ * centred in equal slots ([slots] true — one label per day of a week).
+ */
+@Composable
+internal fun EvenAxis(labels: List<String>, slots: Boolean = false) {
+    Layout(
+        content = { labels.forEach { Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
+        modifier = Modifier.fillMaxWidth(),
+    ) { measurables, constraints ->
+        val placeables = measurables.map { it.measure(constraints.copy(minWidth = 0)) }
+        val width = constraints.maxWidth
+        layout(width, placeables.maxOf { it.height }) {
+            placeables.forEachIndexed { i, p ->
+                val centre = when {
+                    slots -> (width * (2 * i + 1)) / (2 * labels.size)
+                    labels.size == 1 -> width / 2
+                    else -> width * i / (labels.size - 1)
+                }
+                p.placeRelative((centre - p.width / 2).coerceIn(0, width - p.width), 0)
+            }
+        }
+    }
+}

@@ -1,0 +1,10 @@
+server/.venv/
+server/.env
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.DS_Store
+deploy/.env
+deploy/backups/
+dist/
+tools/demo-data/.env

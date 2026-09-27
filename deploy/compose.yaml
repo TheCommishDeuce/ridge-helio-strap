@@ -1,0 +1,81 @@
+# Ridge server, self-hosted: TimescaleDB, the API (migrates on start), nightly backups.
+# Setup and operations: deploy/README.md. Settings come from deploy/.env (see .env.example).
+name: ridge
+
+services:
+  db:
+    image: timescale/timescaledb:latest-pg17
+    restart: unless-stopped
+    # Read only when the volume is first initialised; changing them later has no effect.
+    environment:
+      POSTGRES_DB: strap
+      POSTGRES_USER: strap
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U strap -d strap"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    image: ridge-api:local
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: strap
+      POSTGRES_USER: strap
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+      OWNER_TIMEZONE: ${OWNER_TIMEZONE:-UTC}
+      DEVICE_TOKEN_SHA256: ${DEVICE_TOKEN_SHA256:?run deploy/new-token.sh first}
+    # Plain HTTP: keep it on loopback (or a private address) and put a TLS reverse proxy in
+    # front; the app only talks HTTPS. Docker's port rules bypass host firewalls like ufw.
+    ports:
+      - "${RIDGE_BIND:-127.0.0.1}:${RIDGE_PORT:-8766}:8766"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8766/healthz', timeout=2)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # Dumps the database at start and every 24 h into deploy/backups/, keeping 14 days.
+  backup:
+    image: timescale/timescaledb:latest-pg17
+    restart: unless-stopped
+    environment:
+      PGHOST: db
+      PGUSER: strap
+      PGDATABASE: strap
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          f="/backups/ridge_$$(date +%Y-%m-%d_%H%M%S).sql.gz"
+          # pg_dump's own exit status decides (a pipe would report gzip's).
+          if pg_dump --no-owner -f /tmp/dump.sql && gzip -c /tmp/dump.sql > "$$f.tmp" && mv "$$f.tmp" "$$f"; then
+            echo "backup OK: $$f ($$(du -h "$$f" | cut -f1))"
+          else
+            rm -f "$$f.tmp"; echo "backup FAILED" >&2
+          fi
+          rm -f /tmp/dump.sql
+          find /backups -name 'ridge_*.sql.gz' -mtime +14 -delete
+          sleep 86400
+        done
+    volumes:
+      - ./backups:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata: {}

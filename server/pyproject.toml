@@ -1,0 +1,34 @@
+[project]
+name = "strap-server"
+version = "0.1.0"
+description = "Self-hosted backend for the Ridge app: strap ingest, the science layer, the read API."
+license = "AGPL-3.0-or-later"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "psycopg[binary,pool]>=3.2",
+    "pydantic-settings>=2.4",
+    "pyyaml>=6",
+]
+
+[dependency-groups]
+dev = ["pytest>=8", "httpx>=0.27", "ruff>=0.6"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/strap_server"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "db: needs the TimescaleDB test database (auto-skips when unreachable)",
+    "integration: ported DB tests (compat shim; auto-skips when unreachable)",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py313"

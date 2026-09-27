@@ -1,0 +1,2204 @@
+[
+  {
+    "day": "2026-03-01",
+    "flags": {
+      "caveats": [],
+      "weight_age_days": 1,
+      "weight_as_of": "2026-02-28",
+      "weight_kg": 72.0
+    },
+    "metric": "active_calories",
+    "value": 370.6232
+  },
+  {
+    "day": "2026-03-01",
+    "flags": {
+      "caveats": [],
+      "weight_age_days": 1,
+      "weight_as_of": "2026-02-28",
+      "weight_kg": 72.0
+    },
+    "metric": "basal_calories",
+    "value": 1638.75
+  },
+  {
+    "day": "2026-03-01",
+    "flags": {
+      "edwards_tl": 120,
+      "hr_minutes": 60,
+      "hrmax": 183,
+      "method": "banister",
+      "rhr": 54,
+      "zone_min": [
+        0,
+        60,
+        0,
+        0,
+        0
+      ]
+    },
+    "metric": "cardio_load",
+    "value": 61.0
+  },
+  {
+    "day": "2026-03-01",
+    "flags": {
+      "method": "stride",
+      "source": "steps_per_minute",
+      "stride_m": 0.725
+    },
+    "metric": "distance_m_daily",
+    "value": 2249.5725
+  },
+  {
+    "day": "2026-03-01",
+    "flags": {
+      "zone_min": [
+        0,
+        60,
+        0,
+        0,
+        0
+      ]
+    },
+    "metric": "hr_zone_minutes",
+    "value": 60.0
+  },
+  {
+    "day": "2026-03-01",
+    "flags": {},
+    "metric": "hrv_sleep_avg",
+    "value": 45.0
+  },
+  {
+    "day": "2026-03-01",
+    "flags": {
+      "moderate": 20,
+      "vigorous": 5
+    },
+    "metric": "mvpa_min",
+    "value": 30.0
+  },
+  {
+    "day": "2026-03-01",
+    "flags": {},
+    "metric": "respiratory_rate_sleep",
+    "value": 14.0
+  },
+  {
+    "day": "2026-03-01",
+    "flags": {
+      "n": 480
+    },
+    "metric": "rhr_daily",
+    "value": 54.0
+  },
+  {
+    "day": "2026-03-01",
+    "flags": {
+      "avg_deficit_min": 20,
+      "avg_tst_min": 460,
+      "nights": 1,
+      "nights_below": 1,
+      "recovery_credit": 0.5,
+      "window_nights": 14
+    },
+    "metric": "sleep_debt_min",
+    "value": 20.0
+  },
+  {
+    "day": "2026-03-01",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-01T03:00:00+05:30",
+      "regularity": 0,
+      "session_source": "strap_ble",
+      "sri": null,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_duration",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-01",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-01T03:00:00+05:30",
+      "regularity": 0,
+      "session_source": "strap_ble",
+      "sri": null,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_efficiency",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-01",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-01T03:00:00+05:30",
+      "regularity": 0,
+      "session_source": "strap_ble",
+      "sri": null,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_regularity",
+    "value": 0.0
+  },
+  {
+    "day": "2026-03-01",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-01T03:00:00+05:30",
+      "regularity": 0,
+      "session_source": "strap_ble",
+      "sri": null,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_timing",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-01",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-01T03:00:00+05:30",
+      "regularity": 0,
+      "session_source": "strap_ble",
+      "sri": null,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_health_score_4dim",
+    "value": 3.0
+  },
+  {
+    "day": "2026-03-01",
+    "flags": {
+      "age": 36,
+      "basis": "NSF2015"
+    },
+    "metric": "sleep_need_min",
+    "value": 480.0
+  },
+  {
+    "day": "2026-03-01",
+    "flags": {},
+    "metric": "spo2_overnight",
+    "value": 97.0
+  },
+  {
+    "day": "2026-03-01",
+    "flags": {},
+    "metric": "spo2_overnight_min",
+    "value": 97.0
+  },
+  {
+    "day": "2026-03-01",
+    "flags": {
+      "source": "steps_per_minute",
+      "sample_minutes": 27,
+      "caveats": []
+    },
+    "metric": "steps_total",
+    "value": 3105.0
+  },
+  {
+    "day": "2026-03-01",
+    "flags": {
+      "bmr": 1639,
+      "caveats": [],
+      "pal": 1.23,
+      "stride_m": 0.725,
+      "weight_age_days": 1,
+      "weight_as_of": "2026-02-28",
+      "weight_kg": 72.0,
+      "workout_cal": 0
+    },
+    "metric": "total_calories",
+    "value": 2009.3732
+  },
+  {
+    "day": "2026-03-02",
+    "flags": {
+      "caveats": [],
+      "weight_age_days": 2,
+      "weight_as_of": "2026-02-28",
+      "weight_kg": 72.0
+    },
+    "metric": "active_calories",
+    "value": 370.6232
+  },
+  {
+    "day": "2026-03-02",
+    "flags": {
+      "caveats": [],
+      "weight_age_days": 2,
+      "weight_as_of": "2026-02-28",
+      "weight_kg": 72.0
+    },
+    "metric": "basal_calories",
+    "value": 1638.75
+  },
+  {
+    "day": "2026-03-02",
+    "flags": {
+      "edwards_tl": 120,
+      "hr_minutes": 60,
+      "hrmax": 183,
+      "method": "banister",
+      "rhr": 55,
+      "zone_min": [
+        0,
+        60,
+        0,
+        0,
+        0
+      ]
+    },
+    "metric": "cardio_load",
+    "value": 60.2
+  },
+  {
+    "day": "2026-03-02",
+    "flags": {
+      "method": "stride",
+      "source": "steps_per_minute",
+      "stride_m": 0.725
+    },
+    "metric": "distance_m_daily",
+    "value": 2249.5725
+  },
+  {
+    "day": "2026-03-02",
+    "flags": {
+      "zone_min": [
+        0,
+        60,
+        0,
+        0,
+        0
+      ]
+    },
+    "metric": "hr_zone_minutes",
+    "value": 60.0
+  },
+  {
+    "day": "2026-03-02",
+    "flags": {},
+    "metric": "hrv_sleep_avg",
+    "value": 48.0
+  },
+  {
+    "day": "2026-03-02",
+    "flags": {
+      "moderate": 20,
+      "vigorous": 5
+    },
+    "metric": "mvpa_min",
+    "value": 30.0
+  },
+  {
+    "day": "2026-03-02",
+    "flags": {},
+    "metric": "respiratory_rate_sleep",
+    "value": 15.0
+  },
+  {
+    "day": "2026-03-02",
+    "flags": {
+      "n": 480
+    },
+    "metric": "rhr_daily",
+    "value": 55.0
+  },
+  {
+    "day": "2026-03-02",
+    "flags": {
+      "avg_deficit_min": 20,
+      "avg_tst_min": 460,
+      "nights": 2,
+      "nights_below": 2,
+      "recovery_credit": 0.5,
+      "window_nights": 14
+    },
+    "metric": "sleep_debt_min",
+    "value": 40.0
+  },
+  {
+    "day": "2026-03-02",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-02T03:00:00+05:30",
+      "regularity": 0,
+      "session_source": "strap_ble",
+      "sri": null,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_duration",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-02",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-02T03:00:00+05:30",
+      "regularity": 0,
+      "session_source": "strap_ble",
+      "sri": null,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_efficiency",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-02",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-02T03:00:00+05:30",
+      "regularity": 0,
+      "session_source": "strap_ble",
+      "sri": null,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_regularity",
+    "value": 0.0
+  },
+  {
+    "day": "2026-03-02",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-02T03:00:00+05:30",
+      "regularity": 0,
+      "session_source": "strap_ble",
+      "sri": null,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_timing",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-02",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-02T03:00:00+05:30",
+      "regularity": 0,
+      "session_source": "strap_ble",
+      "sri": null,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_health_score_4dim",
+    "value": 3.0
+  },
+  {
+    "day": "2026-03-02",
+    "flags": {
+      "age": 36,
+      "basis": "NSF2015"
+    },
+    "metric": "sleep_need_min",
+    "value": 480.0
+  },
+  {
+    "day": "2026-03-02",
+    "flags": {},
+    "metric": "spo2_overnight",
+    "value": 97.0
+  },
+  {
+    "day": "2026-03-02",
+    "flags": {},
+    "metric": "spo2_overnight_min",
+    "value": 97.0
+  },
+  {
+    "day": "2026-03-02",
+    "flags": {
+      "source": "steps_per_minute",
+      "sample_minutes": 27,
+      "caveats": []
+    },
+    "metric": "steps_total",
+    "value": 3105.0
+  },
+  {
+    "day": "2026-03-02",
+    "flags": {
+      "bmr": 1639,
+      "caveats": [],
+      "pal": 1.23,
+      "stride_m": 0.725,
+      "weight_age_days": 2,
+      "weight_as_of": "2026-02-28",
+      "weight_kg": 72.0,
+      "workout_cal": 0
+    },
+    "metric": "total_calories",
+    "value": 2009.3732
+  },
+  {
+    "day": "2026-03-03",
+    "flags": {
+      "caveats": [],
+      "weight_age_days": 3,
+      "weight_as_of": "2026-02-28",
+      "weight_kg": 72.0
+    },
+    "metric": "active_calories",
+    "value": 370.6232
+  },
+  {
+    "day": "2026-03-03",
+    "flags": {
+      "caveats": [],
+      "weight_age_days": 3,
+      "weight_as_of": "2026-02-28",
+      "weight_kg": 72.0
+    },
+    "metric": "basal_calories",
+    "value": 1638.75
+  },
+  {
+    "day": "2026-03-03",
+    "flags": {
+      "edwards_tl": 120,
+      "hr_minutes": 60,
+      "hrmax": 183,
+      "method": "banister",
+      "rhr": 56,
+      "zone_min": [
+        0,
+        60,
+        0,
+        0,
+        0
+      ]
+    },
+    "metric": "cardio_load",
+    "value": 59.4
+  },
+  {
+    "day": "2026-03-03",
+    "flags": {
+      "method": "stride",
+      "source": "steps_per_minute",
+      "stride_m": 0.725
+    },
+    "metric": "distance_m_daily",
+    "value": 2249.5725
+  },
+  {
+    "day": "2026-03-03",
+    "flags": {
+      "zone_min": [
+        0,
+        60,
+        0,
+        0,
+        0
+      ]
+    },
+    "metric": "hr_zone_minutes",
+    "value": 60.0
+  },
+  {
+    "day": "2026-03-03",
+    "flags": {},
+    "metric": "hrv_sleep_avg",
+    "value": 51.0
+  },
+  {
+    "day": "2026-03-03",
+    "flags": {
+      "moderate": 20,
+      "vigorous": 5
+    },
+    "metric": "mvpa_min",
+    "value": 30.0
+  },
+  {
+    "day": "2026-03-03",
+    "flags": {},
+    "metric": "respiratory_rate_sleep",
+    "value": 14.0
+  },
+  {
+    "day": "2026-03-03",
+    "flags": {
+      "n": 480
+    },
+    "metric": "rhr_daily",
+    "value": 56.0
+  },
+  {
+    "day": "2026-03-03",
+    "flags": {
+      "avg_deficit_min": 20,
+      "avg_tst_min": 460,
+      "nights": 3,
+      "nights_below": 3,
+      "recovery_credit": 0.5,
+      "window_nights": 14
+    },
+    "metric": "sleep_debt_min",
+    "value": 60.0
+  },
+  {
+    "day": "2026-03-03",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-03T03:00:00+05:30",
+      "regularity": 0,
+      "session_source": "strap_ble",
+      "sri": null,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_duration",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-03",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-03T03:00:00+05:30",
+      "regularity": 0,
+      "session_source": "strap_ble",
+      "sri": null,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_efficiency",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-03",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-03T03:00:00+05:30",
+      "regularity": 0,
+      "session_source": "strap_ble",
+      "sri": null,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_regularity",
+    "value": 0.0
+  },
+  {
+    "day": "2026-03-03",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-03T03:00:00+05:30",
+      "regularity": 0,
+      "session_source": "strap_ble",
+      "sri": null,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_timing",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-03",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-03T03:00:00+05:30",
+      "regularity": 0,
+      "session_source": "strap_ble",
+      "sri": null,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_health_score_4dim",
+    "value": 3.0
+  },
+  {
+    "day": "2026-03-03",
+    "flags": {
+      "age": 36,
+      "basis": "NSF2015"
+    },
+    "metric": "sleep_need_min",
+    "value": 480.0
+  },
+  {
+    "day": "2026-03-03",
+    "flags": {},
+    "metric": "spo2_overnight",
+    "value": 97.0
+  },
+  {
+    "day": "2026-03-03",
+    "flags": {},
+    "metric": "spo2_overnight_min",
+    "value": 97.0
+  },
+  {
+    "day": "2026-03-03",
+    "flags": {
+      "source": "steps_per_minute",
+      "sample_minutes": 27,
+      "caveats": []
+    },
+    "metric": "steps_total",
+    "value": 3105.0
+  },
+  {
+    "day": "2026-03-03",
+    "flags": {
+      "bmr": 1639,
+      "caveats": [],
+      "pal": 1.23,
+      "stride_m": 0.725,
+      "weight_age_days": 3,
+      "weight_as_of": "2026-02-28",
+      "weight_kg": 72.0,
+      "workout_cal": 0
+    },
+    "metric": "total_calories",
+    "value": 2009.3732
+  },
+  {
+    "day": "2026-03-03",
+    "flags": {
+      "age_years": 36,
+      "bmi": 23.5,
+      "method": "jurca_non_exercise",
+      "rhr_med": 55.0,
+      "see_ml_kg_min": 5.075,
+      "sex": "male",
+      "srpa": 2
+    },
+    "metric": "vo2max_estimate",
+    "value": 44.2864
+  },
+  {
+    "day": "2026-03-04",
+    "flags": {
+      "caveats": [],
+      "weight_age_days": 4,
+      "weight_as_of": "2026-02-28",
+      "weight_kg": 72.0
+    },
+    "metric": "active_calories",
+    "value": 526.2404
+  },
+  {
+    "day": "2026-03-04",
+    "flags": {
+      "caveats": [],
+      "weight_age_days": 4,
+      "weight_as_of": "2026-02-28",
+      "weight_kg": 72.0
+    },
+    "metric": "basal_calories",
+    "value": 1638.75
+  },
+  {
+    "day": "2026-03-04",
+    "flags": {
+      "edwards_tl": 120,
+      "hr_minutes": 60,
+      "hrmax": 183,
+      "method": "banister",
+      "rhr": 57,
+      "zone_min": [
+        0,
+        60,
+        0,
+        0,
+        0
+      ]
+    },
+    "metric": "cardio_load",
+    "value": 58.6
+  },
+  {
+    "day": "2026-03-04",
+    "flags": {
+      "method": "stride",
+      "source": "steps_per_minute",
+      "stride_m": 0.725
+    },
+    "metric": "distance_m_daily",
+    "value": 2249.5725
+  },
+  {
+    "day": "2026-03-04",
+    "flags": {
+      "zone_min": [
+        0,
+        60,
+        0,
+        0,
+        0
+      ]
+    },
+    "metric": "hr_zone_minutes",
+    "value": 60.0
+  },
+  {
+    "day": "2026-03-04",
+    "flags": {},
+    "metric": "hrv_sleep_avg",
+    "value": 45.0
+  },
+  {
+    "day": "2026-03-04",
+    "flags": {
+      "moderate": 20,
+      "vigorous": 5
+    },
+    "metric": "mvpa_min",
+    "value": 30.0
+  },
+  {
+    "day": "2026-03-04",
+    "flags": {},
+    "metric": "respiratory_rate_sleep",
+    "value": 15.0
+  },
+  {
+    "day": "2026-03-04",
+    "flags": {
+      "n": 480
+    },
+    "metric": "rhr_daily",
+    "value": 57.0
+  },
+  {
+    "day": "2026-03-04",
+    "flags": {
+      "avg_deficit_min": 20,
+      "avg_tst_min": 460,
+      "nights": 4,
+      "nights_below": 4,
+      "recovery_credit": 0.5,
+      "window_nights": 14
+    },
+    "metric": "sleep_debt_min",
+    "value": 80.0
+  },
+  {
+    "day": "2026-03-04",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-04T03:00:00+05:30",
+      "regularity": 0,
+      "session_source": "strap_ble",
+      "sri": null,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_duration",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-04",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-04T03:00:00+05:30",
+      "regularity": 0,
+      "session_source": "strap_ble",
+      "sri": null,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_efficiency",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-04",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-04T03:00:00+05:30",
+      "regularity": 0,
+      "session_source": "strap_ble",
+      "sri": null,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_regularity",
+    "value": 0.0
+  },
+  {
+    "day": "2026-03-04",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-04T03:00:00+05:30",
+      "regularity": 0,
+      "session_source": "strap_ble",
+      "sri": null,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_timing",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-04",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-04T03:00:00+05:30",
+      "regularity": 0,
+      "session_source": "strap_ble",
+      "sri": null,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_health_score_4dim",
+    "value": 3.0
+  },
+  {
+    "day": "2026-03-04",
+    "flags": {
+      "age": 36,
+      "basis": "NSF2015"
+    },
+    "metric": "sleep_need_min",
+    "value": 480.0
+  },
+  {
+    "day": "2026-03-04",
+    "flags": {},
+    "metric": "spo2_overnight",
+    "value": 97.0
+  },
+  {
+    "day": "2026-03-04",
+    "flags": {},
+    "metric": "spo2_overnight_min",
+    "value": 97.0
+  },
+  {
+    "day": "2026-03-04",
+    "flags": {
+      "source": "steps_per_minute",
+      "sample_minutes": 27,
+      "caveats": []
+    },
+    "metric": "steps_total",
+    "value": 3105.0
+  },
+  {
+    "day": "2026-03-04",
+    "flags": {
+      "bmr": 1639,
+      "caveats": [],
+      "pal": 1.32,
+      "stride_m": 0.725,
+      "weight_age_days": 4,
+      "weight_as_of": "2026-02-28",
+      "weight_kg": 72.0,
+      "workout_cal": 200
+    },
+    "metric": "total_calories",
+    "value": 2164.9904
+  },
+  {
+    "day": "2026-03-04",
+    "flags": {
+      "age_years": 36,
+      "bmi": 23.5,
+      "method": "jurca_non_exercise",
+      "rhr_med": 55.5,
+      "see_ml_kg_min": 5.075,
+      "sex": "male",
+      "srpa": 2
+    },
+    "metric": "vo2max_estimate",
+    "value": 44.2339
+  },
+  {
+    "day": "2026-03-05",
+    "flags": {
+      "caveats": [],
+      "weight_age_days": 5,
+      "weight_as_of": "2026-02-28",
+      "weight_kg": 72.0
+    },
+    "metric": "active_calories",
+    "value": 370.6232
+  },
+  {
+    "day": "2026-03-05",
+    "flags": {
+      "caveats": [],
+      "weight_age_days": 5,
+      "weight_as_of": "2026-02-28",
+      "weight_kg": 72.0
+    },
+    "metric": "basal_calories",
+    "value": 1638.75
+  },
+  {
+    "day": "2026-03-05",
+    "flags": {
+      "edwards_tl": 120,
+      "hr_minutes": 60,
+      "hrmax": 183,
+      "method": "banister",
+      "rhr": 54,
+      "zone_min": [
+        0,
+        60,
+        0,
+        0,
+        0
+      ]
+    },
+    "metric": "cardio_load",
+    "value": 61.0
+  },
+  {
+    "day": "2026-03-05",
+    "flags": {
+      "method": "stride",
+      "source": "steps_per_minute",
+      "stride_m": 0.725
+    },
+    "metric": "distance_m_daily",
+    "value": 2249.5725
+  },
+  {
+    "day": "2026-03-05",
+    "flags": {
+      "zone_min": [
+        0,
+        60,
+        0,
+        0,
+        0
+      ]
+    },
+    "metric": "hr_zone_minutes",
+    "value": 60.0
+  },
+  {
+    "day": "2026-03-05",
+    "flags": {},
+    "metric": "hrv_sleep_avg",
+    "value": 48.0
+  },
+  {
+    "day": "2026-03-05",
+    "flags": {
+      "moderate": 20,
+      "vigorous": 5
+    },
+    "metric": "mvpa_min",
+    "value": 30.0
+  },
+  {
+    "day": "2026-03-05",
+    "flags": {},
+    "metric": "respiratory_rate_sleep",
+    "value": 14.0
+  },
+  {
+    "day": "2026-03-05",
+    "flags": {
+      "n": 480
+    },
+    "metric": "rhr_daily",
+    "value": 54.0
+  },
+  {
+    "day": "2026-03-05",
+    "flags": {
+      "avg_deficit_min": 20,
+      "avg_tst_min": 460,
+      "nights": 5,
+      "nights_below": 5,
+      "recovery_credit": 0.5,
+      "window_nights": 14
+    },
+    "metric": "sleep_debt_min",
+    "value": 100.0
+  },
+  {
+    "day": "2026-03-05",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-05T03:00:00+05:30",
+      "regularity": 0,
+      "session_source": "strap_ble",
+      "sri": null,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_duration",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-05",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-05T03:00:00+05:30",
+      "regularity": 0,
+      "session_source": "strap_ble",
+      "sri": null,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_efficiency",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-05",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-05T03:00:00+05:30",
+      "regularity": 0,
+      "session_source": "strap_ble",
+      "sri": null,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_regularity",
+    "value": 0.0
+  },
+  {
+    "day": "2026-03-05",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-05T03:00:00+05:30",
+      "regularity": 0,
+      "session_source": "strap_ble",
+      "sri": null,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_timing",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-05",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-05T03:00:00+05:30",
+      "regularity": 0,
+      "session_source": "strap_ble",
+      "sri": null,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_health_score_4dim",
+    "value": 3.0
+  },
+  {
+    "day": "2026-03-05",
+    "flags": {
+      "age": 36,
+      "basis": "NSF2015"
+    },
+    "metric": "sleep_need_min",
+    "value": 480.0
+  },
+  {
+    "day": "2026-03-05",
+    "flags": {},
+    "metric": "spo2_overnight",
+    "value": 97.0
+  },
+  {
+    "day": "2026-03-05",
+    "flags": {},
+    "metric": "spo2_overnight_min",
+    "value": 97.0
+  },
+  {
+    "day": "2026-03-05",
+    "flags": {
+      "source": "steps_per_minute",
+      "sample_minutes": 27,
+      "caveats": []
+    },
+    "metric": "steps_total",
+    "value": 3105.0
+  },
+  {
+    "day": "2026-03-05",
+    "flags": {
+      "bmr": 1639,
+      "caveats": [],
+      "pal": 1.23,
+      "stride_m": 0.725,
+      "weight_age_days": 5,
+      "weight_as_of": "2026-02-28",
+      "weight_kg": 72.0,
+      "workout_cal": 0
+    },
+    "metric": "total_calories",
+    "value": 2009.3732
+  },
+  {
+    "day": "2026-03-05",
+    "flags": {
+      "age_years": 36,
+      "bmi": 23.5,
+      "method": "jurca_non_exercise",
+      "rhr_med": 55.0,
+      "see_ml_kg_min": 5.075,
+      "sex": "male",
+      "srpa": 2
+    },
+    "metric": "vo2max_estimate",
+    "value": 44.2864
+  },
+  {
+    "day": "2026-03-06",
+    "flags": {
+      "caveats": [],
+      "weight_age_days": 6,
+      "weight_as_of": "2026-02-28",
+      "weight_kg": 72.0
+    },
+    "metric": "active_calories",
+    "value": 370.6232
+  },
+  {
+    "day": "2026-03-06",
+    "flags": {
+      "caveats": [],
+      "weight_age_days": 6,
+      "weight_as_of": "2026-02-28",
+      "weight_kg": 72.0
+    },
+    "metric": "basal_calories",
+    "value": 1638.75
+  },
+  {
+    "day": "2026-03-06",
+    "flags": {
+      "edwards_tl": 120,
+      "hr_minutes": 60,
+      "hrmax": 183,
+      "method": "banister",
+      "rhr": 55,
+      "zone_min": [
+        0,
+        60,
+        0,
+        0,
+        0
+      ]
+    },
+    "metric": "cardio_load",
+    "value": 60.2
+  },
+  {
+    "day": "2026-03-06",
+    "flags": {
+      "method": "stride",
+      "source": "steps_per_minute",
+      "stride_m": 0.725
+    },
+    "metric": "distance_m_daily",
+    "value": 2249.5725
+  },
+  {
+    "day": "2026-03-06",
+    "flags": {
+      "zone_min": [
+        0,
+        60,
+        0,
+        0,
+        0
+      ]
+    },
+    "metric": "hr_zone_minutes",
+    "value": 60.0
+  },
+  {
+    "day": "2026-03-06",
+    "flags": {},
+    "metric": "hrv_sleep_avg",
+    "value": 51.0
+  },
+  {
+    "day": "2026-03-06",
+    "flags": {
+      "moderate": 20,
+      "vigorous": 5
+    },
+    "metric": "mvpa_min",
+    "value": 30.0
+  },
+  {
+    "day": "2026-03-06",
+    "flags": {
+      "factors": {
+        "hrv": {
+          "baseline": 48.0,
+          "sub": 63,
+          "value": 51.0,
+          "z": 0.67
+        },
+        "rhr": {
+          "baseline": 55.0,
+          "sub": 50,
+          "value": 55.0,
+          "z": 0.0
+        },
+        "rr": {
+          "baseline": 14.0,
+          "sub": 20,
+          "value": 15.0,
+          "z": 2.0
+        },
+        "sleep": {
+          "need_min": 480,
+          "sub": 96,
+          "tst_min": 460
+        }
+      },
+      "method": "evidence_weighted_personal_baseline",
+      "note_id": "recovery_readiness",
+      "weights": {
+        "hrv": 0.42,
+        "rhr": 0.28,
+        "rr": 0.1,
+        "sleep": 0.2
+      }
+    },
+    "metric": "recovery_score",
+    "value": 62.0
+  },
+  {
+    "day": "2026-03-06",
+    "flags": {},
+    "metric": "respiratory_rate_sleep",
+    "value": 15.0
+  },
+  {
+    "day": "2026-03-06",
+    "flags": {
+      "n": 480
+    },
+    "metric": "rhr_daily",
+    "value": 55.0
+  },
+  {
+    "day": "2026-03-06",
+    "flags": {
+      "avg_deficit_min": 20,
+      "avg_tst_min": 460,
+      "nights": 6,
+      "nights_below": 6,
+      "recovery_credit": 0.5,
+      "window_nights": 14
+    },
+    "metric": "sleep_debt_min",
+    "value": 120.0
+  },
+  {
+    "day": "2026-03-06",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-06T03:00:00+05:30",
+      "regularity": 1,
+      "session_source": "strap_ble",
+      "sri": 90.97,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_duration",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-06",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-06T03:00:00+05:30",
+      "regularity": 1,
+      "session_source": "strap_ble",
+      "sri": 90.97,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_efficiency",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-06",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-06T03:00:00+05:30",
+      "regularity": 1,
+      "session_source": "strap_ble",
+      "sri": 90.97,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_regularity",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-06",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-06T03:00:00+05:30",
+      "regularity": 1,
+      "session_source": "strap_ble",
+      "sri": 90.97,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_timing",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-06",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-06T03:00:00+05:30",
+      "regularity": 1,
+      "session_source": "strap_ble",
+      "sri": 90.97,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_health_score_4dim",
+    "value": 4.0
+  },
+  {
+    "day": "2026-03-06",
+    "flags": {
+      "age": 36,
+      "basis": "NSF2015"
+    },
+    "metric": "sleep_need_min",
+    "value": 480.0
+  },
+  {
+    "day": "2026-03-06",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-06T03:00:00+05:30",
+      "regularity": 1,
+      "session_source": "strap_ble",
+      "sri": 90.97,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_regularity_index",
+    "value": 90.97
+  },
+  {
+    "day": "2026-03-06",
+    "flags": {},
+    "metric": "spo2_overnight",
+    "value": 97.0
+  },
+  {
+    "day": "2026-03-06",
+    "flags": {},
+    "metric": "spo2_overnight_min",
+    "value": 97.0
+  },
+  {
+    "day": "2026-03-06",
+    "flags": {
+      "source": "steps_per_minute",
+      "sample_minutes": 27,
+      "caveats": []
+    },
+    "metric": "steps_total",
+    "value": 3105.0
+  },
+  {
+    "day": "2026-03-06",
+    "flags": {
+      "bmr": 1639,
+      "caveats": [],
+      "pal": 1.23,
+      "stride_m": 0.725,
+      "weight_age_days": 6,
+      "weight_as_of": "2026-02-28",
+      "weight_kg": 72.0,
+      "workout_cal": 0
+    },
+    "metric": "total_calories",
+    "value": 2009.3732
+  },
+  {
+    "day": "2026-03-06",
+    "flags": {
+      "age_years": 36,
+      "bmi": 23.5,
+      "method": "jurca_non_exercise",
+      "rhr_med": 55.0,
+      "see_ml_kg_min": 5.075,
+      "sex": "male",
+      "srpa": 2
+    },
+    "metric": "vo2max_estimate",
+    "value": 44.2864
+  },
+  {
+    "day": "2026-03-07",
+    "flags": {
+      "caveats": [],
+      "weight_age_days": 7,
+      "weight_as_of": "2026-02-28",
+      "weight_kg": 72.0
+    },
+    "metric": "active_calories",
+    "value": 370.6232
+  },
+  {
+    "day": "2026-03-07",
+    "flags": {
+      "caveats": [],
+      "weight_age_days": 7,
+      "weight_as_of": "2026-02-28",
+      "weight_kg": 72.0
+    },
+    "metric": "basal_calories",
+    "value": 1638.75
+  },
+  {
+    "day": "2026-03-07",
+    "flags": {
+      "edwards_tl": 120,
+      "hr_minutes": 60,
+      "hrmax": 183,
+      "method": "banister",
+      "rhr": 56,
+      "zone_min": [
+        0,
+        60,
+        0,
+        0,
+        0
+      ]
+    },
+    "metric": "cardio_load",
+    "value": 59.4
+  },
+  {
+    "day": "2026-03-07",
+    "flags": {
+      "method": "stride",
+      "source": "steps_per_minute",
+      "stride_m": 0.725
+    },
+    "metric": "distance_m_daily",
+    "value": 2249.5725
+  },
+  {
+    "day": "2026-03-07",
+    "flags": {
+      "zone_min": [
+        0,
+        60,
+        0,
+        0,
+        0
+      ]
+    },
+    "metric": "hr_zone_minutes",
+    "value": 60.0
+  },
+  {
+    "day": "2026-03-07",
+    "flags": {},
+    "metric": "hrv_sleep_avg",
+    "value": 45.0
+  },
+  {
+    "day": "2026-03-07",
+    "flags": {
+      "moderate": 20,
+      "vigorous": 5
+    },
+    "metric": "mvpa_min",
+    "value": 30.0
+  },
+  {
+    "day": "2026-03-07",
+    "flags": {
+      "factors": {
+        "hrv": {
+          "baseline": 48.0,
+          "sub": 37,
+          "value": 45.0,
+          "z": -0.67
+        },
+        "rhr": {
+          "baseline": 55.0,
+          "sub": 37,
+          "value": 56.0,
+          "z": 0.67
+        },
+        "rr": {
+          "baseline": 14.5,
+          "sub": 60,
+          "value": 14.0,
+          "z": -0.67
+        },
+        "sleep": {
+          "need_min": 480,
+          "sub": 96,
+          "tst_min": 460
+        }
+      },
+      "method": "evidence_weighted_personal_baseline",
+      "note_id": "recovery_readiness",
+      "weights": {
+        "hrv": 0.42,
+        "rhr": 0.28,
+        "rr": 0.1,
+        "sleep": 0.2
+      }
+    },
+    "metric": "recovery_score",
+    "value": 51.0
+  },
+  {
+    "day": "2026-03-07",
+    "flags": {},
+    "metric": "respiratory_rate_sleep",
+    "value": 14.0
+  },
+  {
+    "day": "2026-03-07",
+    "flags": {
+      "n": 480
+    },
+    "metric": "rhr_daily",
+    "value": 56.0
+  },
+  {
+    "day": "2026-03-07",
+    "flags": {
+      "avg_deficit_min": 20,
+      "avg_tst_min": 460,
+      "nights": 7,
+      "nights_below": 7,
+      "recovery_credit": 0.5,
+      "window_nights": 14
+    },
+    "metric": "sleep_debt_min",
+    "value": 140.0
+  },
+  {
+    "day": "2026-03-07",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-07T03:00:00+05:30",
+      "regularity": 1,
+      "session_source": "strap_ble",
+      "sri": 100.0,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_duration",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-07",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-07T03:00:00+05:30",
+      "regularity": 1,
+      "session_source": "strap_ble",
+      "sri": 100.0,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_efficiency",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-07",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-07T03:00:00+05:30",
+      "regularity": 1,
+      "session_source": "strap_ble",
+      "sri": 100.0,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_regularity",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-07",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-07T03:00:00+05:30",
+      "regularity": 1,
+      "session_source": "strap_ble",
+      "sri": 100.0,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_timing",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-07",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-07T03:00:00+05:30",
+      "regularity": 1,
+      "session_source": "strap_ble",
+      "sri": 100.0,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_health_score_4dim",
+    "value": 4.0
+  },
+  {
+    "day": "2026-03-07",
+    "flags": {
+      "age": 36,
+      "basis": "NSF2015"
+    },
+    "metric": "sleep_need_min",
+    "value": 480.0
+  },
+  {
+    "day": "2026-03-07",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-07T03:00:00+05:30",
+      "regularity": 1,
+      "session_source": "strap_ble",
+      "sri": 100.0,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_regularity_index",
+    "value": 100.0
+  },
+  {
+    "day": "2026-03-07",
+    "flags": {},
+    "metric": "spo2_overnight",
+    "value": 97.0
+  },
+  {
+    "day": "2026-03-07",
+    "flags": {},
+    "metric": "spo2_overnight_min",
+    "value": 97.0
+  },
+  {
+    "day": "2026-03-07",
+    "flags": {
+      "source": "steps_per_minute",
+      "sample_minutes": 27,
+      "caveats": []
+    },
+    "metric": "steps_total",
+    "value": 3105.0
+  },
+  {
+    "day": "2026-03-07",
+    "flags": {
+      "bmr": 1639,
+      "caveats": [],
+      "pal": 1.23,
+      "stride_m": 0.725,
+      "weight_age_days": 7,
+      "weight_as_of": "2026-02-28",
+      "weight_kg": 72.0,
+      "workout_cal": 0
+    },
+    "metric": "total_calories",
+    "value": 2009.3732
+  },
+  {
+    "day": "2026-03-07",
+    "flags": {
+      "age_years": 36,
+      "bmi": 23.5,
+      "method": "jurca_non_exercise",
+      "rhr_med": 55.0,
+      "see_ml_kg_min": 5.075,
+      "sex": "male",
+      "srpa": 2
+    },
+    "metric": "vo2max_estimate",
+    "value": 44.2864
+  },
+  {
+    "day": "2026-03-08",
+    "flags": {
+      "caveats": [],
+      "weight_age_days": 8,
+      "weight_as_of": "2026-02-28",
+      "weight_kg": 72.0
+    },
+    "metric": "active_calories",
+    "value": 394.5217
+  },
+  {
+    "day": "2026-03-08",
+    "flags": {
+      "caveats": [],
+      "weight_age_days": 8,
+      "weight_as_of": "2026-02-28",
+      "weight_kg": 72.0
+    },
+    "metric": "basal_calories",
+    "value": 1638.75
+  },
+  {
+    "day": "2026-03-08",
+    "flags": {
+      "edwards_tl": 120,
+      "hr_minutes": 60,
+      "hrmax": 183,
+      "method": "banister",
+      "rhr": 57,
+      "zone_min": [
+        0,
+        60,
+        0,
+        0,
+        0
+      ]
+    },
+    "metric": "cardio_load",
+    "value": 58.6
+  },
+  {
+    "day": "2026-03-08",
+    "flags": {
+      "method": "stride",
+      "source": "steps_per_minute",
+      "stride_m": 0.725
+    },
+    "metric": "distance_m_daily",
+    "value": 2249.5725
+  },
+  {
+    "day": "2026-03-08",
+    "flags": {
+      "zone_min": [
+        0,
+        60,
+        0,
+        0,
+        0
+      ]
+    },
+    "metric": "hr_zone_minutes",
+    "value": 60.0
+  },
+  {
+    "day": "2026-03-08",
+    "flags": {},
+    "metric": "hrv_sleep_avg",
+    "value": 48.0
+  },
+  {
+    "day": "2026-03-08",
+    "flags": {
+      "moderate": 20,
+      "vigorous": 5
+    },
+    "metric": "mvpa_min",
+    "value": 30.0
+  },
+  {
+    "day": "2026-03-08",
+    "flags": {
+      "factors": {
+        "hrv": {
+          "baseline": 48.0,
+          "sub": 50,
+          "value": 48.0,
+          "z": 0.0
+        },
+        "rhr": {
+          "baseline": 55.0,
+          "sub": 23,
+          "value": 57.0,
+          "z": 1.35
+        },
+        "rr": {
+          "baseline": 14.0,
+          "sub": 20,
+          "value": 15.0,
+          "z": 2.0
+        },
+        "sleep": {
+          "need_min": 480,
+          "sub": 96,
+          "tst_min": 460
+        }
+      },
+      "method": "evidence_weighted_personal_baseline",
+      "note_id": "recovery_readiness",
+      "weights": {
+        "hrv": 0.42,
+        "rhr": 0.28,
+        "rr": 0.1,
+        "sleep": 0.2
+      }
+    },
+    "metric": "recovery_score",
+    "value": 49.0
+  },
+  {
+    "day": "2026-03-08",
+    "flags": {},
+    "metric": "respiratory_rate_sleep",
+    "value": 15.0
+  },
+  {
+    "day": "2026-03-08",
+    "flags": {
+      "n": 480
+    },
+    "metric": "rhr_daily",
+    "value": 57.0
+  },
+  {
+    "day": "2026-03-08",
+    "flags": {
+      "avg_deficit_min": 20,
+      "avg_tst_min": 460,
+      "nights": 8,
+      "nights_below": 8,
+      "recovery_credit": 0.5,
+      "window_nights": 14
+    },
+    "metric": "sleep_debt_min",
+    "value": 160.0
+  },
+  {
+    "day": "2026-03-08",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-08T03:00:00+05:30",
+      "regularity": 1,
+      "session_source": "strap_ble",
+      "sri": 98.61,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_duration",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-08",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-08T03:00:00+05:30",
+      "regularity": 1,
+      "session_source": "strap_ble",
+      "sri": 98.61,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_efficiency",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-08",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-08T03:00:00+05:30",
+      "regularity": 1,
+      "session_source": "strap_ble",
+      "sri": 98.61,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_regularity",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-08",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-08T03:00:00+05:30",
+      "regularity": 1,
+      "session_source": "strap_ble",
+      "sri": 98.61,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_dim_timing",
+    "value": 1.0
+  },
+  {
+    "day": "2026-03-08",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-08T03:00:00+05:30",
+      "regularity": 1,
+      "session_source": "strap_ble",
+      "sri": 98.61,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_health_score_4dim",
+    "value": 4.0
+  },
+  {
+    "day": "2026-03-08",
+    "flags": {
+      "age": 36,
+      "basis": "NSF2015"
+    },
+    "metric": "sleep_need_min",
+    "value": 480.0
+  },
+  {
+    "day": "2026-03-08",
+    "flags": {
+      "duration": 1,
+      "efficiency": 1,
+      "efficiency_pct": 95.8,
+      "midpoint_hr": 3,
+      "midpoint_local": "2026-03-08T03:00:00+05:30",
+      "regularity": 1,
+      "session_source": "strap_ble",
+      "sri": 98.61,
+      "tib_min": 480,
+      "timing": 1,
+      "tst_min": 460
+    },
+    "metric": "sleep_regularity_index",
+    "value": 98.61
+  },
+  {
+    "day": "2026-03-08",
+    "flags": {},
+    "metric": "spo2_overnight",
+    "value": 97.0
+  },
+  {
+    "day": "2026-03-08",
+    "flags": {},
+    "metric": "spo2_overnight_min",
+    "value": 97.0
+  },
+  {
+    "day": "2026-03-08",
+    "flags": {
+      "source": "steps_per_minute",
+      "sample_minutes": 27,
+      "caveats": []
+    },
+    "metric": "steps_total",
+    "value": 3105.0
+  },
+  {
+    "day": "2026-03-08",
+    "flags": {
+      "bmr": 1639,
+      "caveats": [],
+      "pal": 1.24,
+      "stride_m": 0.725,
+      "weight_age_days": 8,
+      "weight_as_of": "2026-02-28",
+      "weight_kg": 72.0,
+      "workout_cal": 0
+    },
+    "metric": "total_calories",
+    "value": 2033.2717
+  },
+  {
+    "day": "2026-03-08",
+    "flags": {
+      "age_years": 36,
+      "bmi": 23.5,
+      "method": "jurca_non_exercise",
+      "rhr_med": 56.0,
+      "see_ml_kg_min": 5.075,
+      "sex": "male",
+      "srpa": 2
+    },
+    "metric": "vo2max_estimate",
+    "value": 44.1814
+  }
+]

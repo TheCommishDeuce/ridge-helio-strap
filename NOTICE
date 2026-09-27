@@ -1,0 +1,41 @@
+Ridge (codename "strap")
+Copyright (C) 2026 TheCommishDeuce
+
+This program is free software: you can redistribute it and/or modify it under the terms of
+the GNU Affero General Public License as published by the Free Software Foundation, either
+version 3 of the License, or (at your option) any later version. See LICENSE.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+It is not a medical device and gives no medical advice.
+
+
+Where the knowledge came from
+-----------------------------
+
+Gadgetbridge (https://codeberg.org/Freeyourgadget/Gadgetbridge), AGPL-3.0-or-later.
+  The Zepp OS protocol this app speaks (the B-163 ECDH handshake, chunked framing and
+  encryption, activity fetch, and the alarm and config service layouts) was learned from
+  Gadgetbridge's source. An earlier app ported it; this one re-implements it from
+  docs/spec/01-strap-protocol.md, with test vectors, and copies no Gadgetbridge code (D8).
+  Licensing this project under the AGPL keeps it compatible with that lineage.
+
+HelioCore: read as a protocol reference only; no code taken.
+
+huami_token: read as the reference for the Zepp cloud sign-in request that
+  tools/keyfetch sends; no code taken.
+
+
+Bundled third-party files
+-------------------------
+
+android/gradle/wrapper/gradle-wrapper.jar, android/gradlew, android/gradlew.bat:
+  Gradle wrapper, Apache License 2.0, Copyright the Gradle authors.
+
+
+Trademarks
+----------
+
+Not affiliated with, endorsed by or supported by Amazfit, Zepp Health or Huami. "Amazfit",
+"Helio" and "Zepp" are trademarks of their respective owners, used here only to say which
+device this software works with.

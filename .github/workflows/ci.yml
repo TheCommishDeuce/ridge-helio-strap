@@ -1,0 +1,51 @@
+# Tests and builds every push and pull request. Release APKs are NOT built here: the signing
+# key never leaves the owner's machine (D24); tools/release.sh makes them there.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+      # Protocol tests, lint, and an (unsigned) release build: R8 must still pass.
+      - run: ./gradlew --no-daemon :strap-protocol:test :app:lintRelease :app:assembleRelease
+
+  server:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: timescale/timescaledb:latest-pg17
+        env:
+          POSTGRES_DB: strap
+          POSTGRES_USER: strap
+          POSTGRES_PASSWORD: local-test-only
+        ports:
+          - 5598:5432
+        options: >-
+          --health-cmd "pg_isready -U strap -d strap"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen
+      - run: uv run ruff check
+      # The database tests skip when no database answers; here one must, so a skip fails.
+      - run: |
+          uv run pytest -q -rs | tee pytest.log
+          if grep -qiE '[0-9]+ skipped' pytest.log; then echo "tests were skipped" >&2; exit 1; fi
