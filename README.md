@@ -63,9 +63,10 @@ reads them back from there.
    minutes, then put HTTPS in front of it.
 2. **Get your strap's auth key**: [`tools/keyfetch/README.md`](tools/keyfetch/README.md).
 3. **Install the app** from the
-   [latest release](https://github.com/TheCommishDeuce/ridge-helio-strap/releases), then
-   in the app open the gear: pair the strap (MAC and key), add your server (address and
-   token), and sync.
+   [latest release](https://github.com/TheCommishDeuce/ridge-helio-strap/releases) and open
+   it. Setup walks you through pairing the strap (MAC and key), connecting your server
+   (address and token, tested before it is saved) and the first sync. Later changes live
+   under the gear (Settings).
 
 ## How it's built
 

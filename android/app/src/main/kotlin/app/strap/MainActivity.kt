@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
@@ -33,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -56,6 +58,10 @@ import app.strap.api.ApiException
 import app.strap.sync.SyncService
 import app.strap.sync.SyncState
 import app.strap.ui.DiagnosticsScreen
+import app.strap.ui.settings.SettingsScreen
+import app.strap.ui.setup.ServerStep
+import app.strap.ui.setup.SetupFlow
+import app.strap.ui.setup.StrapStep
 import app.strap.ui.activity.ActivityScreen
 import app.strap.ui.journal.JournalScreen
 import app.strap.ui.sleep.SleepScreen
@@ -81,6 +87,14 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/** What covers the tabs: the gear's pages. */
+private enum class Page(val title: String) {
+    SETTINGS("Settings"),
+    DIAGNOSTICS("Diagnostics"),
+    CHANGE_STRAP("Settings"),
+    CHANGE_SERVER("Settings"),
+}
+
 private enum class Tab(val label: String, val icon: ImageVector) {
     TODAY("Today", Icons.Outlined.Today),
     SLEEP("Sleep", Icons.Outlined.Bedtime),
@@ -92,16 +106,26 @@ private enum class Tab(val label: String, val icon: ImageVector) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AppShell(app: StrapApp) {
+    // First run (D27): until both the strap and the server are set, only the setup flow shows.
+    var setUp by remember { mutableStateOf(app.vault.load() != null && app.vault.loadServer() != null) }
+    if (!setUp) {
+        // A Surface, not a bare Box: it sets the content colour that plain Text reads.
+        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            Box(Modifier.safeDrawingPadding()) { SetupFlow(app) { setUp = true } }
+        }
+        return
+    }
     var tab by remember { mutableStateOf(Tab.TODAY) }
-    var diagnostics by remember { mutableStateOf(false) }
+    var page by remember { mutableStateOf<Page?>(null) }
     var detail by remember { mutableStateOf<DetailMetric?>(null) }
     var day by remember { mutableStateOf(LocalDate.now()) }
     val sync by app.syncRunner.state.collectAsStateWithLifecycle()
     val colors = LocalMetricColors.current
-    BackHandler(enabled = diagnostics || detail != null) {
-        when {
-            diagnostics -> diagnostics = false
-            else -> detail = null
+    BackHandler(enabled = page != null || detail != null) {
+        page = when (page) {
+            null -> null.also { detail = null }
+            Page.SETTINGS -> null
+            else -> Page.SETTINGS
         }
     }
     val nav = TodayNav(
@@ -116,7 +140,7 @@ private fun AppShell(app: StrapApp) {
             CenterAlignedTopAppBar(
                 title = {
                     when {
-                        diagnostics -> Text("Diagnostics")
+                        page != null -> Text(page!!.title)
                         detail != null -> Text(detail!!.title + if (day == LocalDate.now()) "" else " · " + dayLabel(day))
                         tab == Tab.TODAY -> DaySwitcher(day) { day = it }
                         else -> Text(tab.label)
@@ -128,12 +152,12 @@ private fun AppShell(app: StrapApp) {
                         if (busy) CircularProgressIndicator(Modifier.padding(12.dp), strokeWidth = 2.dp) else Icon(Icons.Outlined.Sync, "Sync now")
                     }
                 },
-                actions = { IconButton(onClick = { diagnostics = !diagnostics }) { Icon(Icons.Outlined.Settings, "Diagnostics") } },
+                actions = { IconButton(onClick = { page = if (page == null) Page.SETTINGS else null }) { Icon(Icons.Outlined.Settings, "Settings") } },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.background),
             )
         },
         bottomBar = {
-            if (!diagnostics) NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+            if (page == null) NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                 Tab.entries.forEach { t ->
                     NavigationBarItem(selected = tab == t && detail == null, onClick = { if (t == Tab.TODAY && tab == Tab.TODAY && detail == null) day = LocalDate.now(); tab = t; detail = null }, icon = { Icon(t.icon, null) }, label = { Text(t.label) })
                 }
@@ -142,7 +166,15 @@ private fun AppShell(app: StrapApp) {
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize()) {
             when {
-                diagnostics -> DiagnosticsScreen(app)
+                page == Page.SETTINGS -> SettingsScreen(
+                    app,
+                    onChangeStrap = { page = Page.CHANGE_STRAP },
+                    onChangeServer = { page = Page.CHANGE_SERVER },
+                    onDiagnostics = { page = Page.DIAGNOSTICS },
+                )
+                page == Page.DIAGNOSTICS -> DiagnosticsScreen(app)
+                page == Page.CHANGE_STRAP -> StrapStep(app, "Change strap", onCancel = { page = Page.SETTINGS }) { page = Page.SETTINGS }
+                page == Page.CHANGE_SERVER -> ServerStep(app, "Change server", onCancel = { page = Page.SETTINGS }) { page = Page.SETTINGS }
                 detail != null -> app.vault.loadServer()?.let { MetricDetailScreen(ApiClient(it), detail!!, day) } ?: Centered("Add your server first.")
                 tab == Tab.TODAY -> TodayTab(app, sync, nav, day)
                 tab == Tab.STRAP -> StrapScreen(app.syncRunner)
@@ -150,7 +182,7 @@ private fun AppShell(app: StrapApp) {
                     val api = remember(sync) { app.vault.loadServer()?.let(::ApiClient) }
                     val refresh = sync is SyncState.Finished
                     when {
-                        api == null -> Centered("Add your server under the gear (Diagnostics) first.")
+                        api == null -> Centered("Add your server in Settings (the gear) first.")
                         tab == Tab.SLEEP -> SleepScreen(api, refresh)
                         tab == Tab.ACTIVITY -> ActivityScreen(api, refresh)
                         else -> JournalScreen(api)
@@ -179,7 +211,7 @@ private fun TodayTab(app: StrapApp, sync: SyncState, nav: TodayNav, day: LocalDa
     }
     val current = data
     when {
-        link == null -> Centered("Add your server under the gear (Diagnostics) to see your day.")
+        link == null -> Centered("Add your server in Settings (the gear) to see your day.")
         current != null && current.day == day -> TodayContent(current, nav)
         error != null -> Centered(error!!)
         else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }

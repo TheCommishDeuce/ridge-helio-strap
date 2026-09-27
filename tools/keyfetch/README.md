@@ -30,7 +30,7 @@ Amazfit Helio Strap  mac=AA:BB:CC:DD:EE:FF  key=0123…(32 hex)  (active)
 
 With `--qr` it also prints a QR code that holds the MAC and key together.
 
-**In Ridge** (gear → pairing), either paste the MAC and the 32-character key into their
+**In Ridge's setup** (or later: the gear → Settings → Strap), either paste the MAC and the 32-character key into their
 fields, or point your phone's camera (or Google Lens) at the QR code, copy the text it
 shows (`{"v":1,"mac":…,"key":…}`) and paste all of it into the key field. The key is kept
 in the Android keystore.

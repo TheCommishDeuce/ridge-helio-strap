@@ -29,6 +29,7 @@ cat <<EOT
 Demo server ready. On the phone (USB or wireless adb):
   adb reverse tcp:8767 tcp:8767
   adb install -r android/app/build/outputs/apk/demo/app-demo.apk
-In "Ridge demo", gear → server: http://127.0.0.1:8767  token: $token
+In "Ridge demo" setup: any MAC and 32-hex key; server http://127.0.0.1:8767  token: $token
+(The first sync fails without a strap: press "Continue to Today".)
 Remove it afterwards: tools/demo-data/load.sh down
 EOT

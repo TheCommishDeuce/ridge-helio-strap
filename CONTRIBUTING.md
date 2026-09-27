@@ -44,7 +44,8 @@ synthetic data, and a demo build of the app that installs beside the real one.
 tools/demo-data/load.sh                     # starts it on 127.0.0.1:8767, prints a token
 cd android && ./gradlew :app:assembleDemo
 adb reverse tcp:8767 tcp:8767 && adb install -r app/build/outputs/apk/demo/app-demo.apk
-# In "Ridge demo": gear → server http://127.0.0.1:8767 and the printed token.
+# "Ridge demo" opens on setup: any MAC and 32-hex key, then server http://127.0.0.1:8767 and
+# the printed token (Test, Next); the first sync fails without a strap: Continue to Today.
 tools/demo-data/load.sh down                # remove it afterwards
 ```
 

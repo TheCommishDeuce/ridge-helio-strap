@@ -165,6 +165,15 @@ class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null,
 
     data class Battery(val percent: Int, val at: Instant)
 
+    /** When the last sync finished, and its failure (null = complete), or null before the first. */
+    fun lastSync(): Pair<Instant, String?>? = readableDatabase
+        .rawQuery("SELECT at, summary FROM sync_log ORDER BY id DESC LIMIT 1", null)
+        .use { c ->
+            if (!c.moveToFirst()) return null
+            val failure = JSONObject(c.getString(1)).opt("failure")
+            Instant.ofEpochMilli(c.getLong(0)) to (failure as? String)
+        }
+
     fun lastSummary(): JSONObject? = readableDatabase
         .rawQuery("SELECT summary FROM sync_log ORDER BY id DESC LIMIT 1", null)
         .use { if (it.moveToFirst()) JSONObject(it.getString(0)) else null }

@@ -70,8 +70,9 @@ Check from outside your network: `curl -fsS https://ridge.example.com/healthz`.
 
 ## 5 · Connect the app
 
-In Ridge: the gear → **Server**. Enter `https://ridge.example.com` and the token from
-step 2, then sync. What the strap delivered is uploaded after every sync, and the server
+Ridge's first-run setup asks for the server: enter `https://ridge.example.com` and the
+token from step 2, press **Test**, then continue to the first sync. To change it later: the
+gear → Settings → Server. What the strap delivered is uploaded after every sync, and the server
 derives recovery, strain, sleep and the rest from it.
 
 ## Updating
