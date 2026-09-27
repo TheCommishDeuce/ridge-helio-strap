@@ -32,16 +32,18 @@ reads them back from there.
   is withheld and names the reason ("sync the strap", "log your weight"), never shown as
   a zero or a guess. Every formula, constant, gate and source is written down in
   [`docs/spec/02-science.md`](docs/spec/02-science.md).
-- **Your data stays yours**: on your phone, then on your server. No account, no cloud and
-  no analytics.
+- **Your data stays yours**: on your phone, then on your server. Ridge has no account, no
+  cloud and no analytics. (Your Zepp account is needed once, on your computer, to fetch
+  the strap's key: see [What you need](#what-you-need).)
 
 ## What it is not
 
 - **Not a medical device** and not medical advice. The illness flag and similar signals
   are prompts to pay attention, not diagnoses.
 - **Not affiliated with Amazfit, Zepp Health or Huami.**
-- Not a Zepp app replacement for everything. You still need the Zepp app once, to pair
-  the strap and to update its firmware.
+- Not a Zepp app replacement for everything. You still need the Zepp app to pair the
+  strap and to update its firmware, and your Zepp account once per pairing to fetch the
+  strap's key.
 
 ## Limitations
 
@@ -53,15 +55,38 @@ reads them back from there.
 - **One person per server.** There is one device token, no accounts and no sign-up.
 - **Syncing is manual.** Press sync when you want fresh data; nothing runs in the
   background (D19).
-- **Getting the strap's auth key needs your Zepp account, once per pairing** (see below).
+- **Getting the strap's auth key needs your Zepp account, once per pairing**, signed in
+  with email and password (see [What you need](#what-you-need)).
 - Strap settings other than alarms can be read, not yet changed.
 - No GPS. English only.
+
+## What you need
+
+- **The strap, paired with the official Zepp app** on your phone, with any pending firmware
+  update installed.
+- **Your Zepp account's email and password.** The strap only talks to someone who knows its
+  *auth key*, 16 bytes the Zepp app created when it paired the strap and stored in your
+  Zepp cloud account. Ridge cannot pair a strap or make its own key, so a small script
+  signs in to your Zepp account once and reads the key from there. Accounts that sign in
+  with Google, Apple or Facebook don't work unless they also have a password. Signing in
+  logs the Zepp app out; the key is not affected.
+- **A computer with [uv](https://docs.astral.sh/uv/)** to run that script. The Ridge app
+  itself never talks to Zepp.
+- **An Android 12+ phone.**
+- **An always-on machine with Docker** for the server, reachable from the phone over HTTPS.
+
+You end up with two secrets: the strap's **MAC and auth key** (from your Zepp account), and
+the server's **token** (made by the server's setup). The app asks for both during setup.
 
 ## Getting started
 
 1. **Run the server**: [`deploy/README.md`](deploy/README.md). Docker Compose, about ten
-   minutes, then put HTTPS in front of it.
-2. **Get your strap's auth key**: [`tools/keyfetch/README.md`](tools/keyfetch/README.md).
+   minutes, then put HTTPS in front of it. Keep the token it prints.
+2. **Get your strap's MAC and auth key from your Zepp account**:
+   `uv run tools/keyfetch/keyfetch.py you@example.com --qr`. Details, and how to keep the
+   Zepp app from grabbing the strap afterwards:
+   [`tools/keyfetch/README.md`](tools/keyfetch/README.md). Already use Gadgetbridge? Its
+   device export holds the same key.
 3. **Install the app** from the
    [latest release](https://github.com/TheCommishDeuce/ridge-helio-strap/releases) and open
    it. Setup walks you through pairing the strap (MAC and key), connecting your server
