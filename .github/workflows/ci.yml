@@ -42,7 +42,7 @@ jobs:
         working-directory: server
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.2.0 # no major-version tag since v7
       - run: uv sync --frozen
       - run: uv run ruff check
       # The database tests skip when no database answers; here one must, so a skip fails.
