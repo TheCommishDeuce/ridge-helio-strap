@@ -12,6 +12,7 @@ import android.bluetooth.BluetoothStatusCodes
 import android.content.Context
 import android.os.Build
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.sync.Mutex
@@ -181,6 +182,8 @@ class AndroidStrapLink private constructor(private val log: (String) -> Unit) : 
     companion object {
         private val OP_TIMEOUT = 10.seconds
         private val CONNECT_TIMEOUT = 20.seconds
+        private const val DISCOVERY_ATTEMPTS = 5
+        private val DISCOVERY_RETRY = 1.seconds
 
         /** Connect → MTU 247 → discover → notifications on `0017`, in that order (spec/01 §2). */
         suspend fun connect(context: Context, mac: String, log: (String) -> Unit): AndroidStrapLink {
@@ -213,11 +216,20 @@ class AndroidStrapLink private constructor(private val log: (String) -> Unit) : 
         log("MTU = $mtu")
     }
 
+    /**
+     * Reconnecting within ~2 s of the previous connection (a sync right after the Strap tab
+     * read, or two syncs in a row), Android reports discovery as successful but with an EMPTY
+     * service table while it tears the old link down. Asking again a moment later works.
+     */
     private suspend fun discover() {
-        op("discover services") { gatt.discoverServices() }
-        for (service in gatt.services) for (c in service.characteristics) chars[c.uuid] = c
-        if (Gatt.CHUNKED_WRITE !in chars || Gatt.CHUNKED_NOTIFY !in chars) {
-            throw IOException("chunked transport characteristics (0016/0017) not found")
+        for (attempt in 1..DISCOVERY_ATTEMPTS) {
+            op("discover services") { gatt.discoverServices() }
+            chars.clear()
+            for (service in gatt.services) for (c in service.characteristics) chars[c.uuid] = c
+            if (Gatt.CHUNKED_WRITE in chars && Gatt.CHUNKED_NOTIFY in chars) break
+            log("discovery $attempt found ${gatt.services.size} services, not the strap's; asking again")
+            if (attempt == DISCOVERY_ATTEMPTS) throw IOException("chunked transport characteristics (0016/0017) not found")
+            delay(DISCOVERY_RETRY)
         }
         log("characteristics: fetch channel ${if (hasFetchChannel) "present" else "MISSING"}")
     }
