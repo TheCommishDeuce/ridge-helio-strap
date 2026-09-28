@@ -1,30 +1,55 @@
 package app.strap.ui.activity
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.DirectionsRun
+import androidx.compose.material.icons.rounded.Air
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.strap.api.ApiClient
 import app.strap.api.ApiException
+import app.strap.ui.Loading
 import app.strap.ui.components.Bar
+import app.strap.ui.components.CardHeader
+import app.strap.ui.components.ConnectedButtons
 import app.strap.ui.components.DailyBars
-import app.strap.ui.components.MetricCard
-import app.strap.ui.components.Segmented
-import app.strap.ui.components.StatRow
+import app.strap.ui.components.GroupHeader
+import app.strap.ui.components.Grouped
+import app.strap.ui.components.HeroGauge
+import app.strap.ui.components.HeroRow
+import app.strap.ui.components.IconCircle
+import app.strap.ui.components.InfoButton
+import app.strap.ui.components.Infos
+import app.strap.ui.components.ListRow
+import app.strap.ui.components.Note
+import app.strap.ui.components.RidgeCard
+import app.strap.ui.components.SideStat
 import app.strap.ui.components.Subtle
+import app.strap.ui.components.changeNote
 import app.strap.ui.components.clockOf
 import app.strap.ui.theme.LocalMetricColors
+import app.strap.ui.theme.LocalRidgeColors
+import app.strap.ui.theme.RidgeType
+import app.strap.ui.today.workoutLine
 import org.json.JSONArray
 import org.json.JSONObject
 import java.time.Instant
@@ -39,7 +64,7 @@ private class ActivityData(val summary: JSONObject, val daily: JSONObject, val w
 fun ActivityScreen(api: ApiClient, refreshKey: Any?) {
     var data by remember { mutableStateOf<ActivityData?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
-    var days by remember { mutableStateOf(7) }
+    var days by rememberSaveable { mutableIntStateOf(7) }
     val today = LocalDate.now()
     LaunchedEffect(refreshKey) {
         try {
@@ -53,99 +78,133 @@ fun ActivityScreen(api: ApiClient, refreshKey: Any?) {
             error = e.message
         }
     }
-    val d = data ?: return if (error != null) Text(error!!) else CircularProgressIndicator()
+    val d = data ?: return Loading(error)
     val c = LocalMetricColors.current
+    val r = LocalRidgeColors.current
     fun series(metric: String): Map<LocalDate, Double> = d.daily.getJSONArray(metric).let { a ->
         (0 until a.length()).map { a.getJSONObject(it) }.associate { LocalDate.parse(it.getString("day")) to it.getDouble("value") }
     }
     val first = today.minusDays(days - 1L)
-    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        // Order agreed with the owner: steps, recovery, active minutes, load, strain, workouts, VO2max.
-        item { Segmented(listOf(7, 30), days, { if (it == 7) "Week" else "Month" }) { days = it } }
+    val strain = d.summary.getJSONObject("strain")
+    val readiness = d.summary.getJSONObject("recovery").optJSONObject("readiness")
+    val mvpa = series("mvpa_min")
+    val weekActive = (0..6).mapNotNull { mvpa[today.minusDays(it.toLong())] }.takeIf { it.isNotEmpty() }?.sum()
+    LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item {
-            MetricCard("Steps", c.steps) {
-                DailyBars(series("steps_total"), first, today, c.steps, { "%,d steps".format(it.roundToInt()) })
+            val load = if (strain.has("cardio_load")) strain.getDouble("cardio_load") else null
+            val value = if (strain.has("value") && !strain.isNull("value")) strain.getDouble("value") else null
+            HeroRow(
+                left = {
+                    SideStat(load?.roundToInt()?.toString() ?: "—", "Load · TRIMP",
+                        changeNote(load?.let { l -> readiness?.optDouble("typical")?.takeIf { !it.isNaN() }?.let { l - it } }, "vs typical", neutral = true), it)
+                },
+                right = {
+                    SideStat(weekActive?.roundToInt()?.toString() ?: "—", "Active min",
+                        Note("goal 150 / week", if ((weekActive ?: 0.0) >= 150) r.zoneGreen else MaterialTheme.colorScheme.onSurfaceVariant), it)
+                },
+            ) {
+                HeroGauge(value?.let { "%.1f".format(it) } ?: "—", "of 21", value?.let { (it / 21).toFloat() }, c.strain, "Strain", null)
             }
         }
-        item { RecoveryCard(d.summary.getJSONObject("recovery"), c.recovery) }
+        item { ConnectedButtons(listOf(7, 30), days, { if (it == 7) "Week" else "Month" }) { days = it } }
         item {
-            MetricCard("Active minutes", c.recovery) {
-                Subtle("Moderate + 2 × vigorous minutes from step cadence (WHO counts a vigorous minute double); guideline 150 a week.")
-                DailyBars(series("mvpa_min"), first, today, c.recovery, { "${it.roundToInt()} min" })
+            val steps = series("steps_total")
+            val inRange = steps.filterKeys { it >= first }
+            RidgeCard {
+                CardHeader("Steps")
+                Text("%,d".format(inRange.values.sum().roundToInt()), style = RidgeType.bigNumber)
+                Subtle(
+                    (if (days == 7) "this week" else "last 30 days") +
+                        (inRange.values.takeIf { it.isNotEmpty() }?.average()?.let { " · %,d a day on average".format(it.roundToInt()) } ?: ""),
+                )
+                DailyBars(steps, first, today, c.steps, { "%,d steps".format(it.roundToInt()) }, highlightLast = true, height = 130.dp)
             }
         }
         item {
-            MetricCard("Load", c.strain) {
-                Subtle("Daily cardio load (Banister TRIMP over waking minutes) — the number strain is scaled from.")
-                DailyBars(series("cardio_load"), first, today, c.strain, { "%.0f TRIMP".format(it) })
+            val inRange = mvpa.filterKeys { it >= first }.values
+            RidgeCard {
+                CardHeader("Active minutes", info = Infos.active)
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text("${inRange.sum().roundToInt()}", style = RidgeType.cardNumber)
+                    Subtle(if (days == 7) "  of 150 min this week" else "  min in 30 days", Modifier.padding(bottom = 5.dp))
+                }
+                DailyBars(mvpa, first, today, c.recovery, { "${it.roundToInt()} min" }, highlightLast = true, height = 90.dp)
             }
         }
-        item { StrainCard(d.summary.getJSONObject("strain"), c.strain, c.heart) }
-        item { WorkoutsCard(d.workouts, c.heart) }
+        item {
+            val load = series("cardio_load")
+            RidgeCard {
+                CardHeader("Load", info = Infos.load)
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(load[today]?.roundToInt()?.toString() ?: "—", style = RidgeType.cardNumber)
+                    Subtle("  TRIMP today", Modifier.padding(bottom = 5.dp))
+                }
+                DailyBars(load, first, today, c.strain, { "%.0f TRIMP".format(it) }, highlightLast = true, height = 90.dp)
+            }
+        }
+        item { ZonesCard(strain) }
+        item { GroupHeader("Workouts", trailing = "${d.workouts.length()} in 30 days") }
+        item { Workouts(d.workouts) }
         item {
             val v = d.summary.getJSONObject("vo2max")
-            MetricCard("VO₂max", c.strain, headline = if (v.has("value")) "%.1f ml/kg/min".format(v.getDouble("value")) else null) {
-                Subtle(v.optJSONObject("withheld")?.getString("message") ?: "Estimated from your profile, activity answer and resting heart rate (Jurca 2005).")
+            RidgeCard(padding = 14.dp) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconCircle(Icons.Rounded.Air, c.strainTone.container, c.strainTone.onContainer)
+                    Column(Modifier.weight(1f).padding(start = 16.dp)) {
+                        Text("VO₂max", style = RidgeType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        if (v.has("value")) {
+                            Row(verticalAlignment = Alignment.Bottom) {
+                                Text("%.1f".format(v.getDouble("value")), style = RidgeType.rowValue)
+                                Subtle(" ml/kg/min", Modifier.padding(bottom = 2.dp), RidgeType.caption)
+                            }
+                        } else {
+                            Subtle(v.optJSONObject("withheld")?.getString("message") ?: "—")
+                        }
+                    }
+                    InfoButton(Infos.vo2)
+                }
             }
         }
     }
 }
 
-/** The recovery score always shown WITH its parts — it is an evidence-weighted estimate, not a validated formula. */
 @Composable
-private fun RecoveryCard(r: JSONObject, accent: Color) {
-    MetricCard("Recovery", accent, headline = if (r.has("value")) "${r.getInt("value")}%" else null) {
-        if (r.has("withheld")) {
-            Subtle(r.getJSONObject("withheld").getString("message"))
-            return@MetricCard
+private fun ZonesCard(s: JSONObject) {
+    val c = LocalMetricColors.current
+    val f = s.optJSONObject("flags")
+    RidgeCard {
+        CardHeader("Heart-rate zones today", info = Infos.strain(f?.optInt("hrmax")?.takeIf { it > 0 }, f?.optInt("rhr")?.takeIf { it > 0 }))
+        val zones = f?.optJSONArray("zone_min")
+        if (s.has("withheld") || zones == null) {
+            Subtle(s.optJSONObject("withheld")?.getString("message") ?: "Not computed yet.")
+            return@RidgeCard
         }
-        r.optJSONObject("readiness")?.let { Subtle("Now ${it.getInt("value")}% after today's load (${it.getDouble("load").roundToInt()} vs your typical ${it.getDouble("typical").roundToInt()}).") }
-        val f = r.getJSONObject("flags")
-        val factors = f.getJSONObject("factors")
-        val weights = f.getJSONObject("weights")
-        val names = mapOf("hrv" to "HRV overnight", "rhr" to "Resting heart rate", "rr" to "Breathing rate", "sleep" to "Sleep vs your need")
-        names.forEach { (key, label) ->
-            val x = factors.optJSONObject(key) ?: return@forEach
-            val detail = if (key == "sleep") "${x.getInt("tst_min")} of ${x.getInt("need_min")} min"
-            else "${x.getDouble("value")} vs usual ${x.getDouble("baseline")}"
-            StatRow("$label · weight ${(weights.getDouble(key) * 100).roundToInt()}%", "${x.getInt("sub")}")
-            Bar(x.getInt("sub") / 100f, accent)
-            Subtle(detail)
-        }
-        Subtle("Parts are compared with your own last 42 days. The weights reflect how strong the evidence is for each marker; no study fits them (recovery_readiness).")
-    }
-}
-
-@Composable
-private fun StrainCard(s: JSONObject, accent: Color, zoneColor: Color) {
-    MetricCard("Strain", accent, headline = if (s.has("value") && !s.isNull("value")) "%.1f of 21".format(s.getDouble("value")) else null) {
-        if (s.has("withheld")) {
-            Subtle(s.getJSONObject("withheld").getString("message"))
-            return@MetricCard
-        }
-        Subtle("Today's load on your own scale: 21 is your hardest day of the last 90 (their 95th percentile).")
-        val f = s.getJSONObject("flags")
-        val zones = f.getJSONArray("zone_min")
         val bounds = listOf("50–60%", "60–70%", "70–80%", "80–90%", "90%+")
         val max = (0 until zones.length()).maxOf { zones.getInt(it) }.coerceAtLeast(1)
         bounds.forEachIndexed { i, b ->
-            StatRow("Zone ${i + 1} · $b of max HR", "${zones.getInt(i)} min")
-            Bar(zones.getInt(i) / max.toFloat(), zoneColor.copy(alpha = 0.4f + 0.12f * i))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.width(64.dp)) {
+                    Text("Zone ${i + 1}", style = RidgeType.caption.copy(fontWeight = RidgeType.label.fontWeight))
+                    Text(b, style = RidgeType.change, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Bar(zones.getInt(i) / max.toFloat(), c.heart.copy(alpha = 0.45f + 0.137f * i), Modifier.weight(1f), height = 8.dp)
+                Text("${zones.getInt(i)} min", style = RidgeType.label, textAlign = TextAlign.End, modifier = Modifier.width(64.dp))
+            }
         }
-        Subtle("Max HR ${f.getInt("hrmax")} (Tanaka 208 − 0.7 × age), resting ${f.getInt("rhr")}.")
     }
 }
 
 @Composable
-private fun WorkoutsCard(workouts: JSONArray, accent: Color) {
-    MetricCard("Workouts", accent, headline = "${workouts.length()} in 30 days") {
-        val fmt = DateTimeFormatter.ofPattern("EEE d MMM")
-        (0 until minOf(workouts.length(), 8)).map { workouts.getJSONObject(it) }.forEach { w ->
-            val day = Instant.ofEpochMilli(w.getLong("start")).atZone(ZoneId.systemDefault()).format(fmt)
-            val hr = if (w.isNull("avg_hr")) "" else " · avg ${w.getInt("avg_hr")} bpm"
-            val kcal = if (w.isNull("calories")) "" else " · ${w.getInt("calories")} kcal"
-            StatRow("$day ${clockOf(w.getLong("start"))}", "${w.getInt("duration_s") / 60} min$kcal$hr")
-        }
-        if (workouts.length() == 0) Subtle("No workouts recorded by the strap in the last 30 days.")
+private fun Workouts(workouts: JSONArray) {
+    val tone = LocalMetricColors.current.heartTone
+    if (workouts.length() == 0) {
+        RidgeCard { Subtle("No workouts recorded by the strap in the last 30 days.") }
+        return
+    }
+    val fmt = DateTimeFormatter.ofPattern("EEE d MMM")
+    Grouped((0 until minOf(workouts.length(), 8)).map { workouts.getJSONObject(it) }) { w, shape ->
+        val day = Instant.ofEpochMilli(w.getLong("start")).atZone(ZoneId.systemDefault()).format(fmt)
+        ListRow(shape, "$day · ${clockOf(w.getLong("start"))}", workoutLine(w),
+            leading = { IconCircle(Icons.AutoMirrored.Rounded.DirectionsRun, tone.container, tone.onContainer) })
     }
 }

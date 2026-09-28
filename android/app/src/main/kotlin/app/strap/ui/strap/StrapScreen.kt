@@ -1,5 +1,6 @@
 package app.strap.ui.strap
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -8,24 +9,29 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AlarmAdd
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimeInput
+import androidx.compose.material3.TimePickerDefaults
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,24 +40,41 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalLocale
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.foundation.layout.widthIn
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.strap.StrapApp
 import app.strap.store.LocalStore
-import app.strap.sync.SyncRunner
-import app.strap.ui.components.MetricCard
+import app.strap.sync.SyncState
+import app.strap.ui.components.GroupHeader
+import app.strap.ui.components.Grouped
+import app.strap.ui.components.HeroGauge
+import app.strap.ui.components.HeroRow
+import app.strap.ui.components.Infos
+import app.strap.ui.components.ListRow
+import app.strap.ui.components.Note
+import app.strap.ui.components.RidgeCard
+import app.strap.ui.components.SideStat
 import app.strap.ui.components.Subtle
+import app.strap.ui.theme.LocalRidgeColors
+import app.strap.ui.theme.RidgeType
 import kotlinx.coroutines.launch
 import strap.protocol.parse.AlarmWrite
+import strap.protocol.parse.Alarms
 import strap.protocol.parse.Config
 import strap.protocol.parse.ConfigGroup
-import strap.protocol.parse.Alarms
 import strap.protocol.parse.StrapAlarm
 import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -60,6 +83,7 @@ import java.util.Locale
 
 private const val MAX_ALARMS = 10 // the strap's capabilities reply (spec/01 "Alarms")
 private val SETTING_GROUPS = listOf(Config.Health.GROUP, Config.Workout.GROUP)
+internal const val LOW_BATTERY = 15
 
 /**
  * What the strap itself does: battery, alarms, its health and workout settings. Everything is
@@ -67,8 +91,10 @@ private val SETTING_GROUPS = listOf(Config.Health.GROUP, Config.Workout.GROUP)
  * and read back. The settings are shown read-only until each has been write-tested (R1).
  */
 @Composable
-fun StrapScreen(runner: SyncRunner) {
+fun StrapScreen(app: StrapApp, sync: SyncState) {
+    val runner = app.syncRunner
     val battery by runner.battery.collectAsStateWithLifecycle()
+    val last = remember(sync) { app.store.lastSync() }
     var alarms by remember { mutableStateOf<List<StrapAlarm>?>(null) }
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
@@ -99,32 +125,42 @@ fun StrapScreen(runner: SyncRunner) {
     }
     LaunchedEffect(Unit) { apply(null) }
 
-    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        if (busy) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
-        item { BatteryCard(battery) }
-        item {
-            Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("Alarms", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Subtle("These alarms live on the strap and vibrate it. Changes are written to the strap straight away.")
+    val list = alarms
+    Box(Modifier.fillMaxSize()) {
+        LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 104.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            item { Hero(battery, list, last) }
+            if (busy) item { LinearProgressIndicator(Modifier.fillMaxWidth().clip(RoundedCornerShape(2.dp))) }
+            item { GroupHeader("Alarms", info = Infos.alarms) }
+            message?.let { item { Text(it, style = RidgeType.body, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(horizontal = 4.dp)) } }
+            if (list != null) {
+                if (list.isEmpty()) item { RidgeCard { Subtle("No alarms on the strap.") } }
+                else item {
+                    Grouped(list) { a, shape ->
+                        val color = if (a.enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                        ListRow(shape, "%02d:%02d".format(a.hour, a.minute), daysLabel(a.days), onClick = { editing = a to false }, enabled = !busy,
+                            headlineStyle = RidgeType.cardNumber.copy(fontSize = 34.sp, lineHeight = 40.sp, color = color),
+                            trailing = { Switch(checked = a.enabled, enabled = !busy, onCheckedChange = { apply(Alarms.update(a.copy(enabled = it))) }) })
+                    }
+                }
+            } else if (!busy) item { TextButton(onClick = { apply(null) }) { Text("Read again") } }
+            settings?.let { (health, workout) ->
+                item { SettingsGroup("Heart rate & sensors", health, healthRows(health)) }
+                item { SettingsGroup("Workout detection", workout, workoutRows(workout)) }
             }
         }
-        message?.let { item { Text(it, color = MaterialTheme.colorScheme.error) } }
-        val list = alarms
-        if (list != null) {
-            if (list.isEmpty()) item { Subtle("No alarms on the strap.") }
-            items(list, key = { it.slot }) { a ->
-                AlarmRow(a, enabled = !busy, onToggle = { apply(Alarms.update(a.copy(enabled = it))) }, onClick = { editing = a to false })
-            }
-            if (list.size < MAX_ALARMS) item {
-                Button(enabled = !busy, onClick = {
+        AnimatedVisibility(list != null && list.size < MAX_ALARMS, Modifier.align(Alignment.BottomEnd).padding(16.dp)) {
+            ExtendedFloatingActionButton(
+                onClick = {
+                    if (busy || list == null) return@ExtendedFloatingActionButton
                     val slot = (0 until MAX_ALARMS).first { s -> list.none { it.slot == s } }
                     editing = StrapAlarm(slot, true, 7, 0, DayOfWeek.entries.take(5).toSet()) to true
-                }) { Text("Add alarm") }
-            }
-        } else if (!busy) item { TextButton(onClick = { apply(null) }) { Text("Read again") } }
-        settings?.let { (health, workout) ->
-            item { SettingsCard("Heart rate & sensors", health, healthRows(health)) }
-            item { SettingsCard("Workout detection", workout, workoutRows(workout)) }
+                },
+                icon = { Icon(Icons.Rounded.AlarmAdd, null) },
+                text = { Text("Add alarm", style = RidgeType.cardTitle) },
+                shape = RoundedCornerShape(20.dp),
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.height(64.dp),
+            )
         }
     }
 
@@ -139,41 +175,48 @@ fun StrapScreen(runner: SyncRunner) {
 }
 
 @Composable
-private fun BatteryCard(battery: LocalStore.Battery?) {
+private fun Hero(battery: LocalStore.Battery?, alarms: List<StrapAlarm>?, last: Pair<Instant, String?>?) {
+    val r = LocalRidgeColors.current
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
     val low = battery != null && battery.percent <= LOW_BATTERY
-    MetricCard("Battery", if (low) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary, battery?.let { "${it.percent} %" }) {
-        Subtle(battery?.let { "Read " + readAt(it) } ?: "Not read yet. It is read on every sync and whenever this screen reaches the strap.")
+    HeroRow(
+        left = { SideStat(alarms?.count { it.enabled }?.toString() ?: "—", "Alarms on", alarms?.let { Note("of ${it.size} on strap", muted) }, it) },
+        right = {
+            SideStat(last?.first?.let(::readAt) ?: "—", "Last sync",
+                last?.let { (_, failure) -> if (failure == null) Note("complete", r.zoneGreen) else Note("stopped early", r.zoneRed) }, it)
+        },
+    ) {
+        HeroGauge(battery?.let { "${it.percent}%" } ?: "—", "charge", battery?.let { it.percent / 100f },
+            if (low) MaterialTheme.colorScheme.error else r.zoneGreen, "Battery",
+            Note(battery?.let { "read " + readAt(it.at) } ?: "not read yet", muted))
     }
 }
 
-private const val LOW_BATTERY = 15
-
-private fun readAt(b: LocalStore.Battery): String {
-    val at = b.at.atZone(ZoneId.systemDefault())
+private fun readAt(at: Instant): String {
+    val t = at.atZone(ZoneId.systemDefault())
     val today = LocalDate.now()
-    val time = at.format(DateTimeFormatter.ofPattern("HH:mm"))
-    return when (at.toLocalDate()) {
+    val time = t.format(DateTimeFormatter.ofPattern("HH:mm"))
+    return when (t.toLocalDate()) {
         today -> time
         today.minusDays(1) -> "yesterday $time"
-        else -> at.format(DateTimeFormatter.ofPattern("d MMM HH:mm"))
+        else -> t.format(DateTimeFormatter.ofPattern("d MMM HH:mm"))
     }
 }
 
+/** A strap settings group, read-only: one row per setting the strap reported that we can name. */
 @Composable
-private fun AlarmRow(a: StrapAlarm, enabled: Boolean, onToggle: (Boolean) -> Unit, onClick: () -> Unit) {
-    Card(
-        Modifier.fillMaxWidth().clickable(enabled = enabled, onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-    ) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                val color = if (a.enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
-                Text("%02d:%02d".format(a.hour, a.minute), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold, color = color)
-                Subtle(daysLabel(a.days))
+private fun SettingsGroup(title: String, group: ConfigGroup?, rows: List<Pair<String, String>>) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        GroupHeader(title, "Read from the strap", Infos.strapSettings)
+        when {
+            group == null -> RidgeCard { Subtle("The strap did not send these settings.") }
+            rows.isEmpty() -> RidgeCard { Subtle("The strap reported none of the settings we know.") }
+            else -> Grouped(rows) { (label, value), shape ->
+                ListRow(shape, label, headlineStyle = RidgeType.body.copy(fontSize = 15.sp),
+                    trailing = { Text(value, style = RidgeType.body, color = MaterialTheme.colorScheme.onSurfaceVariant) })
             }
-            Switch(checked = a.enabled, enabled = enabled, onCheckedChange = onToggle)
         }
+        if (group != null && !group.complete) Subtle("Some settings could not be read.", Modifier.padding(horizontal = 4.dp), RidgeType.caption)
     }
 }
 
@@ -182,40 +225,53 @@ private fun AlarmRow(a: StrapAlarm, enabled: Boolean, onToggle: (Boolean) -> Uni
 private fun AlarmEditor(alarm: StrapAlarm, isNew: Boolean, onDismiss: () -> Unit, onSave: (StrapAlarm) -> Unit, onDelete: () -> Unit) {
     val time = rememberTimePickerState(alarm.hour, alarm.minute, is24Hour = true)
     var days by remember { mutableStateOf(alarm.days) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(if (isNew) "New alarm" else "Edit alarm") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                TimeInput(time)
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    DayOfWeek.entries.forEach { d -> DayToggle(d, d in days) { days = if (d in days) days - d else days + d } }
-                }
-                Subtle(daysLabel(days))
+    val scheme = MaterialTheme.colorScheme
+    // Wider than the platform's dialog default: seven 36 dp day toggles need the room.
+    BasicAlertDialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Column(
+            Modifier.padding(horizontal = 24.dp).widthIn(max = 400.dp).fillMaxWidth()
+                .clip(RoundedCornerShape(28.dp)).background(LocalRidgeColors.current.surface3).padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(if (isNew) "New alarm" else "Edit alarm", style = RidgeType.label, color = scheme.onSurfaceVariant, modifier = Modifier.fillMaxWidth())
+            TimeInput(
+                time,
+                colors = TimePickerDefaults.colors(
+                    timeSelectorSelectedContainerColor = scheme.primaryContainer,
+                    timeSelectorUnselectedContainerColor = LocalRidgeColors.current.surface4,
+                    timeSelectorSelectedContentColor = scheme.onSurface,
+                    timeSelectorUnselectedContentColor = scheme.onSurface,
+                ),
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                DayOfWeek.entries.forEach { d -> DayToggle(d, d in days) { days = if (d in days) days - d else days + d } }
             }
-        },
-        confirmButton = { TextButton(onClick = { onSave(alarm.copy(hour = time.hour, minute = time.minute, days = days)) }) { Text("Save") } },
-        dismissButton = {
-            Row {
-                if (!isNew) TextButton(onClick = onDelete) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+            Text(daysLabel(days), style = RidgeType.body, color = scheme.onSurfaceVariant)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                if (!isNew) TextButton(onClick = onDelete) { Text("Delete", color = scheme.error) }
+                Spacer(Modifier.weight(1f))
                 TextButton(onClick = onDismiss) { Text("Cancel") }
+                Spacer(Modifier.width(4.dp))
+                TextButton(onClick = { onSave(alarm.copy(hour = time.hour, minute = time.minute, days = days)) }) { Text("Save") }
             }
-        },
-    )
+        }
+    }
 }
 
 @Composable
 private fun DayToggle(day: DayOfWeek, on: Boolean, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
+    val locale = LocalLocale.current.platformLocale
     Box(
-        Modifier.size(32.dp).clip(CircleShape)
-            .background(if (on) scheme.primary else scheme.surfaceVariant)
+        Modifier.size(36.dp).clip(CircleShape)
+            .background(if (on) scheme.primary else LocalRidgeColors.current.surface3)
             .border(1.dp, if (on) scheme.primary else scheme.outline, CircleShape)
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .semantics { selected = on; contentDescription = day.getDisplayName(TextStyle.FULL, locale) },
         contentAlignment = Alignment.Center,
     ) {
-        Text(day.getDisplayName(TextStyle.NARROW, LocalLocale.current.platformLocale), color = if (on) scheme.onPrimary else scheme.onSurfaceVariant,
-            style = MaterialTheme.typography.labelLarge)
+        Text(day.getDisplayName(TextStyle.NARROW, locale), color = if (on) scheme.onPrimary else scheme.onSurfaceVariant, style = RidgeType.label)
     }
 }
 

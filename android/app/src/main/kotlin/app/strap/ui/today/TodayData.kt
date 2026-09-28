@@ -1,15 +1,11 @@
 package app.strap.ui.today
 
 import app.strap.api.ApiClient
-import app.strap.ui.components.Point
-import app.strap.ui.components.Span
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import org.json.JSONArray
 import org.json.JSONObject
-import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 
 /** A number, or the server's reason for not having one. */
 sealed interface Reading {
@@ -18,30 +14,64 @@ sealed interface Reading {
     data class Withheld(val message: String) : Reading
 }
 
-/** Everything the Today screen draws, parsed once at the data boundary. */
+val Reading.valueOrNull: Double? get() = (this as? Reading.Value)?.value
+
+/** The 30-day median the server compares a daily card with, if it has one. */
+val Reading.usual: Double? get() = (this as? Reading.Value)?.json?.optJSONObject("baseline")?.optDouble("median")?.takeIf { !it.isNaN() }
+
+/** Readiness now: recovery reduced by today's load against the typical load. */
+data class Readiness(val value: Int, val load: Double, val typical: Double)
+
+/**
+ * One part of the recovery score. [key] hrv / rhr / rr carry value, baseline and z; sleep
+ * carries asleep and need minutes instead.
+ */
+data class Factor(
+    val key: String,
+    val value: Double,
+    val baseline: Double?,
+    val z: Double?,
+    val sub: Int,
+    val weight: Double,
+    val needMin: Double?,
+)
+
+/** The main night that ended on the day. */
+data class Night(val start: Long, val end: Long, val deviceScore: Int?)
+
+/** Everything the Today and Recovery screens draw, parsed once at the data boundary. */
 data class TodayData(
     val day: LocalDate,
-    val dayStartMs: Long,
     val recovery: Reading,
-    val readiness: Int?,
+    val readiness: Readiness?,
+    val factors: List<Factor>,
+    /** recovery_score for the two weeks ending on [stripEnd] — the week strip and "vs week". */
+    val recoveryByDay: Map<LocalDate, Double>,
+    val stripEnd: LocalDate,
     val strain: Reading,
+    val night: Night?,
     val sleepTstMin: Double?,
-    val sleepDeviceScore: Int?,
-    val sleepDebt: Reading,
-    val sleepDims: Int?,
-    val hypnogram: List<Triple<Long, Long, Int>>,
     val steps: Reading,
-    val distanceM: Reading,
-    val activeKcal: Reading,
     val restingHr: Reading,
-    val vo2max: Reading,
+    val hrv: Reading,
+    val stressMean: Double?,
+    val stressMax: Double?,
+    val stressMaxAt: Long?,
     val stressNote: String?,
-    val illness: JSONObject?,
-    val hr: List<Point>,
-    val stress: List<Point>,
-    val sleepSpans: List<Span>,
-    val stepsByHour: Map<Int, Double>,
-)
+    val illness: String?,
+    val journal: List<JSONObject>,
+    val workouts: List<JSONObject>,
+) {
+    /** The seven strip days, oldest first. */
+    val stripDays: List<LocalDate> get() = (6 downTo 0).map { stripEnd.minusDays(it.toLong()) }
+
+    /** Mean recovery over the seven days before [d] (null under three of them). */
+    fun recoveryWeekBefore(d: LocalDate): Double? =
+        (1..7).mapNotNull { recoveryByDay[d.minusDays(it.toLong())] }.takeIf { it.size >= 3 }?.average()
+
+    /** Mean recovery over the seven days ending on [d]. */
+    fun recoveryWeekTo(d: LocalDate): Double? = (0..6).mapNotNull { recoveryByDay[d.minusDays(it.toLong())] }.takeIf { it.isNotEmpty() }?.average()
+}
 
 private fun reading(card: JSONObject?): Reading = when {
     card == null -> Reading.Withheld("Not available.")
@@ -50,45 +80,55 @@ private fun reading(card: JSONObject?): Reading = when {
     else -> Reading.Value(card.getDouble("value"), card)
 }
 
-private fun points(array: JSONArray?): List<Point> =
-    if (array == null) emptyList() else List(array.length()) { i -> array.getJSONArray(i).let { Point(it.getLong(0), it.getDouble(1)) } }
+private fun JSONArray.objects(): List<JSONObject> = (0 until length()).map { getJSONObject(it) }
+
+private fun JSONObject.num(key: String): Double? = if (isNull(key)) null else optDouble(key).takeIf { !it.isNaN() }
+
+/** The week strip shows the last seven days, or the week ending on an older picked day. */
+fun stripEndFor(day: LocalDate, today: LocalDate = LocalDate.now()): LocalDate = if (day >= today.minusDays(6)) today else day
 
 suspend fun loadToday(api: ApiClient, day: LocalDate): TodayData = coroutineScope {
+    val stripEnd = stripEndFor(day)
     val summaryCall = async { api.summary(day) }
-    val seriesCall = async { api.daySeries(day, "hr,stress") }
-    val stepsCall = async { api.buckets("steps", day, day, "1h") }
+    val recoveryCall = async { api.daily("recovery_score", stripEnd.minusDays(13), stripEnd) }
+    val journalCall = async { api.journal(day, day) }
+    val workoutsCall = async { api.workouts(day, day) }
     val s = summaryCall.await()
-    val series = seriesCall.await()
-    val zone = ZoneId.of(series.getString("timezone"))
     val sleep = s.getJSONObject("sleep")
-    val main = sleep.getJSONArray("sessions").let { arr -> (0 until arr.length()).map { arr.getJSONObject(it) }.lastOrNull { it.getString("kind") == "main" } }
+    val main = sleep.getJSONArray("sessions").objects().lastOrNull { it.getString("kind") == "main" }
     val health = sleep.getJSONObject("health")
-    val stepsByHour = stepsCall.await().getJSONArray("buckets").let { arr ->
-        (0 until arr.length()).associate { i ->
-            arr.getJSONObject(i).let { Instant.ofEpochMilli(it.getLong("t")).atZone(zone).hour to it.getDouble("sum") }
+    val recoveryCard = s.getJSONObject("recovery")
+    val stress = s.getJSONObject("stress")
+    val flags = recoveryCard.optJSONObject("flags")
+    val factors = flags?.optJSONObject("factors")?.let { f ->
+        val weights = flags.optJSONObject("weights")
+        listOf("hrv", "rhr", "rr", "sleep").mapNotNull { key ->
+            val x = f.optJSONObject(key) ?: return@mapNotNull null
+            val weight = weights?.optDouble(key)?.takeIf { !it.isNaN() } ?: 0.0
+            if (key == "sleep") Factor(key, x.getDouble("tst_min"), null, null, x.getInt("sub"), weight, x.getDouble("need_min"))
+            else Factor(key, x.getDouble("value"), x.num("baseline"), x.num("z"), x.getInt("sub"), weight, null)
         }
-    }
+    }.orEmpty()
     TodayData(
         day = day,
-        dayStartMs = day.atStartOfDay(zone).toInstant().toEpochMilli(),
-        recovery = reading(s.getJSONObject("recovery")),
-        readiness = s.getJSONObject("recovery").optJSONObject("readiness")?.getInt("value"),
+        recovery = reading(recoveryCard),
+        readiness = recoveryCard.optJSONObject("readiness")?.let { Readiness(it.getInt("value"), it.getDouble("load"), it.getDouble("typical")) },
+        factors = factors,
+        recoveryByDay = recoveryCall.await().getJSONObject("metrics").getJSONArray("recovery_score").objects()
+            .associate { LocalDate.parse(it.getString("day")) to it.getDouble("value") },
+        stripEnd = stripEnd,
         strain = reading(s.getJSONObject("strain")),
-        sleepTstMin = health.optJSONObject("flags")?.optDouble("tst_min"),
-        sleepDeviceScore = main?.takeIf { !it.isNull("device_score") }?.getInt("device_score"),
-        sleepDebt = sleep.getJSONObject("debt").let { if (it.has("withheld")) reading(it) else Reading.Value(it.getDouble("minutes"), it) },
-        sleepDims = if (health.has("dimensions")) health.getInt("dimensions") else null,
-        hypnogram = main?.getJSONArray("stages")?.let { st -> List(st.length()) { i -> st.getJSONArray(i).let { Triple(it.getLong(0), it.getLong(1), it.getInt(2)) } } } ?: emptyList(),
+        night = main?.let { Night(it.getLong("start"), it.getLong("end"), if (it.isNull("device_score")) null else it.getInt("device_score")) },
+        sleepTstMin = health.optJSONObject("flags")?.num("tst_min"),
         steps = reading(s.getJSONObject("steps").getJSONObject("steps")),
-        distanceM = reading(s.getJSONObject("steps").getJSONObject("distance_m")),
-        activeKcal = reading(s.getJSONObject("steps").getJSONObject("active_calories")),
         restingHr = reading(s.getJSONObject("heart").getJSONObject("resting")),
-        vo2max = reading(s.getJSONObject("vo2max")),
-        stressNote = s.getJSONObject("stress").optJSONObject("withheld")?.getString("message"),
-        illness = s.optJSONObject("illness"),
-        hr = points(series.getJSONObject("series").optJSONArray("hr")),
-        stress = points(series.getJSONObject("series").optJSONArray("stress")),
-        sleepSpans = series.getJSONArray("sleep").let { arr -> (0 until arr.length()).map { arr.getJSONObject(it).let { o -> Span(o.getLong("start"), o.getLong("end")) } } },
-        stepsByHour = stepsByHour,
+        hrv = reading(s.getJSONObject("heart").optJSONObject("hrv")),
+        stressMean = stress.num("mean"),
+        stressMax = stress.num("max"),
+        stressMaxAt = if (stress.has("t_max")) stress.getLong("t_max") else null,
+        stressNote = stress.optJSONObject("withheld")?.getString("message"),
+        illness = s.optJSONObject("illness")?.getString("framing"),
+        journal = journalCall.await().objects(),
+        workouts = workoutsCall.await().objects(),
     )
 }

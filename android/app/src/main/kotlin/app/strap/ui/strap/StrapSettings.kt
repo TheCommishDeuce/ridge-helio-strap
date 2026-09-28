@@ -1,46 +1,10 @@
 package app.strap.ui.strap
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import app.strap.ui.components.StatRow
-import app.strap.ui.components.Subtle
 import strap.protocol.parse.Config
 import strap.protocol.parse.Config.Health
 import strap.protocol.parse.Config.Workout
 import strap.protocol.parse.ConfigGroup
 import strap.protocol.parse.ConfigValue
-
-/** A strap settings group, read-only: one row per setting the strap reported that we can name. */
-@Composable
-internal fun SettingsCard(title: String, group: ConfigGroup?, rows: List<Pair<String, String>>) {
-    Card(
-        Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-    ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            when {
-                group == null -> Subtle("The strap did not send these settings.")
-                rows.isEmpty() -> Subtle("The strap reported none of the settings we know.")
-                else -> rows.forEach { (label, value) -> StatRow(label, value) }
-            }
-            if (group != null && !group.complete) Subtle("Some settings could not be read.")
-            if (group != null) Subtle("Read from the strap. Changing them here comes later.")
-        }
-    }
-}
 
 internal fun healthRows(g: ConfigGroup?): List<Pair<String, String>> = rows(g, listOf(
     Health.HR_INTERVAL to "Heart-rate readings",
