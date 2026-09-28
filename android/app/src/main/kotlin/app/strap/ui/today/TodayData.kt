@@ -1,11 +1,13 @@
 package app.strap.ui.today
 
 import app.strap.api.ApiClient
+import app.strap.ui.components.Span
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import org.json.JSONArray
 import org.json.JSONObject
 import java.time.LocalDate
+import java.time.ZoneId
 
 /** A number, or the server's reason for not having one. */
 sealed interface Reading {
@@ -36,6 +38,17 @@ data class Factor(
     val needMin: Double?,
 )
 
+/** A day's raw stats for one signal (the strap's own values), and its usual up to the same clock time. */
+data class DayStats(val min: Double, val max: Double, val mean: Double, val maxAt: Long, val usual: Double?)
+
+/** One slice of a day's per-minute series: its lowest, highest and mean value. */
+data class Slice(val t: Long, val min: Double, val max: Double, val mean: Double)
+
+/** The day's per-minute heart rate and stress in [SLICE_MS] slices, and the sleep to shade. */
+data class DayCurves(val dayStart: Long, val hr: List<Slice>, val stress: List<Slice>, val sleep: List<Span>)
+
+const val SLICE_MS = 10 * 60_000L
+
 /** The main night that ended on the day. */
 data class Night(val start: Long, val end: Long, val deviceScore: Int?)
 
@@ -52,12 +65,16 @@ data class TodayData(
     val night: Night?,
     val sleepTstMin: Double?,
     val steps: Reading,
+    /** Steps usually walked by this time of day; only for a day still running. */
+    val stepsUsualByNow: Double?,
+    val distanceM: Double?,
+    val activeMin: Double?,
     val restingHr: Reading,
     val hrv: Reading,
-    val stressMean: Double?,
-    val stressMax: Double?,
-    val stressMaxAt: Long?,
+    val heart: DayStats?,
+    val stress: DayStats?,
     val stressNote: String?,
+    val curves: DayCurves,
     val illness: String?,
     val journal: List<JSONObject>,
     val workouts: List<JSONObject>,
@@ -80,6 +97,14 @@ private fun reading(card: JSONObject?): Reading = when {
     else -> Reading.Value(card.getDouble("value"), card)
 }
 
+private fun stats(o: JSONObject): DayStats? = if (o.has("withheld")) null else
+    DayStats(o.getDouble("min"), o.getDouble("max"), o.getDouble("mean"), o.getLong("t_max"), o.optJSONObject("usual")?.num("median"))
+
+/** Per-minute points into fixed slices from local midnight; a slice with no reading is absent. */
+private fun slices(points: JSONArray, dayStart: Long): List<Slice> =
+    (0 until points.length()).map { points.getJSONArray(it) }.groupBy { (it.getLong(0) - dayStart) / SLICE_MS }.toSortedMap()
+        .map { (i, ps) -> ps.map { it.getDouble(1) }.let { v -> Slice(dayStart + i * SLICE_MS, v.min(), v.max(), v.average()) } }
+
 private fun JSONArray.objects(): List<JSONObject> = (0 until length()).map { getJSONObject(it) }
 
 private fun JSONObject.num(key: String): Double? = if (isNull(key)) null else optDouble(key).takeIf { !it.isNaN() }
@@ -93,12 +118,16 @@ suspend fun loadToday(api: ApiClient, day: LocalDate): TodayData = coroutineScop
     val recoveryCall = async { api.daily("recovery_score", stripEnd.minusDays(13), stripEnd) }
     val journalCall = async { api.journal(day, day) }
     val workoutsCall = async { api.workouts(day, day) }
+    val seriesCall = async { api.daySeries(day, "hr,stress") }
     val s = summaryCall.await()
     val sleep = s.getJSONObject("sleep")
     val main = sleep.getJSONArray("sessions").objects().lastOrNull { it.getString("kind") == "main" }
     val health = sleep.getJSONObject("health")
     val recoveryCard = s.getJSONObject("recovery")
     val stress = s.getJSONObject("stress")
+    val stepsCard = s.getJSONObject("steps")
+    val series = seriesCall.await()
+    val dayStart = day.atStartOfDay(ZoneId.of(series.getString("timezone"))).toInstant().toEpochMilli()
     val flags = recoveryCard.optJSONObject("flags")
     val factors = flags?.optJSONObject("factors")?.let { f ->
         val weights = flags.optJSONObject("weights")
@@ -120,13 +149,19 @@ suspend fun loadToday(api: ApiClient, day: LocalDate): TodayData = coroutineScop
         strain = reading(s.getJSONObject("strain")),
         night = main?.let { Night(it.getLong("start"), it.getLong("end"), if (it.isNull("device_score")) null else it.getInt("device_score")) },
         sleepTstMin = health.optJSONObject("flags")?.num("tst_min"),
-        steps = reading(s.getJSONObject("steps").getJSONObject("steps")),
+        steps = reading(stepsCard.getJSONObject("steps")),
+        stepsUsualByNow = stepsCard.getJSONObject("steps").optJSONObject("usual_by_now")?.num("median"),
+        distanceM = reading(stepsCard.optJSONObject("distance_m")).valueOrNull,
+        activeMin = reading(stepsCard.optJSONObject("mvpa_min")).valueOrNull,
         restingHr = reading(s.getJSONObject("heart").getJSONObject("resting")),
         hrv = reading(s.getJSONObject("heart").optJSONObject("hrv")),
-        stressMean = stress.num("mean"),
-        stressMax = stress.num("max"),
-        stressMaxAt = if (stress.has("t_max")) stress.getLong("t_max") else null,
+        heart = stats(s.getJSONObject("heart").getJSONObject("today")),
+        stress = stats(stress),
         stressNote = stress.optJSONObject("withheld")?.getString("message"),
+        curves = series.getJSONObject("series").let { c ->
+            DayCurves(dayStart, slices(c.getJSONArray("hr"), dayStart), slices(c.getJSONArray("stress"), dayStart),
+                series.optJSONArray("sleep")?.objects().orEmpty().map { Span(it.getLong("start"), it.getLong("end")) })
+        },
         illness = s.optJSONObject("illness")?.getString("framing"),
         journal = journalCall.await().objects(),
         workouts = workoutsCall.await().objects(),

@@ -3,14 +3,20 @@
 from __future__ import annotations
 
 import json
-from datetime import date
+from datetime import date, time
 from pathlib import Path
 
 import psycopg
 import pytest
 
 from strap_server.derive import derive_day, derive_night
-from strap_server.read.summary import day_summary, decayed_readiness, strain_from_load
+from strap_server.read.summary import (
+    _usual_mean,
+    day_summary,
+    decayed_readiness,
+    steps_usual_by,
+    strain_from_load,
+)
 from tests.derive import _seed
 
 TZ = "Asia/Kolkata"
@@ -91,3 +97,31 @@ def test_a_day_without_data_is_withheld_by_name_never_null(seeded) -> None:
     for card in (out["recovery"], out["strain"], out["steps"]["steps"], out["heart"]["resting"], out["heart"]["today"], out["vo2max"]):
         assert card["withheld"]["reason"] and card["withheld"]["message"]
     assert out["sleep"]["sessions"] == [] and "withheld" in out["sleep"]["health"]
+
+
+@pytest.mark.db
+def test_usual_steps_by_a_clock_time_scale_each_days_total_by_its_share_so_far(seeded) -> None:
+    day = _seed.DAYS[-1]
+    with psycopg.connect(seeded) as conn:
+        cur = conn.cursor()
+        by_0811 = steps_usual_by(cur, _seed.OWNER, TZ, day, time(8, 11))
+        by_noon = steps_usual_by(cur, _seed.OWNER, TZ, day, time(12, 0))
+        too_few = steps_usual_by(cur, _seed.OWNER, TZ, _seed.DAYS[3], time(12, 0))
+    total = _golden(_seed.DAYS[0].isoformat(), "steps_total")
+    # The seed walks 21 x 110 + 120 + 5 x 135 = 3105 per-minute steps, 11 x 110 of them before 08:11.
+    assert by_0811 == {"median": round(total * 1210 / 3105), "n": 7, "until": "08:11"}
+    assert by_noon["median"] == round(total)
+    assert too_few is None  # three days before DAYS[3]
+
+
+@pytest.mark.db
+def test_usual_mean_compares_the_same_hours_of_other_days(seeded) -> None:
+    day = _seed.DAYS[-1]
+    with psycopg.connect(seeded) as conn:
+        cur = conn.cursor()
+        walk = _usual_mean(cur, _seed.OWNER, TZ, day, "hr", time(9, 0))
+        out = day_summary(cur, _seed.OWNER, TZ, day)
+    assert walk["n"] == 7 and walk["until"] == "09:00"
+    assert out["heart"]["today"]["usual"]["n"] == 8  # the first seeded night starts the evening before DAYS[0]
+    assert out["heart"]["today"]["usual"]["until"] is None  # a past day compares whole days
+    assert "usual_by_now" not in out["steps"]["steps"]  # only a day still running gets one

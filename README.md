@@ -23,9 +23,10 @@ reads them back from there.
 ## What you get
 
 - **Today**: strain, recovery and sleep gauges, each part of recovery against your own
-  usual, and the day's moments (waking, caffeine, stress peak, workouts). A week strip and a
-  date picker step back through past days; heart rate, stress and steps open per-minute
-  charts with the peaks kept.
+  usual, and the day's moments (waking, caffeine, stress peak, workouts). Stress and heart
+  rate cards draw the whole day and compare it with your usual for the same hours; steps
+  show where you usually are by now. A week strip and a date picker step back through past
+  days; heart rate, stress and steps open per-minute charts with the peaks kept.
 - **Sleep, Activity, Journal**: nights and their stages, workouts and daily activity, and
   a journal for caffeine, alcohol and weight.
 - **Strap**: battery, the strap's own alarms (read, add, edit, delete), and its heart-rate,

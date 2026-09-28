@@ -10,7 +10,7 @@ Two formulas are read-time and ported verbatim from healthee@049c9ad: strain
 
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
@@ -102,6 +102,58 @@ def _raw_stats(cur: Cursor, user_id: UUID, tz: str, day: date, metric: str, extr
     if not n:
         return None
     return {"min": mn, "max": mx, "mean": round(avg, 1), "n": n, "t_max": int(t_max.timestamp() * 1000), "t_min": int(t_min.timestamp() * 1000)}
+
+
+def _local_day(tz: str) -> str:
+    return "(ts AT TIME ZONE '" + tz.replace("'", "''") + "')"
+
+
+def _usual_mean(
+    cur: Cursor, user_id: UUID, tz: str, day: date, metric: str, until: time | None, extra: str = "", params: tuple = ()
+) -> dict | None:
+    """Median, over the 30 days before `day`, of each day's mean up to the same local clock
+    time (`until`; the whole day when None) — a day still running is compared with the
+    same hours of other days, never with whole days. None under 5 such days."""
+    start, _ = _day_bounds_utc(day - timedelta(days=BASELINE_DAYS), tz)
+    end, _ = _day_bounds_utc(day, tz)
+    local = _local_day(tz)
+    clock = f"AND {local}::time < %s" if until else ""
+    cur.execute(
+        f"SELECT avg(value) FROM sample WHERE user_id = %s AND metric = %s {extra} AND ts >= %s AND ts < %s {clock} "
+        f"GROUP BY {local}::date",
+        (user_id, metric, *params, start, end, *((until,) if until else ())),
+    )
+    means = [float(r[0]) for r in cur.fetchall()]
+    if len(means) < BASELINE_MIN_POINTS:
+        return None
+    return {"median": round(median(means), 1), "n": len(means), "until": until.strftime("%H:%M") if until else None}
+
+
+def steps_usual_by(cur: Cursor, user_id: UUID, tz: str, day: date, until: time) -> dict | None:
+    """Steps usually walked by `until`: for each of the 30 days before `day`, that day's
+    ``steps_total`` times the share of its per-minute steps taken before `until`; the median.
+
+    The per-minute stream only supplies the day's SHAPE (a unitless share); the count is
+    always the served ``steps_total``, so the stream's stalls shrink both halves of the share
+    alike instead of undercounting the reference. None under 5 such days."""
+    start, _ = _day_bounds_utc(day - timedelta(days=BASELINE_DAYS), tz)
+    end, _ = _day_bounds_utc(day, tz)
+    local = _local_day(tz)
+    cur.execute(
+        f"SELECT {local}::date, sum(value) FILTER (WHERE {local}::time < %s), sum(value) FROM sample "
+        "WHERE user_id = %s AND metric = 'steps_per_minute' AND value > 0 AND value < 250 AND ts >= %s AND ts < %s "
+        f"GROUP BY {local}::date",
+        (until, user_id, start, end),
+    )
+    shares = {d: float(before or 0) / float(total) for d, before, total in cur.fetchall() if total}
+    cur.execute(
+        "SELECT day, value FROM derived_daily WHERE user_id = %s AND metric = 'steps_total' AND day < %s AND day >= %s",
+        (user_id, day, day - timedelta(days=BASELINE_DAYS)),
+    )
+    usual = [float(v) * shares[d] for d, v in cur.fetchall() if d in shares]
+    if len(usual) < BASELINE_MIN_POINTS:
+        return None
+    return {"median": round(median(usual)), "n": len(usual), "until": until.strftime("%H:%M")}
 
 
 # ── cards ─────────────────────────────────────────────────────────────────────
@@ -212,9 +264,18 @@ def illness_card(cur: Cursor, user_id: UUID, day: date) -> dict | None:
 
 
 def day_summary(cur: Cursor, user_id: UUID, tz: str, day: date) -> dict:
-    today = datetime.now(ZoneInfo(tz)).date()
+    now = datetime.now(ZoneInfo(tz))
+    today = now.date()
+    until = now.time().replace(second=0, microsecond=0) if day == today else None
     hr = _raw_stats(cur, user_id, tz, day, "hr", f"AND {HR_VALID_SQL}", HR_VALID_BOUNDS)
+    if hr:
+        hr["usual"] = _usual_mean(cur, user_id, tz, day, "hr", until, f"AND {HR_VALID_SQL}", HR_VALID_BOUNDS)
     stress = _raw_stats(cur, user_id, tz, day, "stress")
+    if stress:
+        stress["usual"] = _usual_mean(cur, user_id, tz, day, "stress", until)
+    steps = _metric_card(cur, user_id, day, "steps_total")
+    if until and "value" in steps:
+        steps["usual_by_now"] = steps_usual_by(cur, user_id, tz, day, until)
     return {
         "date": day.isoformat(),
         "timezone": tz,
@@ -222,7 +283,7 @@ def day_summary(cur: Cursor, user_id: UUID, tz: str, day: date) -> dict:
         "strain": strain_card(cur, user_id, day),
         "sleep": sleep_card(cur, user_id, tz, day, today),
         "steps": {
-            "steps": _metric_card(cur, user_id, day, "steps_total"),
+            "steps": steps,
             "distance_m": _metric_card(cur, user_id, day, "distance_m_daily"),
             "active_calories": _metric_card(cur, user_id, day, "active_calories"),
             "total_calories": _metric_card(cur, user_id, day, "total_calories"),

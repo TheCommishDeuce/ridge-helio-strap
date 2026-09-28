@@ -76,7 +76,7 @@ class TodayNav(
     val selectDay: (LocalDate) -> Unit,
 )
 
-/** Today: week strip, three gauges, the recovery card, the day's moments, three tiles. */
+/** Today: week strip, three gauges, the recovery card, the day's moments, stress, heart and steps. */
 @Composable
 fun TodayContent(data: TodayData, nav: TodayNav, modifier: Modifier = Modifier) {
     val c = LocalMetricColors.current
@@ -107,19 +107,10 @@ fun TodayContent(data: TodayData, nav: TodayNav, modifier: Modifier = Modifier) 
             val moments = moments(data, nav)
             if (moments.isEmpty()) RidgeCard { Subtle("Nothing recorded for this day yet.") } else Timeline(moments)
         }
-        item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                val rhr = data.restingHr.valueOrNull
-                val steps = data.steps.valueOrNull
-                Tile("Heart", c.heart, rhr?.roundToInt()?.toString() ?: "—",
-                    changeNote(rhr?.let { v -> data.restingHr.usual?.let { v - it } }, "vs usual", lowerBetter = true), Modifier.weight(1f), nav.heart)
-                Tile("Steps", c.steps, steps?.let { "%,d".format(it.roundToInt()) } ?: "—",
-                    // A day still running is compared with whole days, so its change is shown but not judged.
-                    changeNote(steps?.let { v -> data.steps.usual?.let { v - it } }, "vs usual", neutral = data.day == LocalDate.now(),
-                        magnitude = { "%,d".format(it.roundToInt()) }), Modifier.weight(1f), nav.steps)
-                Tile("Stress", c.stress, data.stressMean?.roundToInt()?.toString() ?: "—", null, Modifier.weight(1f), nav.stress)
-            }
-        }
+        item { SectionLabel("Heart & stress", if (data.day == LocalDate.now()) "vs your usual by now" else "vs your usual day") }
+        item { StressCard(data, nav.stress) }
+        item { HeartCard(data, nav.heart) }
+        item { StepsRow(data, nav.steps) }
     }
 }
 
@@ -185,18 +176,6 @@ private fun RecoveryCard(data: TodayData, onOpen: () -> Unit) {
 }
 
 @Composable
-private fun Tile(label: String, color: Color, value: String, note: Note?, modifier: Modifier, onClick: () -> Unit) {
-    Column(
-        modifier.clip(RoundedCornerShape(20.dp)).background(LocalRidgeColors.current.card).clickable(onClick = onClick).padding(14.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        Text(label.uppercase(), style = RidgeType.section, color = color)
-        Text(value, style = RidgeType.sideValue.copy(fontSize = 26.sp, lineHeight = 32.sp))
-        NoteLine(note)
-    }
-}
-
-@Composable
 private fun IllnessBanner(text: String, onDismiss: () -> Unit) {
     val tone = LocalMetricColors.current.stressTone
     Row(
@@ -242,9 +221,9 @@ private fun moments(data: TodayData, nav: TodayNav): List<Moment> {
             add(Moment(ts, clockOf(ts), journalIcon(e), c.stressTone, journalName(e) ?: e.getString("kind").replaceFirstChar { it.uppercase() },
                 journalHeadline(e), null, nav.journal))
         }
-        if (data.stressMax != null && data.stressMaxAt != null) {
-            add(Moment(data.stressMaxAt, clockOf(data.stressMaxAt), Icons.Rounded.Psychology, c.stressTone, "Stress peak", "Highest of the day",
-                "${data.stressMax.roundToInt()}", nav.stress))
+        data.stress?.let { s ->
+            add(Moment(s.maxAt, clockOf(s.maxAt), Icons.Rounded.Psychology, c.stressTone, "Stress peak", "Highest of the day",
+                "${s.max.roundToInt()}", nav.stress))
         }
         data.workouts.forEach { w ->
             val start = w.getLong("start")
