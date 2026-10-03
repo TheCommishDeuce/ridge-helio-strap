@@ -37,7 +37,8 @@ reads them back from there.
   [`docs/spec/02-science.md`](docs/spec/02-science.md).
 - **Your data stays yours**: on your phone, then on your server. Ridge has no account, no
   cloud and no analytics. (Your Zepp account is needed once, on your computer, to fetch
-  the strap's key: see [What you need](#what-you-need).)
+  the strap's key, and optionally to copy your older history to your server: see
+  [What you need](#what-you-need).)
 
 ## What it is not
 
@@ -70,7 +71,9 @@ reads them back from there.
 - **Your Zepp account's email and password.** The strap only talks to someone who knows its
   *auth key*, 16 bytes the Zepp app created when it paired the strap and stored in your
   Zepp cloud account. Ridge cannot pair a strap or make its own key, so a small script
-  signs in to your Zepp account once and reads the key from there. Accounts that sign in
+  signs in to your Zepp account once and reads the key from there. The same sign-in can
+  optionally bring your older history across (see
+  [Your history](#your-history-the-last-30-days-or-everything)). Accounts that sign in
   with Google, Apple or Facebook don't work unless they also have a password. Signing in
   logs the Zepp app out; the key is not affected.
 - **A computer with [uv](https://docs.astral.sh/uv/)** to run that script. The Ridge app
@@ -96,6 +99,25 @@ the server's **token** (made by the server's setup). The app asks for both durin
    (address and token, tested before it is saved) and the first sync. Later changes live
    under the gear (Settings).
 
+### Your history: the last 30 days, or everything
+
+Moving to Ridge, you choose how much of your past comes with you:
+
+- **Just the strap: nothing more to do.** The first sync reads what the strap still
+  holds, about the last 30 days. You can ignore the Zepp cloud and its data export
+  completely.
+- **Everything the Zepp app ever synced: optional, one more command.** Your Zepp
+  account keeps the strap's history from the months you used the Zepp app. With the
+  same email and password you already use for the auth key,
+  [`tools/zepp-backfill`](tools/zepp-backfill/README.md) copies it to your server:
+  per-minute heart rate and steps, stress, sleep with its stages, and daily totals.
+  It only fills days the strap didn't deliver, so whatever the strap recorded always
+  wins. It works before or after your first sync. The cloud doesn't keep HRV, SpO₂, skin
+  temperature or breathing rate, so older days have none of those.
+
+You can backfill at any time later. The cloud keeps your history after you stop using the
+Zepp app; it just stops growing.
+
 ## How it's built
 
 | Part | Where | What |
@@ -105,6 +127,7 @@ the server's **token** (made by the server's setup). The app asks for both durin
 | Server | `server/` | Python, FastAPI and TimescaleDB: ingest, the science layer, the read API |
 | Self-hosting | `deploy/` | Docker Compose kit and guide |
 | Key tool | `tools/keyfetch/` | One-shot Zepp account → MAC and auth key |
+| History backfill | `tools/zepp-backfill/` | One-off: your pre-Ridge history from the Zepp cloud, filling only gaps |
 
 More: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for how the pieces fit,
 [`docs/spec/01-strap-protocol.md`](docs/spec/01-strap-protocol.md) for everything the strap

@@ -25,22 +25,22 @@ log = get_logger(__name__)
 
 
 def ingest(conn: Connection, user_id: UUID, tz: str, payload: IngestPayload) -> IngestSummary:
+    fill = payload.source == "zepp_cloud"
+    workouts = [] if fill else payload.workouts  # the backfill sends none; cloud sport codes are not the strap's
     with conn.cursor() as cur:
-        stored, dropped = upsert.upsert_samples(cur, user_id, payload.samples)
-        upsert.upsert_sleep(cur, user_id, payload.sleep)
-        upsert.upsert_workouts(cur, user_id, payload.workouts)
-        total_days = upsert.upsert_daily_totals(cur, user_id, tz, payload.daily_totals)
+        stored, dropped = upsert.upsert_samples(cur, user_id, payload.samples, fill_only=fill)
+        sleep = upsert.upsert_sleep(cur, user_id, payload.sleep, fill_only=fill)
+        upsert.upsert_workouts(cur, user_id, workouts)
+        total_days = upsert.upsert_daily_totals(cur, user_id, tz, payload.daily_totals, fill_only=fill)
         late = upsert.nights_containing(cur, user_id, [ts for ts, m in stored if m in upsert.NIGHT_INPUTS])
 
-    pushed = [
-        (upsert.epoch_to_utc(s.start_ts), upsert.epoch_to_utc(s.end_ts)) for s in payload.sleep if s.kind == "main"
-    ]
+    pushed = [(upsert.epoch_to_utc(s.start_ts), upsert.epoch_to_utc(s.end_ts)) for s in sleep if s.kind == "main"]
     nights = sorted(set(pushed) | set(late))
     zone = ZoneInfo(tz)
     days: set[date] = {ts.astimezone(zone).date() for ts, _ in stored}
-    days |= {upsert.local_date(w.start_ts, tz) for w in payload.workouts}
+    days |= {upsert.local_date(w.start_ts, tz) for w in workouts}
     days |= set(total_days)
-    for s in payload.sleep:
+    for s in sleep:
         days |= {upsert.local_date(s.start_ts, tz), upsert.local_date(s.end_ts, tz)}
     for start, end in nights:
         days |= {start.astimezone(zone).date(), end.astimezone(zone).date()}
@@ -54,9 +54,9 @@ def ingest(conn: Connection, user_id: UUID, tz: str, payload: IngestPayload) -> 
     summary = IngestSummary(
         samples_stored=len(stored),
         samples_dropped=dropped,
-        sleep=len(payload.sleep),
-        workouts=len(payload.workouts),
-        daily_totals=len(payload.daily_totals),
+        sleep=len(sleep),
+        workouts=len(workouts),
+        daily_totals=len(total_days),
         nights_derived=len(nights),
         days_derived=len(days),
     )

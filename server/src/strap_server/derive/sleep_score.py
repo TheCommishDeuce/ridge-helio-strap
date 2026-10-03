@@ -48,23 +48,14 @@ SLEEP_RECOVERY_CREDIT = 0.5  # surplus sleep repays debt at half value (partial 
 
 _AWAKE_STAGE = 7  # stage type code for "awake" in the hypnogram triples
 
-# WHICH INSTRUMENT recorded the sleep session behind these rows (write-path audit C1).
+# WHICH SOURCE the sleep session behind these rows came from (write-path audit C1).
 #
-# This was the legacy cloud's name — hardcoded on all six rows a night produces, and again
-# at two sites in ``read/sleep_page.py``. A verbatim carry-over from legacy, where sleep
-# genuinely did arrive from that cloud. **In the rebuild there is no such path**: the only
-# writer of the ``sleep_session`` table is ``ingest.upsert.upsert_sleep``, fed by the strap
-# over BLE, and ``tests/derive/test_session_source.py`` asserts that premise rather than
-# trusting the grep that established it.
-#
-# On the product whose premise is that every number names its instrument, a provenance
-# field naming an instrument that did not take the reading is the clearest possible
-# version of the defect — and it is C rather than higher only because nothing renders the
-# string today. That is not a reason to keep it wrong; it is the reason it survived.
-#
-# One constant, three sites, so the payload cannot say two things: ``MEMORY``'s
-# `project_source_naming_cleanup`.
-SESSION_SOURCE = "strap_ble"
+# Legacy hardcoded the Zepp cloud's name on every row. In the rebuild the strap over BLE
+# wrote every night, so this was a constant naming the strap; since the Zepp cloud backfill
+# (0002) each ``sleep_session`` row carries its own ``source`` and the six rows a night
+# produces serve that. ``tests/derive/test_session_source.py`` holds both directions: a
+# strap night never claims the cloud, a cloud night never claims the strap.
+SESSION_SOURCE = "strap_ble"  # the column's default: what every pre-0002 row was
 
 
 def _sleep_efficiency(tst_min: int, wake_min: int) -> float:
@@ -201,6 +192,7 @@ def derive_sleep_score(
     deep: int,
     wake: int,
     night_date: date,
+    source: str = SESSION_SOURCE,
 ) -> dict:
     """4-dimension sleep-health score (duration, efficiency, timing, regularity).
 
@@ -230,7 +222,7 @@ def derive_sleep_score(
         "midpoint_local": mid.isoformat(),
         "midpoint_hr": mid.hour,
         "sri": sri,
-        "session_source": SESSION_SOURCE,
+        "session_source": source,
     }
     _upsert_daily(cur, user_id, night_date, "sleep_health_score_4dim", score, flags)
     _upsert_daily(cur, user_id, night_date, "sleep_dim_duration", p_dur, flags)

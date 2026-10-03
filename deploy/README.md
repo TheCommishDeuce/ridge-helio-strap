@@ -75,6 +75,10 @@ token from step 2, press **Test**, then continue to the first sync. To change it
 gear → Settings → Server. What the strap delivered is uploaded after every sync, and the server
 derives recovery, strain, sleep and the rest from it.
 
+The first sync brings about the last 30 days. For older history from your Zepp account
+(optional), see [`tools/zepp-backfill`](../tools/zepp-backfill/README.md), then recompute
+every day as under [Updating](#updating).
+
 ## Updating
 
 ```sh

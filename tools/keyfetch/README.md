@@ -50,6 +50,10 @@ in the Android keystore.
 - **It depends on the Zepp cloud API**, which is undocumented and can change. The script
   says so by name when a reply is not what it expects. It has been used successfully on
   one account.
+- **Want your older history too?** The same email and password can copy the strap's
+  history from your Zepp account to your Ridge server: see
+  [`tools/zepp-backfill`](../zepp-backfill/README.md). It's optional. Without it, Ridge
+  starts from the last 30 days the strap holds.
 - **Already use Gadgetbridge?** Its device export holds the same key
   (`Export_preference_device.xml`, `authkey`), and you can use that instead.
 

@@ -69,11 +69,12 @@ def derive_night(cur: Cur, user_id: UUID, tz: str, start_ts: datetime, end_ts: d
     out.update(derive_night_vitals(cur, user_id, day, start_ts, end_ts))
 
     cur.execute(
-        "SELECT rem_min, light_min, deep_min, wake_min FROM sleep_session "
+        "SELECT rem_min, light_min, deep_min, wake_min, source FROM sleep_session "
         "WHERE user_id = %s AND start_ts=%s",
         (user_id, start_ts),
     )
-    sr = cur.fetchone()
+    row = cur.fetchone()
+    sr, source = (row[:4], row[4]) if row else (None, None)
     # A session without a COMPLETE stage breakdown scores nothing. Three of the four
     # dimensions — duration, efficiency, and the sleep debt that reads `tst_min` — are
     # functions of the stage minutes, so scoring one without them would have to invent a
@@ -103,7 +104,7 @@ def derive_night(cur: Cur, user_id: UUID, tz: str, start_ts: datetime, end_ts: d
     if sr and all(v is not None for v in sr):
         rem, light, deep, wake = (int(v) for v in sr)
         out.update(
-            derive_sleep_score(cur, user_id, tz, start_ts, end_ts, rem, light, deep, wake, day)
+            derive_sleep_score(cur, user_id, tz, start_ts, end_ts, rem, light, deep, wake, day, source)
         )
     return out
 

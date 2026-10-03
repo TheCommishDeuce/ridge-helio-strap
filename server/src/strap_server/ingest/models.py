@@ -3,10 +3,15 @@
 Metric names are the STRAP's (the phone sends what it decoded); `upsert.py` maps them to
 the server's canonical names. An unknown metric is dropped and counted, never a 422, so a
 newer app never loses a whole push to one new stream.
+
+`source` says who measured it. The phone sends "strap" (the default). "zepp_cloud" is the
+one-off history backfill (`tools/zepp-backfill`): the strap's own data as the Zepp app once
+synced it. It only fills gaps — anything the strap already pushed wins (`upsert.py`).
 """
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -51,12 +56,14 @@ class WorkoutIn(BaseModel):
 
 class DailyTotalIn(BaseModel):
     read_at: int  # when the strap's since-midnight counter was read
+    day: date | None = None  # a closed day's total (backfill); None: the local day of read_at
     steps: int | None = None
     distance_m: float | None = None
     calories: float | None = None
 
 
 class IngestPayload(BaseModel):
+    source: Literal["strap", "zepp_cloud"] = "strap"
     samples: list[SampleIn] = Field(default_factory=list, max_length=MAX_SAMPLES)
     sleep: list[SleepIn] = Field(default_factory=list, max_length=MAX_SLEEP)
     workouts: list[WorkoutIn] = Field(default_factory=list, max_length=MAX_WORKOUTS)

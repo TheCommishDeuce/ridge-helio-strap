@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import psycopg
 import pytest
@@ -94,3 +95,63 @@ def test_the_api_requires_the_device_token(db, test_dsn, monkeypatch) -> None:
         assert client.get("/healthz").json() == {"ok": True}
     finally:
         config.get_settings.cache_clear()
+
+
+def test_the_cloud_backfill_never_overwrites_the_strap(db, test_dsn) -> None:
+    """The strap's minute, night and day total win; the cloud fills only what is empty."""
+    strap = night_payload()
+    start = datetime(2026, 9, 24, 22, 30, tzinfo=UTC)
+    cloud = {
+        "source": "zepp_cloud",
+        # Same minutes 20 s off the strap's grid, then one hour the strap never covered.
+        "samples": [{"metric": "hr", "ts": ms(start + timedelta(minutes=m, seconds=20)), "value": 99} for m in range(5)]
+        + [{"metric": "hr", "ts": ms(start - timedelta(hours=2, minutes=m)), "value": 70} for m in range(60)],
+        "sleep": [{"start_ts": ms(start + timedelta(minutes=10)), "end_ts": ms(start + timedelta(hours=7)),
+                   "kind": "main", "deep_min": 1}],
+        "daily_totals": [{"read_at": ms(datetime(2026, 9, 26, tzinfo=UTC)), "day": "2026-09-25", "steps": 1}],
+        "workouts": strap["workouts"],
+    }
+    with psycopg.connect(test_dsn) as conn:
+        ingest(conn, OWNER, TZ, IngestPayload.model_validate(strap))
+        summary = ingest(conn, OWNER, TZ, IngestPayload.model_validate(cloud))
+        assert summary.samples_stored == 60 and summary.sleep == 0 and summary.daily_totals == 0
+        assert conn.execute("SELECT count(*) FROM sample WHERE metric = 'hr' AND value = 99").fetchone() == (0,)
+        assert conn.execute("SELECT count(*), max(deep_min) FROM sleep_session").fetchone() == (1, 360)
+        assert conn.execute("SELECT steps, source FROM device_daily_total").fetchone() == (2400, "strap_0x16")
+        assert conn.execute("SELECT count(*) FROM workout").fetchone() == (1,)
+
+
+def test_a_cloud_day_total_lands_on_its_own_day_as_a_closed_day(db, test_dsn) -> None:
+    midnight = datetime(2026, 7, 2, tzinfo=UTC).astimezone(ZoneInfo(TZ)).replace(hour=0)
+    cloud = {
+        "source": "zepp_cloud",
+        "daily_totals": [{"read_at": ms(midnight), "day": "2026-07-01", "steps": 8000, "distance_m": 6000}],
+    }
+    with psycopg.connect(test_dsn) as conn:
+        assert ingest(conn, OWNER, TZ, IngestPayload.model_validate(cloud)).daily_totals == 1
+        assert ingest(conn, OWNER, TZ, IngestPayload.model_validate(cloud)).daily_totals == 0  # idempotent
+        assert conn.execute("SELECT day::text, steps, source FROM device_daily_total").fetchone() == (
+            "2026-07-01", 8000, "zepp_cloud")
+        flags = conn.execute(
+            "SELECT value, flags FROM derived_daily WHERE day = '2026-07-01' AND metric = 'steps_total'"
+        ).fetchone()
+    assert flags[0] == 8000 and flags[1]["caveats"] == [] and flags[1]["source"] == "zepp_cloud"
+
+
+def test_a_strap_push_after_the_backfill_replaces_what_the_cloud_put_there(db, test_dsn) -> None:
+    """Backfill first, then the first sync: the strap's minute, night and day total win."""
+    strap = night_payload()
+    start = datetime(2026, 9, 24, 22, 30, tzinfo=UTC)
+    cloud = {
+        "source": "zepp_cloud",
+        "samples": [{"metric": "hr", "ts": ms(start + timedelta(minutes=m)), "value": 99} for m in range(5)],
+        "sleep": [{"start_ts": ms(start - timedelta(minutes=1)), "end_ts": ms(start + timedelta(hours=7)),
+                   "kind": "main", "score": 10, "rem_min": 1, "light_min": 1, "deep_min": 1, "wake_min": 1}],
+        "daily_totals": [{"read_at": ms(datetime(2026, 9, 26, tzinfo=UTC)), "day": "2026-09-25", "steps": 1, "calories": 5}],
+    }
+    with psycopg.connect(test_dsn) as conn:
+        ingest(conn, OWNER, TZ, IngestPayload.model_validate(cloud))
+        ingest(conn, OWNER, TZ, IngestPayload.model_validate(strap))
+        assert conn.execute("SELECT count(*) FROM sample WHERE metric = 'hr' AND value = 99").fetchone() == (0,)
+        assert conn.execute("SELECT count(*), max(score), max(source) FROM sleep_session").fetchone() == (1, 80, "strap_ble")
+        assert conn.execute("SELECT steps, calories, source FROM device_daily_total").fetchone() == (2400, 90, "strap_0x16")

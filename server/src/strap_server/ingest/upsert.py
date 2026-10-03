@@ -3,6 +3,13 @@
 The SQL is the old server's (healthee@049c9ad `ingest/upsert.py`, `daily_totals.py`),
 including its rule that a re-push which omits a field keeps the measured value (COALESCE)
 rather than overwriting it with a default.
+
+`fill_only` is the Zepp cloud backfill's mode: write only where the strap has nothing. A
+sample is skipped when the same metric already has a point within the minute (the
+cloud's minute grid and the strap's need not share seconds); a sleep session when any
+stored session overlaps it; a day's total when the day has one. The strap's own pushes
+keep overwriting, so the strap wins whichever arrives first: a strap night replaces any
+cloud night it overlaps, and a strap counter reading replaces a cloud day total.
 """
 
 from __future__ import annotations
@@ -46,7 +53,9 @@ def local_date(ms: int, tz: str) -> date:
     return epoch_to_utc(ms).astimezone(ZoneInfo(tz)).date()
 
 
-def upsert_samples(cur: Cursor, user_id: UUID, samples: list[SampleIn]) -> tuple[list[tuple[datetime, str]], int]:
+def upsert_samples(
+    cur: Cursor, user_id: UUID, samples: list[SampleIn], fill_only: bool = False
+) -> tuple[list[tuple[datetime, str]], int]:
     """Stores samples under canonical names. Returns (stored (ts, metric) pairs, dropped count)."""
     rows = []
     dropped = 0
@@ -56,6 +65,21 @@ def upsert_samples(cur: Cursor, user_id: UUID, samples: list[SampleIn]) -> tuple
             dropped += 1
             continue
         rows.append((user_id, epoch_to_utc(s.ts), metric, float(s.value)))
+    if rows and fill_only:
+        cur.executemany(
+            "INSERT INTO sample (user_id, ts, metric, value) SELECT %(u)s, %(ts)s, %(m)s, %(v)s "
+            "WHERE NOT EXISTS (SELECT 1 FROM sample WHERE user_id = %(u)s AND metric = %(m)s "
+            "AND ts > %(ts)s - interval '1 minute' AND ts < %(ts)s + interval '1 minute') "
+            "ON CONFLICT DO NOTHING RETURNING ts, metric",
+            [{"u": u, "ts": ts, "m": m, "v": v} for u, ts, m, v in rows],
+            returning=True,
+        )
+        stored = []
+        while True:
+            stored += cur.fetchall()
+            if not cur.nextset():
+                break
+        return [(r[0], r[1]) for r in stored], dropped
     if rows:
         cur.executemany(
             "INSERT INTO sample (user_id, ts, metric, value) VALUES (%s, %s, %s, %s) "
@@ -65,8 +89,16 @@ def upsert_samples(cur: Cursor, user_id: UUID, samples: list[SampleIn]) -> tuple
     return [(r[1], r[2]) for r in rows], dropped
 
 
-def upsert_sleep(cur: Cursor, user_id: UUID, sessions: list[SleepIn]) -> None:
+def upsert_sleep(cur: Cursor, user_id: UUID, sessions: list[SleepIn], fill_only: bool = False) -> list[SleepIn]:
+    """Stores sleep sessions; returns the ones written (in fill_only, those no stored session overlaps)."""
+    if fill_only:
+        return [s for s in sessions if _insert_sleep_if_free(cur, user_id, s)]
     for s in sessions:
+        cur.execute(
+            "DELETE FROM sleep_session WHERE user_id = %s AND source = 'zepp_cloud' "
+            "AND start_ts < %s AND end_ts > %s",
+            (user_id, epoch_to_utc(s.end_ts), epoch_to_utc(s.start_ts)),
+        )
         cur.execute(
             "INSERT INTO sleep_session "
             "(user_id, start_ts, end_ts, kind, score, avg_hr, rem_min, light_min, deep_min, wake_min, stages) "
@@ -86,6 +118,25 @@ def upsert_sleep(cur: Cursor, user_id: UUID, sessions: list[SleepIn]) -> None:
                 s.rem_min, s.light_min, s.deep_min, s.wake_min, json.dumps([list(st) for st in s.stages]),
             ),
         )
+    return sessions
+
+
+def _insert_sleep_if_free(cur: Cursor, user_id: UUID, s: SleepIn) -> bool:
+    start, end = epoch_to_utc(s.start_ts), epoch_to_utc(s.end_ts)
+    cur.execute(
+        "INSERT INTO sleep_session "
+        "(user_id, start_ts, end_ts, kind, score, avg_hr, rem_min, light_min, deep_min, wake_min, stages, source) "
+        "SELECT %(u)s, %(s)s, %(e)s, %(kind)s, %(score)s, %(hr)s, %(rem)s, %(light)s, %(deep)s, %(wake)s, %(st)s::jsonb, "
+        "'zepp_cloud' "
+        "WHERE NOT EXISTS (SELECT 1 FROM sleep_session WHERE user_id = %(u)s AND start_ts < %(e)s AND end_ts > %(s)s) "
+        "ON CONFLICT DO NOTHING",
+        {
+            "u": user_id, "s": start, "e": end, "kind": s.kind, "score": s.score, "hr": s.avg_hr,
+            "rem": s.rem_min, "light": s.light_min, "deep": s.deep_min, "wake": s.wake_min,
+            "st": json.dumps([list(st) for st in s.stages]),
+        },
+    )
+    return cur.rowcount == 1
 
 
 def upsert_workouts(cur: Cursor, user_id: UUID, workouts: list[WorkoutIn]) -> None:
@@ -108,12 +159,24 @@ def upsert_workouts(cur: Cursor, user_id: UUID, workouts: list[WorkoutIn]) -> No
         )
 
 
-def upsert_daily_totals(cur: Cursor, user_id: UUID, tz: str, totals: list[DailyTotalIn]) -> list[date]:
+def upsert_daily_totals(
+    cur: Cursor, user_id: UUID, tz: str, totals: list[DailyTotalIn], fill_only: bool = False
+) -> list[date]:
     """Stores each reading under its local day; a later reading of the same day wins, an earlier one never does."""
     days = []
     for t in totals:
-        day = local_date(t.read_at, tz)
+        day = t.day or local_date(t.read_at, tz)
+        if fill_only:
+            cur.execute(
+                "INSERT INTO device_daily_total (user_id, day, steps, distance_m, calories, source, read_at, reported_at) "
+                "VALUES (%s, %s, %s, %s, %s, 'zepp_cloud', %s, now()) ON CONFLICT DO NOTHING",
+                (user_id, day, t.steps, t.distance_m, t.calories, epoch_to_utc(t.read_at)),
+            )
+            if cur.rowcount == 1:
+                days.append(day)
+            continue
         days.append(day)
+        cur.execute("DELETE FROM device_daily_total WHERE user_id = %s AND day = %s AND source = 'zepp_cloud'", (user_id, day))
         cur.execute(
             "INSERT INTO device_daily_total (user_id, day, steps, distance_m, calories, read_at, reported_at) "
             "VALUES (%s, %s, %s, %s, %s, %s, now()) "
