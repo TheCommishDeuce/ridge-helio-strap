@@ -13,6 +13,7 @@ import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.CloudDone
 import androidx.compose.material.icons.outlined.CloudUpload
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material.icons.outlined.Watch
 import androidx.compose.material3.Icon
@@ -45,7 +46,7 @@ private data class Item(val icon: ImageVector, val title: String, val detail: St
 
 /** The gear (D27): what is set up, a way to change it, and the raw diagnostics only under Advanced. */
 @Composable
-fun SettingsScreen(app: StrapApp, onChangeStrap: () -> Unit, onChangeServer: () -> Unit, onDiagnostics: () -> Unit) {
+fun SettingsScreen(app: StrapApp, onChangeStrap: () -> Unit, onChangeServer: () -> Unit, onDiagnostics: () -> Unit, onBackground: () -> Unit) {
     val links = LocalUriHandler.current
     val sync by app.syncRunner.state.collectAsStateWithLifecycle()
     // Re-read when a sync changes state: it may have finished, or uploaded the outbox.
@@ -53,6 +54,7 @@ fun SettingsScreen(app: StrapApp, onChangeStrap: () -> Unit, onChangeServer: () 
     val server = remember(sync) { app.vault.loadServer() }
     val last = remember(sync) { app.store.lastSync() }
     val waiting = remember(sync) { app.store.unpushedCounts().values.sum() }
+    val background = remember { app.background.prefs() }
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -61,6 +63,7 @@ fun SettingsScreen(app: StrapApp, onChangeStrap: () -> Unit, onChangeServer: () 
             Item(Icons.Outlined.Watch, "Helio Strap", pairing?.mac ?: "Not paired", onClick = onChangeStrap),
             Item(Icons.Outlined.Sync, last?.let { "Last sync ${time(it.first)}" } ?: "Not synced yet",
                 last?.let { it.second ?: "Complete" } ?: "Tap to sync now") { SyncService.start(app) },
+            Item(Icons.Outlined.Schedule, "Background sync", backgroundSummary(background), onClick = onBackground),
         ))
         Section("Server", listOf(
             Item(if (waiting == 0) Icons.Outlined.CloudDone else Icons.Outlined.CloudUpload,

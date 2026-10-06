@@ -6,23 +6,24 @@ clamp. Ported verbatim from the legacy v2 derive module — only the data plumbi
 (the DB pool lives in ``healthee.core.db``) and the type hints are new; the SQL,
 rounding, and math are identical.
 
-All daily metrics anchor on the user's local wake date. The timezone is threaded
-in as an IANA name (``tz: str``) rather than read from a module constant: 6.3b
-removed the single-tenant ``USER_TZ``, and 6.4 sources the value from the
-authenticated user's ``app_user.timezone``. SQL binds it to ``AT TIME ZONE %s``;
-Python datetime math builds a local ``ZoneInfo(tz)``.
+All daily metrics anchor on the user's local wake date. The timezone is threaded in as
+``tz`` — a :class:`strap_server.zones.Zones` (the owner's zone over time, D31) or a plain
+IANA name meaning that zone throughout. Every local day comes from
+:func:`_day_bounds_utc` and every local date from :func:`_wake_date`; SQL filters on the
+UTC ranges they return, never on ``AT TIME ZONE``.
 """
 
 from __future__ import annotations
 
 import json
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime
 from typing import LiteralString, cast
 from uuid import UUID
-from zoneinfo import ZoneInfo
 
 from psycopg import Cursor
 from psycopg.rows import TupleRow
+
+from strap_server.zones import ZoneLike, as_zones
 
 # A cursor over plain tuple rows — the row shape every derivation reads.
 Cur = Cursor[TupleRow]
@@ -92,12 +93,12 @@ def _window_stat(
     return float(row[0]) if row and row[0] is not None else None
 
 
-def _wake_date(end_ts: datetime, tz: str) -> date:
+def _wake_date(end_ts: datetime, tz: ZoneLike) -> date:
     """Daily metrics anchor on the local wake (session end) date."""
-    return end_ts.astimezone(ZoneInfo(tz)).date()
+    return as_zones(tz).date_of(end_ts)
 
 
-def _day_bounds_utc(day: date, tz: str) -> tuple[datetime, datetime]:
+def _day_bounds_utc(day: date, tz: ZoneLike) -> tuple[datetime, datetime]:
     """The ONE definition of a local (``tz``) day: half-open UTC ``[start, next_start)``.
 
     The end is the START OF THE NEXT LOCAL DAY, never this day's ``23:59:59``. That
@@ -116,7 +117,8 @@ def _day_bounds_utc(day: date, tz: str) -> tuple[datetime, datetime]:
     starts there. Consecutive days therefore tile the timeline exactly — no gap, no
     overlap — which is the property a per-day metric actually needs (verified across
     every zone in the tz database by ``tests/derive/test_energy_dst.py``, and against
-    Postgres' own ``AT TIME ZONE`` by ``tests/read/test_day_window.py``).
+    Postgres' own ``AT TIME ZONE`` by ``tests/read/test_day_window.py``). With travel (D31)
+    the day starts at midnight wherever the owner is; ``strap_server.zones`` holds the rule.
 
     ZoneInfo re-resolves the UTC offset at each edge independently, so a DST day
     correctly spans 23 h, 23.5 h, 24.5 h or 25 h rather than a fixed 24 h. Two rules
@@ -125,11 +127,7 @@ def _day_bounds_utc(day: date, tz: str) -> tuple[datetime, datetime]:
     it is ``ts >= start AND ts < end`` — a closed ``<=`` would hand the next day's
     first instant to this day as well.
     """
-    zone = ZoneInfo(tz)
-    nxt = day + timedelta(days=1)
-    start = datetime(day.year, day.month, day.day, tzinfo=zone)
-    end = datetime(nxt.year, nxt.month, nxt.day, tzinfo=zone)
-    return start.astimezone(UTC), end.astimezone(UTC)
+    return as_zones(tz).bounds(day)
 
 
 def _day_minutes(start_utc: datetime, end_utc: datetime) -> int:
@@ -183,7 +181,7 @@ def _date_of_birth(cur: Cur, user_id: UUID) -> date | None:
     return row[0] if row and row[0] is not None else None
 
 
-def _load_profile(cur: Cur, user_id: UUID, tz: str, day: date) -> dict | None:
+def _load_profile(cur: Cur, user_id: UUID, tz: ZoneLike, day: date) -> dict | None:
     """Profile + weight as-of `day` (weight is a time-series, read at that date).
 
     Weight uses the most recent `weight_log` entry logged on or before `day`, so
@@ -221,25 +219,21 @@ def _load_profile(cur: Cur, user_id: UUID, tz: str, day: date) -> dict | None:
     }
 
 
-def _weight_as_of(cur: Cur, user_id: UUID, tz: str, day: date) -> tuple[float, date] | None:
+def _weight_as_of(cur: Cur, user_id: UUID, tz: ZoneLike, day: date) -> tuple[float, date] | None:
     """Most-recent (kg, local log date) on/before `day`, else the earliest logged.
 
     The date comes back with the value because they are one fact — see `_load_profile`.
     """
+    zones = as_zones(tz)
     cur.execute(
-        "SELECT kg, (ts AT TIME ZONE %s)::date FROM weight_log WHERE user_id = %s "
-        "AND (ts AT TIME ZONE %s)::date <= %s ORDER BY ts DESC LIMIT 1",
-        (tz, user_id, tz, day),
+        "SELECT kg, ts FROM weight_log WHERE user_id = %s AND ts < %s ORDER BY ts DESC LIMIT 1",
+        (user_id, zones.bounds(day)[1]),
     )
     weight = cur.fetchone()
     if not weight:
-        cur.execute(
-            "SELECT kg, (ts AT TIME ZONE %s)::date FROM weight_log WHERE user_id = %s "
-            "ORDER BY ts ASC LIMIT 1",
-            (tz, user_id),
-        )
+        cur.execute("SELECT kg, ts FROM weight_log WHERE user_id = %s ORDER BY ts ASC LIMIT 1", (user_id,))
         weight = cur.fetchone()
-    return (float(weight[0]), weight[1]) if weight else None
+    return (float(weight[0]), zones.date_of(weight[1])) if weight else None
 
 
 def _clamp100(x: float) -> float:

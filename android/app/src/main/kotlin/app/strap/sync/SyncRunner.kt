@@ -10,11 +10,15 @@ import app.strap.store.LocalStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
+import strap.protocol.parse.AlarmZones
 import strap.protocol.parse.Config
+import strap.protocol.parse.CurrentTime
 import strap.protocol.auth.HandshakeFailure
 import strap.protocol.session.StrapException
 import strap.protocol.session.StrapFailure
@@ -23,6 +27,7 @@ import strap.protocol.sync.StrapSync
 import strap.protocol.sync.SyncProgress
 import java.io.IOException
 import java.time.Instant
+import java.time.ZoneId
 
 /** What the sync is doing, for the screen. */
 sealed interface SyncState {
@@ -34,8 +39,11 @@ sealed interface SyncState {
 
     data class Uploading(val detail: String) : SyncState
 
-    /** [failure] null = everything fetched and uploaded; otherwise named, secret-free reasons. */
-    data class Finished(val failure: String?) : SyncState
+    /**
+     * [failure] null = everything fetched and uploaded; otherwise named, secret-free reasons.
+     * [background]: a background job's run, which the screen shows no result message for.
+     */
+    data class Finished(val failure: String?, val background: Boolean = false) : SyncState
 }
 
 /** A strap job's result: [value] on success, else null and a secret-free [failure] sentence. */
@@ -46,7 +54,7 @@ data class StrapJob<T>(val value: T?, val failure: String?)
  * owner of the strap connection: a second request while one runs is refused, never queued
  * behind a half-open link (the old app's lease bugs B6–B8).
  */
-class SyncRunner(private val context: Context, private val store: LocalStore, private val vault: KeyVault) {
+class SyncRunner(private val context: Context, private val store: LocalStore, private val vault: KeyVault, private val alarms: AlarmKeeper) {
     private val lock = Mutex()
     private val _state = MutableStateFlow<SyncState>(SyncState.Idle)
     val state: StateFlow<SyncState> = _state.asStateFlow()
@@ -58,6 +66,11 @@ class SyncRunner(private val context: Context, private val store: LocalStore, pr
 
     /** The newest battery reading and when it was taken; every sync and strap job refreshes it. */
     val battery: StateFlow<LocalStore.Battery?> = _battery.asStateFlow()
+
+    private val _clock = MutableStateFlow<StrapClock?>(null)
+
+    /** The strap clock's offset, measured on every connection before any strap job runs (D30). */
+    val clock: StateFlow<StrapClock?> = _clock.asStateFlow()
 
     private val _probe = MutableStateFlow<List<String>>(emptyList())
 
@@ -94,20 +107,29 @@ class SyncRunner(private val context: Context, private val store: LocalStore, pr
         return job.failure
     }
 
-    /** Returns false when a sync is already running. */
-    suspend fun run(): Boolean {
-        if (!lock.tryLock()) return false
+    /** Strap → phone → server. Null when the strap is already busy, else how it ended. */
+    suspend fun run(): SyncState.Finished? = exclusive { listOfNotNull(syncOnce(), pushOnce()) }
+
+    /**
+     * The background jobs (D30): strap → phone, and phone → server. Each holds the lock so it
+     * never interleaves another strap or upload run, and WAITS for a running one (up to
+     * [BACKGROUND_WAIT]) rather than skipping: the two jobs often fire together, and a skipped
+     * job would wait a whole period.
+     */
+    suspend fun collect(): SyncState.Finished? = exclusive(background = true) { listOfNotNull(syncOnce()) }
+
+    suspend fun upload(): SyncState.Finished? = exclusive(background = true) { listOfNotNull(pushOnce()) }
+
+    private suspend fun exclusive(background: Boolean = false, work: suspend () -> List<String>): SyncState.Finished? {
+        val locked = if (background) withTimeoutOrNull(BACKGROUND_WAIT) { lock.lock() } != null else lock.tryLock()
+        if (!locked) return null
         try {
             // Off the main thread: the store writes thousands of rows per sync.
-            _state.value = SyncState.Finished(
-                withContext(Dispatchers.IO) {
-                    listOfNotNull(syncOnce(), pushOnce()).joinToString(" ").ifEmpty { null }
-                },
-            )
+            return SyncState.Finished(withContext(Dispatchers.IO) { work().joinToString(" ").ifEmpty { null } }, background)
+                .also { _state.value = it }
         } finally {
             lock.unlock()
         }
-        return true
     }
 
     /**
@@ -137,11 +159,26 @@ class SyncRunner(private val context: Context, private val store: LocalStore, pr
             store.save(result, battery)
             battery?.let { _battery.value = LocalStore.Battery(it, result.completedAt) }
             session.services.value?.let { _services.value = it }
+            // Keeps zoned alarms right across DST and clock changes; only after a complete
+            // fetch, so a struggling link is not asked for more.
+            if (result.failure == null) _clock.value?.let { alarms.reconcile(session, it, ::log) }
             log("sync done in %.1f s: %d samples, %d sleep, %d workouts, failure=%s".format(
                 (System.nanoTime() - started) / 1e9, result.samples.size, result.sleepSessions.size, result.workouts.size, result.failure))
             result.failure?.let { "Sync stopped early: $it (what arrived was saved)" }
         }
         return connectFailure ?: failure
+    }
+
+    /**
+     * The strap clock's offset: its Current Time reading against the phone's true time. A strap
+     * without that reading is assumed to run on the phone's zone, as the history fetch does.
+     */
+    private suspend fun measureClock(link: AndroidStrapLink): StrapClock {
+        val now = Instant.now()
+        val raw = link.currentTime()
+        val offset = raw?.let(CurrentTime::parse)?.let { AlarmZones.offsetOf(it, now) }
+        log("strap clock: ${raw?.hex() ?: "not read"} → ${offset ?: "assumed phone zone"}")
+        return offset?.let { StrapClock(it, measured = true) } ?: StrapClock(ZoneId.systemDefault().rules.getOffset(now), measured = false)
     }
 
     private fun saveBattery(percent: Int) {
@@ -161,6 +198,7 @@ class SyncRunner(private val context: Context, private val store: LocalStore, pr
         return try {
             coroutineScope {
                 val session = StrapSession.open(link, pairing.authKey, this, log = ::log)
+                _clock.value = measureClock(link)
                 try {
                     block(session, link) to null
                 } finally {
@@ -191,7 +229,7 @@ class SyncRunner(private val context: Context, private val store: LocalStore, pr
         if (context.checkSelfPermission(Manifest.permission.INTERNET) != PackageManager.PERMISSION_GRANTED) {
             return "Upload skipped: network access is off for this app (App info → Permissions → Network)."
         }
-        val outcome = PushClient(store, ::log).push(link) { _state.value = SyncState.Uploading(it) }
+        val outcome = PushClient(store, (context.applicationContext as app.strap.StrapApp).zones, ::log).push(link) { _state.value = SyncState.Uploading(it) }
         log("push: ${outcome.samples} samples, ${outcome.records} records, failure=${outcome.failure}")
         return outcome.failure?.let { "Upload stopped: $it (it resumes next sync)" }
     }
@@ -206,5 +244,6 @@ class SyncRunner(private val context: Context, private val store: LocalStore, pr
         const val TAG = "strap"
         const val BATTERY = 0x0029
         const val DEVICE_INFO = 0x0043
+        val BACKGROUND_WAIT = 3.minutes
     }
 }

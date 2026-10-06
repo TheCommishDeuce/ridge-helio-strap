@@ -14,7 +14,9 @@ from __future__ import annotations
 from datetime import date
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+from strap_server.zones import valid_zone
 
 # Caps sized well above one sync (a first 30-day sync is ~115k samples, sent in pages).
 MAX_SAMPLES = 20_000
@@ -22,6 +24,7 @@ MAX_SLEEP = 200
 MAX_WORKOUTS = 500
 MAX_TOTALS = 400
 MAX_STAGES = 2_000
+MAX_ZONES = 500
 
 
 class SampleIn(BaseModel):
@@ -62,12 +65,27 @@ class DailyTotalIn(BaseModel):
     calories: float | None = None
 
 
+class ZoneChangeIn(BaseModel):
+    """From `since` (epoch ms) the phone was in `timezone` (an IANA name) — D31."""
+
+    since: int
+    timezone: str = Field(max_length=64)
+
+    @field_validator("timezone")
+    @classmethod
+    def known_zone(cls, v: str) -> str:
+        if not valid_zone(v):
+            raise ValueError(f"unknown timezone {v!r}")
+        return v
+
+
 class IngestPayload(BaseModel):
     source: Literal["strap", "zepp_cloud"] = "strap"
     samples: list[SampleIn] = Field(default_factory=list, max_length=MAX_SAMPLES)
     sleep: list[SleepIn] = Field(default_factory=list, max_length=MAX_SLEEP)
     workouts: list[WorkoutIn] = Field(default_factory=list, max_length=MAX_WORKOUTS)
     daily_totals: list[DailyTotalIn] = Field(default_factory=list, max_length=MAX_TOTALS)
+    zones: list[ZoneChangeIn] = Field(default_factory=list, max_length=MAX_ZONES)
 
 
 class IngestSummary(BaseModel):

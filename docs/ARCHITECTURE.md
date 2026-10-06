@@ -28,7 +28,9 @@ and the server's database is the only complete copy.
 6. **Read.** The app's screens ask the server for a day's per-minute series, summaries
    and history.
 
-Syncing only happens when you press the button (D19). One component, `SyncRunner`, owns
+A sync runs when you press the button, when the app opens and the last complete sync is
+over 15 minutes old, or from the optional background jobs: collection (strap → phone) and
+upload (phone → server), each on its own interval (D30). One component, `SyncRunner`, owns
 the Bluetooth connection. A second request while it is busy is refused, never queued. The
 same goes for short strap jobs such as reading or writing alarms.
 

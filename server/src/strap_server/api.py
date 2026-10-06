@@ -19,6 +19,7 @@ from strap_server.db import connection
 from strap_server.ingest.models import IngestPayload, IngestSummary
 from strap_server.ingest.service import ingest
 from strap_server.read import history, series, summary
+from strap_server.zones import Zones
 
 app = FastAPI(title="strap", docs_url=None, redoc_url=None)
 
@@ -51,9 +52,12 @@ def _ensure_owner(conn, user_id: UUID, settings: Settings) -> None:
     )
 
 
-def _owner_tz(conn, user_id: UUID, settings: Settings) -> str:
-    row = conn.execute("SELECT timezone FROM app_user WHERE id = %s", (user_id,)).fetchone()
-    return row[0] if row else settings.owner_timezone
+def _owner_tz(conn, user_id: UUID, settings: Settings) -> Zones:
+    """The owner's zone over time (D31); the configured zone before the first write."""
+    with conn.cursor() as cur:
+        zones = Zones.load(cur, user_id)
+    exists = conn.execute("SELECT 1 FROM app_user WHERE id = %s", (user_id,)).fetchone()
+    return zones if exists else Zones(settings.owner_timezone)
 
 
 @app.get("/v1/day/{day}/series")
@@ -102,7 +106,7 @@ def get_bucket_series(
             raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(e)) from e
 
 
-def _local_bounds(tz: str, first: date, last: date) -> tuple:
+def _local_bounds(tz: Zones, first: date, last: date) -> tuple:
     from strap_server.derive._common import _day_bounds_utc
 
     return _day_bounds_utc(first, tz)[0], _day_bounds_utc(last, tz)[1]
@@ -172,5 +176,4 @@ def post_ingest(
 ) -> IngestSummary:
     with connection() as conn:
         _ensure_owner(conn, user_id, settings)
-        tz = conn.execute("SELECT timezone FROM app_user WHERE id = %s", (user_id,)).fetchone()[0]
-        return ingest(conn, user_id, tz, payload)
+        return ingest(conn, user_id, payload)

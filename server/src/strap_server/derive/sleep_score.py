@@ -22,6 +22,7 @@ from strap_server.derive.freshness import (
     NOT_DERIVED_YET,
     unavailable_reason,
 )
+from strap_server.zones import ZoneLike, as_zones
 
 # ── 4-dimension sleep score cutoffs — sleep_score_implementation_plan ─────────
 # NSF 2015 (Hirshkowitz et al., Sleep Health 1(1):40-43) — the recommended range for
@@ -70,7 +71,7 @@ def _sleep_efficiency(tst_min: int, wake_min: int) -> float:
     return min(1.0, tst_min / total) if total > 0 else 0.0
 
 
-def _sri_grid(cur: Cur, user_id: UUID, tz: str, night_date: date) -> dict[int, set[int]]:
+def _sri_grid(cur: Cur, user_id: UUID, tz: ZoneLike, night_date: date) -> dict[int, set[int]]:
     """The asleep-minute grid for the 7-day window ending on ``night_date``.
 
     Extracted from :func:`_compute_sri` so the WITHHOLD GATE and the computation read
@@ -79,19 +80,17 @@ def _sri_grid(cur: Cur, user_id: UUID, tz: str, night_date: date) -> dict[int, s
     be a second definition of "a complete week" — sessions can span a local midnight,
     the grid is what decides which day a minute belongs to.
     """
-    start_local = datetime(
-        night_date.year, night_date.month, night_date.day, tzinfo=ZoneInfo(tz)
-    ) - timedelta(days=SRI_DAYS - 1)
-    end_local = start_local + timedelta(days=SRI_DAYS)
+    first = night_date - timedelta(days=SRI_DAYS - 1)
+    zones = as_zones(tz)
     cur.execute(
         "SELECT stages FROM sleep_session "
         "WHERE user_id = %s AND kind='main' AND end_ts>=%s AND start_ts<%s",
-        (user_id, start_local.astimezone(UTC), end_local.astimezone(UTC)),
+        (user_id, zones.start(first), zones.bounds(night_date)[1]),
     )
-    return _sri_minute_grid(cur.fetchall(), start_local.date(), tz)
+    return _sri_minute_grid(cur.fetchall(), first, tz)
 
 
-def _compute_sri(cur: Cur, user_id: UUID, tz: str, night_date: date) -> float | None:
+def _compute_sri(cur: Cur, user_id: UUID, tz: ZoneLike, night_date: date) -> float | None:
     """Sleep Regularity Index over the 7-day window ending on `night_date`.
 
     Built from main-sleep hypnogram stages (asleep = any non-awake stage): the
@@ -109,9 +108,10 @@ def _compute_sri(cur: Cur, user_id: UUID, tz: str, night_date: date) -> float | 
     return round(-100.0 + (200.0 / (minutes_per_day * (days - 1))) * matches, 2)
 
 
-def _sri_minute_grid(rows: list, start_date: date, tz: str) -> dict[int, set[int]]:
-    """Map each day-index -> set of minute-of-day the person is asleep."""
-    zone = ZoneInfo(tz)
+def _sri_minute_grid(rows: list, start_date: date, tz: ZoneLike) -> dict[int, set[int]]:
+    """Map each day-index -> set of minute-of-day the person is asleep, on the clock of the
+    zone the owner was in at that minute (D31: regularity is about the local clock lived)."""
+    zones = as_zones(tz)
     grid: dict[int, set[int]] = defaultdict(set)
     for (stages,) in rows:
         for st in stages or []:
@@ -121,7 +121,7 @@ def _sri_minute_grid(rows: list, start_date: date, tz: str) -> dict[int, set[int
             end = datetime.fromtimestamp(st[1] / 1000, tz=UTC)
             minute = start
             while minute < end:
-                local = minute.astimezone(zone)
+                local = minute.astimezone(ZoneInfo(zones.zone_at(minute)))
                 day_index = (local.date() - start_date).days
                 if 0 <= day_index < SRI_DAYS:
                     grid[day_index].add(local.hour * 60 + local.minute)
@@ -154,7 +154,7 @@ SRI_MESSAGES = {
 }
 
 
-def sri_withhold_reason_for_day(cur: Cur, user_id: UUID, tz: str, day: date) -> str | None:
+def sri_withhold_reason_for_day(cur: Cur, user_id: UUID, tz: ZoneLike, day: date) -> str | None:
     """Why ``day`` cannot carry an SRI, or None when its 7-day window is complete.
 
     The same check :func:`_compute_sri` makes, over the same grid, without writing
@@ -167,7 +167,7 @@ def sri_withhold_reason_for_day(cur: Cur, user_id: UUID, tz: str, day: date) -> 
 
 
 def sri_unavailable_reason(
-    cur: Cur, user_id: UUID, tz: str, today: date, last_day: date | None
+    cur: Cur, user_id: UUID, tz: ZoneLike, today: date, last_day: date | None
 ) -> str | None:
     """Why this owner has no SRI FOR TODAY, or ``None`` when ``last_day`` IS today.
 
@@ -184,7 +184,7 @@ def sri_unavailable_reason(
 def derive_sleep_score(
     cur: Cur,
     user_id: UUID,
-    tz: str,
+    tz: ZoneLike,
     start_ts: datetime,
     end_ts: datetime,
     rem: int,
@@ -206,7 +206,8 @@ def derive_sleep_score(
     p_dur = 1 if SLEEP_DURATION_MIN_H <= tst / 60.0 <= SLEEP_DURATION_MAX_H else 0
     eff = _sleep_efficiency(tst, wake)  # <= 1 by construction (never >100%)
     p_eff = 1 if (tst > 0 and eff >= SLEEP_EFFICIENCY_MIN) else 0
-    mid = (start_ts + (end_ts - start_ts) / 2).astimezone(ZoneInfo(tz))
+    midpoint = start_ts + (end_ts - start_ts) / 2
+    mid = midpoint.astimezone(ZoneInfo(as_zones(tz).zone_at(midpoint)))
     p_tim = 1 if SLEEP_TIMING_RANGE[0] <= mid.hour < SLEEP_TIMING_RANGE[1] else 0
     sri = _compute_sri(cur, user_id, tz, night_date)
     p_reg = 1 if (sri is not None and sri >= SRI_GOOD) else 0
@@ -310,7 +311,7 @@ def sleep_debt_withhold_reason_for_day(cur: Cur, user_id: UUID, day: date) -> st
 def sleep_debt_unavailable_reason(
     cur: Cur,
     user_id: UUID,
-    tz: str,
+    tz: ZoneLike,
     today: date,
     last_day: date | None,
 ) -> str | None:

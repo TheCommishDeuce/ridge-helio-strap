@@ -37,11 +37,15 @@ def test_each_night_serves_its_own_source(db, test_dsn) -> None:
                 "rem_min": 90, "light_min": 240, "deep_min": 120, "wake_min": 30}
 
     with psycopg.connect(test_dsn) as conn:
-        ingest(conn, OWNER, "UTC", IngestPayload.model_validate({"sleep": [night(1)]}))
-        ingest(conn, OWNER, "UTC", IngestPayload.model_validate({"source": "zepp_cloud", "sleep": [night(3)]}))
-        served = dict(conn.execute(
-            "SELECT day::text, flags->>'session_source' FROM derived_daily WHERE metric = 'sleep_health_score_4dim'"
-        ).fetchall())
+        conn.execute("UPDATE app_user SET timezone = 'UTC' WHERE id = %s", (OWNER,))  # ingest reads it (D31)
+        try:
+            ingest(conn, OWNER, IngestPayload.model_validate({"sleep": [night(1)]}))
+            ingest(conn, OWNER, IngestPayload.model_validate({"source": "zepp_cloud", "sleep": [night(3)]}))
+            served = dict(conn.execute(
+                "SELECT day::text, flags->>'session_source' FROM derived_daily WHERE metric = 'sleep_health_score_4dim'"
+            ).fetchall())
+        finally:
+            conn.execute("UPDATE app_user SET timezone = 'Asia/Kolkata' WHERE id = %s", (OWNER,))
     assert served == {"2026-07-02": "strap_ble", "2026-07-04": "zepp_cloud"}
 
 

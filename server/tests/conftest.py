@@ -54,7 +54,7 @@ def cur(test_dsn: str) -> Iterator[psycopg.Cursor]:
 
 _DATA_TABLES = (
     "sample", "sleep_session", "workout", "derived_daily", "device_daily_total",
-    "profile", "weight_log", "manual_entry", "illness_flag",
+    "profile", "weight_log", "manual_entry", "illness_flag", "zone_change",
 )
 
 

@@ -85,6 +85,7 @@ object Infos {
     val alarms = Info("Alarms", listOf(
         "These alarms live on the strap and vibrate it. Changes are written to the strap straight away.",
         "The strap holds up to 10 alarms.",
+        "Each alarm has a time zone (your phone's unless you pick another). The strap only knows its own clock, so an alarm in another zone is written to the strap shifted, and shows the strap's time under it. Daylight saving changes are caught on every sync.",
     ))
     val strapSettings = Info("Strap settings", listOf("Read from the strap. Changing them here comes later."))
 }

@@ -34,6 +34,7 @@ import app.strap.ui.components.ConnectedButtons
 import app.strap.ui.components.DailyBars
 import app.strap.ui.components.DayBars
 import app.strap.ui.components.DayLineChart
+import app.strap.ui.components.DayWindow
 import app.strap.ui.components.Note
 import app.strap.ui.components.NoteLine
 import app.strap.ui.components.Point
@@ -63,7 +64,7 @@ private enum class Range(val label: String, val days: Int) { DAY("Day", 1), WEEK
 private sealed interface Loaded {
     val summary: JSONObject
 
-    data class Day(val points: List<Point>, val sleep: List<Span>, val dayStart: Long, override val summary: JSONObject) : Loaded
+    data class Day(val points: List<Point>, val sleep: List<Span>, val window: DayWindow, override val summary: JSONObject) : Loaded
 
     data class Hours(val hours: Map<Int, Double>, override val summary: JSONObject) : Loaded
 
@@ -108,8 +109,9 @@ fun MetricDetailScreen(api: ApiClient, metric: DetailMetric, day: LocalDate) {
         ) {
             val fmtDay = DateTimeFormatter.ofPattern("EEE d MMM")
             when (l) {
-                is Loaded.Day -> DayLineChart(l.points, l.dayStart, metric.tone.accent, metric.maxGapMs, metric.unit, shaded = l.sleep, height = 200.dp,
-                    onScrub = { p -> scrubbed = p?.let { Headline("At ${clockOf(it.t)}", "${it.v.roundToInt()}", "") } })
+                is Loaded.Day -> DayLineChart(l.points, l.window.start, metric.tone.accent, metric.maxGapMs, metric.unit, shaded = l.sleep, height = 200.dp,
+                    dayEnd = l.window.end, zone = l.window.zone,
+                    onScrub = { p -> scrubbed = p?.let { Headline("At ${clockOf(it.t, l.window.zone)}", "${it.v.roundToInt()}", "") } })
                 is Loaded.Hours -> DayBars(l.hours, metric.tone.accent, metric.unit, height = 200.dp,
                     onScrub = { h -> scrubbed = h?.let { Headline("%02d:00 – %02d:00".format(it, it + 1), "%,d".format((l.hours[it] ?: 0.0).roundToInt()), "") } })
                 is Loaded.Buckets -> RangeChart(l.buckets, l.start, l.end, l.bucketMs, metric.tone.accent, metric.tone.container, metric.unit, l.axis, height = 200.dp,
@@ -166,9 +168,9 @@ private fun describe(metric: DetailMetric, l: Loaded, day: LocalDate): Pair<Head
                 val usual = resting?.optJSONObject("baseline")?.optDouble("median")?.takeIf { !it.isNaN() }
                 Stat("Resting", v?.roundToInt()?.toString() ?: "—", changeNote(v?.let { a -> usual?.let { a - it } }, "vs usual", lowerBetter = true))
             } else {
-                Stat("Peak at", peak?.let { clockOf(it.t) } ?: "—")
+                Stat("Peak at", peak?.let { clockOf(it.t, l.window.zone) } ?: "—")
             }
-            (peak?.let { Headline("Peak", "${it.v.roundToInt()}", "$dayWord at ${clockOf(it.t)}") } ?: none) to listOf(
+            (peak?.let { Headline("Peak", "${it.v.roundToInt()}", "$dayWord at ${clockOf(it.t, l.window.zone)}") } ?: none) to listOf(
                 Stat("Low", l.points.minOfOrNull { it.v }?.roundToInt()?.toString() ?: "—"),
                 Stat("Average", l.points.takeIf { it.isNotEmpty() }?.map { it.v }?.average()?.roundToInt()?.toString() ?: "—"),
                 third,
@@ -220,11 +222,10 @@ private suspend fun load(api: ApiClient, metric: DetailMetric, range: Range, day
         }
         range == Range.DAY -> {
             val json = api.daySeries(day, metric.series)
-            val zone = ZoneId.of(json.getString("timezone"))
             val arr = json.getJSONObject("series").getJSONArray(metric.series)
             val sleep = json.optJSONArray("sleep")?.let { a -> (0 until a.length()).map { a.getJSONObject(it).let { o -> Span(o.getLong("start"), o.getLong("end")) } } }.orEmpty()
             Loaded.Day(List(arr.length()) { arr.getJSONArray(it).let { p -> Point(p.getLong(0), p.getDouble(1)) } }, sleep,
-                day.atStartOfDay(zone).toInstant().toEpochMilli(), summaryCall.await())
+                DayWindow.of(json, day), summaryCall.await())
         }
         metric.isSteps -> {
             val rows = api.daily("steps_total", from, day).getJSONObject("metrics").getJSONArray("steps_total")

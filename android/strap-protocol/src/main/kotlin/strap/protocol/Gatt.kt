@@ -21,6 +21,9 @@ public object Gatt {
     /** Standard Battery Level. */
     public val BATTERY_LEVEL: UUID = UUID.fromString("00002a19-0000-1000-8000-00805f9b34fb")
 
+    /** Standard Current Time: the strap's own clock, read to learn its offset (alarms, D30). */
+    public val CURRENT_TIME: UUID = UUID.fromString("00002a2b-0000-1000-8000-00805f9b34fb")
+
     /** Client Characteristic Configuration descriptor, to enable notifications. */
     public val CCCD: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
 

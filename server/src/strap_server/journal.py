@@ -10,12 +10,12 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 from uuid import UUID
-from zoneinfo import ZoneInfo
 
 from psycopg import Connection
 from pydantic import BaseModel, Field, model_validator
 
 from strap_server.rederive import rederive
+from strap_server.zones import Zones
 
 # Units are fixed per kind so entries stay comparable.
 UNITS = {"caffeine": "mg", "alcohol": "drinks", "weight": "kg"}
@@ -45,8 +45,9 @@ def add(conn: Connection, conninfo: str | None, user_id: UUID, entry: JournalIn)
             (user_id, entry.ts, entry.amount),
         )
         conn.commit()
-        tz = conn.execute("SELECT timezone FROM app_user WHERE id = %s", (user_id,)).fetchone()[0]
-        days = rederive(conninfo, user_id, since=entry.ts.astimezone(ZoneInfo(tz)).date(), log=lambda _: None)
+        with conn.cursor() as cur:
+            zones = Zones.load(cur, user_id)
+        days = rederive(conninfo, user_id, since=zones.date_of(entry.ts), log=lambda _: None)
         return {"id": f"weight:{int(entry.ts.timestamp() * 1000)}", "rederived_days": days}
     row = conn.execute(
         "INSERT INTO manual_entry (user_id, kind, ts, amount, unit, name) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",

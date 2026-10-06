@@ -64,7 +64,17 @@ class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null,
                 sample.executeInsert()
                 sample.clearBindings()
             }
-            result.sleepSessions.forEach { db.insertWithOnConflict("sleep_sessions", null, it.values(), SQLiteDatabase.CONFLICT_REPLACE) }
+            result.sleepSessions.forEach { s ->
+                val v = s.values()
+                // A rewritten night can start a minute off its earlier version: drop the earlier
+                // version it overlaps rather than keep the night twice (the server does the same).
+                val end = s.stages.lastOrNull()?.end?.toEpochMilli()
+                if (end != null) db.execSQL(
+                    "DELETE FROM sleep_sessions WHERE is_nap = ? AND start <> ? AND start < ? AND json_extract(stages, '$[#-1][1]') > ?",
+                    arrayOf(v.getAsInteger("is_nap"), v.getAsLong("start"), end, v.getAsLong("start")),
+                )
+                db.insertWithOnConflict("sleep_sessions", null, v, SQLiteDatabase.CONFLICT_REPLACE)
+            }
             result.workouts.forEach { db.insertWithOnConflict("workouts", null, it.values(), SQLiteDatabase.CONFLICT_REPLACE) }
             result.dailyTotals?.let {
                 db.insertWithOnConflict("daily_totals", null, ContentValues().apply {
@@ -172,6 +182,16 @@ class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null,
             if (!c.moveToFirst()) return null
             val failure = JSONObject(c.getString(1)).opt("failure")
             Instant.ofEpochMilli(c.getLong(0)) to (failure as? String)
+        }
+
+    /** When the last sync that fetched everything finished; a failed one never counts (D30). */
+    fun lastCompleteSync(): Instant? = readableDatabase
+        .rawQuery("SELECT at, summary FROM sync_log ORDER BY id DESC LIMIT 50", null)
+        .use { c ->
+            while (c.moveToNext()) {
+                if (JSONObject(c.getString(1)).isNull("failure")) return Instant.ofEpochMilli(c.getLong(0))
+            }
+            null
         }
 
     fun lastSummary(): JSONObject? = readableDatabase

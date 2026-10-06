@@ -173,6 +173,19 @@ class AndroidStrapLink private constructor(private val log: (String) -> Unit) : 
         }
     }
 
+    override suspend fun currentTime(): ByteArray? {
+        val c = chars[Gatt.CURRENT_TIME] ?: return null.also { log("no current time characteristic") }
+        return try {
+            op("current time read") {
+                @Suppress("DEPRECATION")
+                gatt.readCharacteristic(c)
+            } as? ByteArray
+        } catch (e: IOException) {
+            log("current time read failed: ${e.message}")
+            null
+        }
+    }
+
     fun close() {
         disconnected = true
         runCatching { gatt.disconnect() }

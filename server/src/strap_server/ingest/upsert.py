@@ -17,11 +17,11 @@ from __future__ import annotations
 import json
 from datetime import UTC, date, datetime
 from uuid import UUID
-from zoneinfo import ZoneInfo
 
 from psycopg import Cursor
 
 from strap_server.ingest.models import DailyTotalIn, SampleIn, SleepIn, WorkoutIn
+from strap_server.zones import ZoneLike, as_zones
 
 # Strap stream name -> canonical server metric (the names the science reads).
 # spo2 and spo2_sleep are both blood oxygen; the server windows them itself.
@@ -49,8 +49,23 @@ def epoch_to_utc(ms: int) -> datetime:
     return datetime.fromtimestamp(ms / 1000, tz=UTC)
 
 
-def local_date(ms: int, tz: str) -> date:
-    return epoch_to_utc(ms).astimezone(ZoneInfo(tz)).date()
+def local_date(ms: int, tz: ZoneLike) -> date:
+    return as_zones(tz).date_of(epoch_to_utc(ms))
+
+
+def upsert_zone_changes(cur: Cursor, user_id: UUID, changes: list) -> list[datetime]:
+    """Stores the phone's zone changes (D31); returns the instants that were new."""
+    new: list[datetime] = []
+    for c in changes:
+        cur.execute(
+            "INSERT INTO zone_change (user_id, since, timezone) VALUES (%s, %s, %s) "
+            "ON CONFLICT (user_id, since) DO UPDATE SET timezone = EXCLUDED.timezone "
+            "WHERE zone_change.timezone <> EXCLUDED.timezone RETURNING since",
+            (user_id, epoch_to_utc(c.since), c.timezone),
+        )
+        if (row := cur.fetchone()) is not None:
+            new.append(row[0])
+    return new
 
 
 def upsert_samples(
@@ -98,6 +113,16 @@ def upsert_sleep(cur: Cursor, user_id: UUID, sessions: list[SleepIn], fill_only:
             "DELETE FROM sleep_session WHERE user_id = %s AND source = 'zepp_cloud' "
             "AND start_ts < %s AND end_ts > %s",
             (user_id, epoch_to_utc(s.end_ts), epoch_to_utc(s.start_ts)),
+        )
+        # The strap rewrites a recent night (re-scored, a nap appended) and its first stage
+        # can move by a minute: the same night under a new start. A strap session therefore
+        # replaces any strap session of its kind that it overlaps, never sits beside it
+        # (seen on a real night: stored twice, a minute apart, the later one winning every
+        # metric of the wake date).
+        cur.execute(
+            "DELETE FROM sleep_session WHERE user_id = %s AND source = 'strap_ble' AND kind = %s "
+            "AND start_ts <> %s AND start_ts < %s AND end_ts > %s",
+            (user_id, s.kind, epoch_to_utc(s.start_ts), epoch_to_utc(s.end_ts), epoch_to_utc(s.start_ts)),
         )
         cur.execute(
             "INSERT INTO sleep_session "
@@ -160,7 +185,7 @@ def upsert_workouts(cur: Cursor, user_id: UUID, workouts: list[WorkoutIn]) -> No
 
 
 def upsert_daily_totals(
-    cur: Cursor, user_id: UUID, tz: str, totals: list[DailyTotalIn], fill_only: bool = False
+    cur: Cursor, user_id: UUID, tz: ZoneLike, totals: list[DailyTotalIn], fill_only: bool = False
 ) -> list[date]:
     """Stores each reading under its local day; a later reading of the same day wins, an earlier one never does."""
     days = []

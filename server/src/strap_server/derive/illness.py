@@ -94,6 +94,7 @@ from strap_server.derive._common import Cur
 from strap_server.derive.freshness import unavailable_reason
 from strap_server.derive.robust import median, median_abs_deviation
 from strap_server.log import get_logger
+from strap_server.zones import ZoneLike, as_zones
 
 log = get_logger(__name__)
 
@@ -258,7 +259,7 @@ def sustained_for(rr_nights: Mapping[date, float], night: date) -> bool:
 # ── the per-owner per-day pass ────────────────────────────────────────────────
 
 
-def derive_illness_flag(cur: Cur, user_id: UUID, tz: str, day: date) -> dict:
+def derive_illness_flag(cur: Cur, user_id: UUID, tz: ZoneLike, day: date) -> dict:
     """Compute and persist (or clear) one owner's illness flag for their local ``day``.
 
     Returns what happened, always naming the reason when nothing was written — a
@@ -335,7 +336,7 @@ def _first_night(day: date) -> date:
     return day - timedelta(days=BASELINE_NIGHTS + 1)
 
 
-def _temp_nights(cur: Cur, user_id: UUID, tz: str, day: date) -> dict[date, float]:
+def _temp_nights(cur: Cur, user_id: UUID, tz: ZoneLike, day: date) -> dict[date, float]:
     """Mean overnight ``skin_temp_c`` per wake-date over ``[day-15, day]``.
 
     Averaged over the main sleep session's own window — the same read-time definition
@@ -347,18 +348,26 @@ def _temp_nights(cur: Cur, user_id: UUID, tz: str, day: date) -> dict[date, floa
     The wake date comes from the session's END, matching ``derive._wake_date`` and
     therefore ``derived_daily.day`` — the two limbs must be keyed to the same night.
     """
+    zones = as_zones(tz)
     cur.execute(
-        "SELECT (session.end_ts AT TIME ZONE %s)::date AS wake_date, AVG(sample.value)::float "
+        "SELECT session.end_ts, sum(sample.value)::float, count(sample.value) "
         "FROM sleep_session session "
         "JOIN sample ON sample.user_id = session.user_id "
         "  AND sample.ts >= session.start_ts AND sample.ts < session.end_ts "
         "WHERE session.user_id = %s AND session.kind = 'main' "
         "  AND sample.metric = %s AND sample.value > %s "
-        "  AND (session.end_ts AT TIME ZONE %s)::date BETWEEN %s AND %s "
-        "GROUP BY wake_date",
-        (tz, user_id, _TEMP_METRIC, _TEMP_MIN_VALID_C, tz, _first_night(day), day),
+        "  AND session.end_ts >= %s AND session.end_ts < %s "
+        "GROUP BY session.end_ts",
+        (user_id, _TEMP_METRIC, _TEMP_MIN_VALID_C, zones.bounds(_first_night(day))[0], zones.bounds(day)[1]),
     )
-    return {row[0]: float(row[1]) for row in cur.fetchall() if row[1] is not None}
+    # Grouped per wake DATE in Python (the date needs the zone history): one average over
+    # every sample of the sessions ending that date, as the per-date SQL AVG was.
+    sums: dict[date, list[float]] = {}
+    for end_ts, total, n in cur.fetchall():
+        acc = sums.setdefault(zones.date_of(end_ts), [0.0, 0])
+        acc[0] += total
+        acc[1] += n
+    return {d: s / n for d, (s, n) in sums.items() if n}
 
 
 def _write(

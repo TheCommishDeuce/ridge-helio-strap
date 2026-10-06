@@ -81,6 +81,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.strap.api.ApiClient
 import app.strap.api.ApiException
@@ -100,6 +102,8 @@ import app.strap.ui.detail.DetailMetric
 import app.strap.ui.detail.MetricDetailScreen
 import app.strap.ui.isRunning
 import app.strap.ui.journal.JournalScreen
+import app.strap.sync.BackgroundPrefs
+import app.strap.ui.settings.BackgroundScreen
 import app.strap.ui.settings.SettingsScreen
 import app.strap.ui.setup.ServerStep
 import app.strap.ui.setup.SetupFlow
@@ -152,6 +156,8 @@ private sealed interface Pushed {
 
     data object Diagnostics : Pushed
 
+    data object Background : Pushed
+
     /** Setup in edit mode, full screen: no top bar or navigation bar. */
     data object ChangeStrap : Pushed
 
@@ -196,8 +202,18 @@ private fun AppShell(app: StrapApp) {
         val done = sync as? SyncState.Finished ?: return@LaunchedEffect
         if (!watched) return@LaunchedEffect
         watched = false
+        if (done.background) return@LaunchedEffect // its result is on Settings → Background sync
         val readings = app.store.lastSummary()?.optJSONObject("samples")?.let { s -> s.keys().asSequence().sumOf { s.optInt(it) } }
         showSnack(done.failure ?: ("Synced" + (readings?.let { " · %,d new readings".format(it) } ?: "")), null, null)
+    }
+
+    // Sync on open (D30): coming to the front syncs when the last complete sync is older than
+    // the window. The stamp is on disk, so a cold start does not reset it; a failed sync never
+    // counts, so the next open tries again.
+    LifecycleEventEffect(Lifecycle.Event.ON_START) {
+        val last = app.store.lastCompleteSync()
+        val stale = last == null || java.time.Duration.between(last, Instant.now()) > BackgroundPrefs.OPEN_WINDOW
+        if (stale && app.background.prefs().onOpen && !app.syncRunner.state.value.isRunning) SyncService.start(app)
     }
 
     // Today's data is shared by Today and Recovery; it reloads when a sync finishes.
@@ -247,6 +263,7 @@ private fun AppShell(app: StrapApp) {
         is Pushed.Detail -> top.metric.title
         Pushed.Settings -> "Settings"
         Pushed.Diagnostics -> "Diagnostics"
+        Pushed.Background -> "Background sync"
         else -> when (tab) {
             Tab.TODAY -> dayTitle(day)
             Tab.STRAP -> "Helio Strap"
@@ -334,8 +351,10 @@ private fun AppShell(app: StrapApp) {
                         onChangeStrap = { push(Pushed.ChangeStrap) },
                         onChangeServer = { push(Pushed.ChangeServer) },
                         onDiagnostics = { push(Pushed.Diagnostics) },
+                        onBackground = { push(Pushed.Background) },
                     )
                     top == Pushed.Diagnostics -> DiagnosticsScreen(app)
+                    top == Pushed.Background -> BackgroundScreen(app)
                     api == null -> Centered("Add your server in Settings (the gear) first.")
                     top is Pushed.Detail -> MetricDetailScreen(api, top.metric, day)
                     top == Pushed.Recovery -> today?.takeIf { it.day == day }?.let { RecoveryContent(it) { d -> day = d } } ?: Loading(todayError)

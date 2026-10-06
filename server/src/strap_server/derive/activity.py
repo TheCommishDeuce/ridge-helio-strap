@@ -23,6 +23,7 @@ from strap_server.derive.device_totals import (
     select_steps,
 )
 from strap_server.derive.energy import derive_calories
+from strap_server.zones import ZoneLike
 
 _STRIDE_HEIGHT_FRACTION = 0.414  # stride length ~= 0.414 x height [[distance_from_steps]]
 
@@ -50,7 +51,7 @@ def _steps_per_minute_sum(
     return float(row[0] or 0.0), int(row[1] or 0)
 
 
-def derive_daily_activity(cur: Cur, user_id: UUID, tz: str, day: date) -> dict:
+def derive_daily_activity(cur: Cur, user_id: UUID, tz: ZoneLike, day: date) -> dict:
     """steps_total, distance_m_daily, and total/active/basal calories for a day.
 
     steps_total is upserted whenever an instrument SPOKE, and always carries which one in

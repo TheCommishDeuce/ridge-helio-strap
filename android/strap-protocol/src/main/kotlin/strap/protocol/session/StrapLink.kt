@@ -39,6 +39,9 @@ public interface StrapLink {
 
     /** Battery level 0–100, or null when unreadable — never a reason to fail a sync. */
     public suspend fun batteryPercent(): Int?
+
+    /** The raw Current Time reading (`2a2b`), or null when the strap has none or it failed. */
+    public suspend fun currentTime(): ByteArray? = null
 }
 
 public enum class Channel { CHUNKED, CONTROL, DATA }

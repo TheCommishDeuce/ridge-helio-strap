@@ -16,6 +16,7 @@ from datetime import date, datetime, timedelta
 from uuid import UUID
 
 from strap_server.derive._common import Cur, _day_bounds_utc, _upsert_daily
+from strap_server.zones import ZoneLike
 
 # Cadence thresholds (steps/min) with a one-minute "prior" gate [[cadence_intensity]].
 _MODERATE_SPM = 100
@@ -56,7 +57,7 @@ _VIGOROUS_MET_WEIGHT = 2
 # question about someone's exercise habits. That question now lives in the profile.
 
 
-def derive_mvpa(cur: Cur, user_id: UUID, tz: str, day: date) -> dict | None:
+def derive_mvpa(cur: Cur, user_id: UUID, tz: ZoneLike, day: date) -> dict | None:
     """Cadence-based MVPA minutes for one local day. None when no steps recorded."""
     start_utc, end_utc = _day_bounds_utc(day, tz)
     cur.execute(

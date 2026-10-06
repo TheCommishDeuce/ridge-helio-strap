@@ -16,12 +16,13 @@ from strap_server.derive._common import Cur, _age, _day_bounds_utc, _load_profil
 from strap_server.derive.freshness import RHR_MAX_AGE_DAYS
 from strap_server.derive.hr_validity import HR_VALID_BOUNDS, HR_VALID_SQL
 from strap_server.derive.trimp import trimp_minute
+from strap_server.zones import ZoneLike
 
 # Edwards zone lower bounds as %HRmax; zone weights are 1..5.
 EDWARDS_ZONE_LO = (0.50, 0.60, 0.70, 0.80, 0.90)
 
 
-def derive_cardio_load(cur: Cur, user_id: UUID, tz: str, day: date) -> dict | None:
+def derive_cardio_load(cur: Cur, user_id: UUID, tz: ZoneLike, day: date) -> dict | None:
     """Banister TRIMP + Edwards training load over waking minutes for one day.
 
     None without a profile, **without a measured resting HR fresh enough to anchor the

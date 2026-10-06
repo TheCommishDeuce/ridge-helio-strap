@@ -1,6 +1,7 @@
 package app.strap.ui.today
 
 import app.strap.api.ApiClient
+import app.strap.ui.components.DayWindow
 import app.strap.ui.components.Span
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -45,7 +46,9 @@ data class DayStats(val min: Double, val max: Double, val mean: Double, val maxA
 data class Slice(val t: Long, val min: Double, val max: Double, val mean: Double)
 
 /** The day's per-minute heart rate and stress in [SLICE_MS] slices, and the sleep to shade. */
-data class DayCurves(val dayStart: Long, val hr: List<Slice>, val stress: List<Slice>, val sleep: List<Span>)
+data class DayCurves(val window: DayWindow, val hr: List<Slice>, val stress: List<Slice>, val sleep: List<Span>) {
+    val dayStart: Long get() = window.start
+}
 
 const val SLICE_MS = 10 * 60_000L
 
@@ -127,7 +130,8 @@ suspend fun loadToday(api: ApiClient, day: LocalDate): TodayData = coroutineScop
     val stress = s.getJSONObject("stress")
     val stepsCard = s.getJSONObject("steps")
     val series = seriesCall.await()
-    val dayStart = day.atStartOfDay(ZoneId.of(series.getString("timezone"))).toInstant().toEpochMilli()
+    val window = DayWindow.of(series, day)
+    val dayStart = window.start
     val flags = recoveryCard.optJSONObject("flags")
     val factors = flags?.optJSONObject("factors")?.let { f ->
         val weights = flags.optJSONObject("weights")
@@ -159,7 +163,7 @@ suspend fun loadToday(api: ApiClient, day: LocalDate): TodayData = coroutineScop
         stress = stats(stress),
         stressNote = stress.optJSONObject("withheld")?.getString("message"),
         curves = series.getJSONObject("series").let { c ->
-            DayCurves(dayStart, slices(c.getJSONArray("hr"), dayStart), slices(c.getJSONArray("stress"), dayStart),
+            DayCurves(window, slices(c.getJSONArray("hr"), dayStart), slices(c.getJSONArray("stress"), dayStart),
                 series.optJSONArray("sleep")?.objects().orEmpty().map { Span(it.getLong("start"), it.getLong("end")) })
         },
         illness = s.optJSONObject("illness")?.getString("framing"),

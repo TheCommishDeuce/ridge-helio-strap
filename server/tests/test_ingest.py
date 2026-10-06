@@ -18,6 +18,18 @@ from tests.derive._seed import OWNER
 pytestmark = pytest.mark.db
 
 TZ = "Europe/Berlin"
+
+
+@pytest.fixture(autouse=True)
+def _owner_in_berlin(test_dsn):
+    """Ingest reads the owner's zone from the database (D31); these cases are set in Berlin."""
+    with psycopg.connect(test_dsn) as conn:
+        conn.execute("UPDATE app_user SET timezone = %s WHERE id = %s", (TZ, OWNER))
+    yield
+    with psycopg.connect(test_dsn) as conn:
+        conn.execute("UPDATE app_user SET timezone = 'Asia/Kolkata' WHERE id = %s", (OWNER,))
+
+
 TOKEN = "test-token-not-secret"
 
 
@@ -47,7 +59,7 @@ def night_payload() -> dict:
 
 def test_a_push_stores_raw_rows_and_derives_the_night_and_day(db, test_dsn) -> None:
     with psycopg.connect(test_dsn) as conn:
-        summary = ingest(conn, OWNER, TZ, IngestPayload.model_validate(night_payload()))
+        summary = ingest(conn, OWNER, IngestPayload.model_validate(night_payload()))
         metrics = dict(conn.execute("SELECT metric, count(*) FROM sample GROUP BY metric").fetchall())
         derived = {r[0]: r[1] for r in conn.execute("SELECT metric, value FROM derived_daily WHERE day = '2026-09-25'")}
     assert summary.samples_dropped == 1 and summary.nights_derived == 1
@@ -61,9 +73,9 @@ def test_a_push_stores_raw_rows_and_derives_the_night_and_day(db, test_dsn) -> N
 def test_a_repush_that_omits_fields_keeps_the_measured_values(db, test_dsn) -> None:
     payload = night_payload()
     with psycopg.connect(test_dsn) as conn:
-        ingest(conn, OWNER, TZ, IngestPayload.model_validate(payload))
+        ingest(conn, OWNER, IngestPayload.model_validate(payload))
         partial = {"sleep": [{k: v for k, v in payload["sleep"][0].items() if k in ("start_ts", "end_ts", "kind")}]}
-        ingest(conn, OWNER, TZ, IngestPayload.model_validate(partial))
+        ingest(conn, OWNER, IngestPayload.model_validate(partial))
         row = conn.execute("SELECT deep_min, score, jsonb_array_length(stages) FROM sleep_session").fetchone()
     assert row == (360, 80, 2)
 
@@ -73,8 +85,8 @@ def test_an_older_counter_reading_never_replaces_a_newer_one(db, test_dsn) -> No
     newer = {"daily_totals": [{"read_at": ms(day + timedelta(hours=5)), "steps": 5000}]}
     older = {"daily_totals": [{"read_at": ms(day), "steps": 1200}]}
     with psycopg.connect(test_dsn) as conn:
-        ingest(conn, OWNER, TZ, IngestPayload.model_validate(newer))
-        ingest(conn, OWNER, TZ, IngestPayload.model_validate(older))
+        ingest(conn, OWNER, IngestPayload.model_validate(newer))
+        ingest(conn, OWNER, IngestPayload.model_validate(older))
         assert conn.execute("SELECT steps FROM device_daily_total").fetchone() == (5000,)
 
 
@@ -112,8 +124,8 @@ def test_the_cloud_backfill_never_overwrites_the_strap(db, test_dsn) -> None:
         "workouts": strap["workouts"],
     }
     with psycopg.connect(test_dsn) as conn:
-        ingest(conn, OWNER, TZ, IngestPayload.model_validate(strap))
-        summary = ingest(conn, OWNER, TZ, IngestPayload.model_validate(cloud))
+        ingest(conn, OWNER, IngestPayload.model_validate(strap))
+        summary = ingest(conn, OWNER, IngestPayload.model_validate(cloud))
         assert summary.samples_stored == 60 and summary.sleep == 0 and summary.daily_totals == 0
         assert conn.execute("SELECT count(*) FROM sample WHERE metric = 'hr' AND value = 99").fetchone() == (0,)
         assert conn.execute("SELECT count(*), max(deep_min) FROM sleep_session").fetchone() == (1, 360)
@@ -128,8 +140,8 @@ def test_a_cloud_day_total_lands_on_its_own_day_as_a_closed_day(db, test_dsn) ->
         "daily_totals": [{"read_at": ms(midnight), "day": "2026-07-01", "steps": 8000, "distance_m": 6000}],
     }
     with psycopg.connect(test_dsn) as conn:
-        assert ingest(conn, OWNER, TZ, IngestPayload.model_validate(cloud)).daily_totals == 1
-        assert ingest(conn, OWNER, TZ, IngestPayload.model_validate(cloud)).daily_totals == 0  # idempotent
+        assert ingest(conn, OWNER, IngestPayload.model_validate(cloud)).daily_totals == 1
+        assert ingest(conn, OWNER, IngestPayload.model_validate(cloud)).daily_totals == 0  # idempotent
         assert conn.execute("SELECT day::text, steps, source FROM device_daily_total").fetchone() == (
             "2026-07-01", 8000, "zepp_cloud")
         flags = conn.execute(
@@ -150,8 +162,21 @@ def test_a_strap_push_after_the_backfill_replaces_what_the_cloud_put_there(db, t
         "daily_totals": [{"read_at": ms(datetime(2026, 9, 26, tzinfo=UTC)), "day": "2026-09-25", "steps": 1, "calories": 5}],
     }
     with psycopg.connect(test_dsn) as conn:
-        ingest(conn, OWNER, TZ, IngestPayload.model_validate(cloud))
-        ingest(conn, OWNER, TZ, IngestPayload.model_validate(strap))
+        ingest(conn, OWNER, IngestPayload.model_validate(cloud))
+        ingest(conn, OWNER, IngestPayload.model_validate(strap))
         assert conn.execute("SELECT count(*) FROM sample WHERE metric = 'hr' AND value = 99").fetchone() == (0,)
         assert conn.execute("SELECT count(*), max(score), max(source) FROM sleep_session").fetchone() == (1, 80, "strap_ble")
         assert conn.execute("SELECT steps, calories, source FROM device_daily_total").fetchone() == (2400, 90, "strap_0x16")
+
+
+@pytest.mark.db
+def test_a_rewritten_night_replaces_its_earlier_version(db, test_dsn) -> None:
+    """The strap re-sends a recent night with its start a minute later: still one night."""
+    first = night_payload()
+    moved = night_payload()
+    moved["sleep"][0]["start_ts"] += 60_000
+    with psycopg.connect(test_dsn) as conn:
+        ingest(conn, OWNER, IngestPayload.model_validate(first))
+        ingest(conn, OWNER, IngestPayload.model_validate(moved))
+        rows = conn.execute("SELECT start_ts FROM sleep_session WHERE kind = 'main'").fetchall()
+    assert [int(r[0].timestamp() * 1000) for r in rows] == [moved["sleep"][0]["start_ts"]]

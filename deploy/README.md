@@ -22,7 +22,8 @@ Edit `.env`:
 
 - `POSTGRES_PASSWORD`: a long random value, e.g. from `openssl rand -hex 24`.
 - `OWNER_TIMEZONE`: your IANA timezone, e.g. `Europe/Berlin`. Days are cut at your local
-  midnight.
+  midnight. When you travel, the app reports the phone's timezone changes and days follow
+  them (D31); this is the zone before the first report.
 
 ## 2 · Make the phone's token
 

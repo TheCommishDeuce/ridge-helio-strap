@@ -210,28 +210,29 @@ internal fun journalName(e: JSONObject): String? = e.optString("name").takeIf { 
 @Composable
 private fun moments(data: TodayData, nav: TodayNav): List<Moment> {
     val c = LocalMetricColors.current
+    val zone = data.curves.window.zone // the day's own clock (D31)
     return buildList {
         data.night?.let { n ->
             val asleep = data.sleepTstMin?.let { hm(it) + " asleep · " } ?: ""
-            add(Moment(n.end, clockOf(n.end), Icons.Rounded.Bedtime, c.sleepTone, "Woke up", "$asleep${clockOf(n.start)} – ${clockOf(n.end)}",
+            add(Moment(n.end, clockOf(n.end, zone), Icons.Rounded.Bedtime, c.sleepTone, "Woke up", "$asleep${clockOf(n.start, zone)} – ${clockOf(n.end, zone)}",
                 n.deviceScore?.toString(), nav.sleep))
         }
         data.journal.forEach { e ->
             val ts = e.getLong("ts")
-            add(Moment(ts, clockOf(ts), journalIcon(e), c.stressTone, journalName(e) ?: e.getString("kind").replaceFirstChar { it.uppercase() },
+            add(Moment(ts, clockOf(ts, zone), journalIcon(e), c.stressTone, journalName(e) ?: e.getString("kind").replaceFirstChar { it.uppercase() },
                 journalHeadline(e), null, nav.journal))
         }
         data.stress?.let { s ->
-            add(Moment(s.maxAt, clockOf(s.maxAt), Icons.Rounded.Psychology, c.stressTone, "Stress peak", "Highest of the day",
+            add(Moment(s.maxAt, clockOf(s.maxAt, zone), Icons.Rounded.Psychology, c.stressTone, "Stress peak", "Highest of the day",
                 "${s.max.roundToInt()}", nav.stress))
         }
         data.workouts.forEach { w ->
             val start = w.getLong("start")
-            add(Moment(start, clockOf(start), Icons.AutoMirrored.Rounded.DirectionsRun, c.heartTone, "Workout", workoutLine(w), null, nav.activity))
+            add(Moment(start, clockOf(start, zone), Icons.AutoMirrored.Rounded.DirectionsRun, c.heartTone, "Workout", workoutLine(w), null, nav.activity))
         }
         if (data.day == LocalDate.now()) data.strain.valueOrNull?.let { s ->
             val now = System.currentTimeMillis()
-            add(Moment(now, clockOf(now), Icons.Rounded.Bolt, c.strainTone, "Now", "Strain so far today", "%.1f".format(s), nav.activity))
+            add(Moment(now, clockOf(now, zone), Icons.Rounded.Bolt, c.strainTone, "Now", "Strain so far today", "%.1f".format(s), nav.activity))
         }
     }.sortedBy { it.at }
 }

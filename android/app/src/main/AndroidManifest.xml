@@ -22,6 +22,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- D31: the phone's timezone changes, for the server to cut days where the owner is. -->
+        <receiver android:name=".sync.TimezoneReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
         <service
             android:name=".sync.SyncService"
             android:exported="false"

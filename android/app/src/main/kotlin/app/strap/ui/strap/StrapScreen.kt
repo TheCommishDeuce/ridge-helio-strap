@@ -17,9 +17,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.AlarmAdd
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,6 +29,7 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -52,6 +55,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.foundation.layout.widthIn
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import android.util.Log
 import app.strap.StrapApp
 import app.strap.store.LocalStore
 import app.strap.sync.SyncState
@@ -68,11 +72,11 @@ import app.strap.ui.components.Subtle
 import app.strap.ui.theme.LocalRidgeColors
 import app.strap.ui.theme.RidgeType
 import kotlinx.coroutines.launch
-import strap.protocol.parse.AlarmWrite
 import strap.protocol.parse.Alarms
 import strap.protocol.parse.Config
 import strap.protocol.parse.ConfigGroup
 import strap.protocol.parse.StrapAlarm
+import strap.protocol.parse.ZonedAlarm
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -100,20 +104,33 @@ fun StrapScreen(app: StrapApp, sync: SyncState) {
     var message by remember { mutableStateOf<String?>(null) }
     var settings by remember { mutableStateOf<List<ConfigGroup?>?>(null) } // health, workout
     var editing by remember { mutableStateOf<Pair<StrapAlarm, Boolean>?>(null) } // alarm, isNew
+    val clock by runner.clock.collectAsStateWithLifecycle()
+    val phoneZone = remember { ZoneId.systemDefault() }
     val scope = rememberCoroutineScope()
 
-    fun apply(write: AlarmWrite?) {
+    fun apply(change: AlarmChange?) {
         scope.launch {
             busy = true
             message = null
             val job = runner.strapJob { s ->
+                val strapClock = runner.clock.value ?: return@strapJob Triple(false, null, null) // measured before every job
                 // Settings on the opening read only; an alarm change re-reads the alarms alone.
-                val read = if (write == null) SETTING_GROUPS.map { s.readConfig(it) } else null
-                Triple(write?.let { s.writeAlarm(it) } ?: true, s.readAlarms(), read)
+                val read = if (change == null) SETTING_GROUPS.map { s.readConfig(it) } else null
+                val confirmed = when (change) {
+                    null -> true
+                    is AlarmChange.Save -> {
+                        app.alarms.put(change.alarm.slot, change.intent)
+                        val written = app.alarms.onStrap(change.alarm, change.intent, strapClock)
+                        s.writeAlarm(if (change.isNew) Alarms.create(written) else Alarms.update(written))
+                    }
+                    is AlarmChange.Toggle -> s.writeAlarm(Alarms.update(change.alarm.copy(enabled = change.on)))
+                    is AlarmChange.Delete -> s.writeAlarm(Alarms.delete(change.slot)).also { app.alarms.remove(change.slot) }
+                }
+                Triple(confirmed, app.alarms.reconcile(s, strapClock) { Log.i("strap", it) }, read)
             }
             val (confirmed, list, read) = job.value ?: Triple(null, null, null)
             read?.let { settings = it }
-            list?.let { alarms = it.sortedWith(compareBy({ a -> a.hour }, { a -> a.minute })) }
+            list?.let { alarms = it }
             message = when {
                 job.failure != null -> job.failure
                 list == null -> "The strap did not send its alarms. Try again."
@@ -125,6 +142,11 @@ fun StrapScreen(app: StrapApp, sync: SyncState) {
     }
     LaunchedEffect(Unit) { apply(null) }
 
+    // Each alarm as the owner set it: its own zone's time, sorted by that.
+    val shown = remember(alarms, clock) {
+        alarms?.map { a -> a to clock?.let { app.alarms.intent(a, it, phoneZone) } }
+            ?.sortedWith(compareBy({ (a, z) -> z?.hour ?: a.hour }, { (a, z) -> z?.minute ?: a.minute }))
+    }
     val list = alarms
     Box(Modifier.fillMaxSize()) {
         LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 104.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -135,11 +157,12 @@ fun StrapScreen(app: StrapApp, sync: SyncState) {
             if (list != null) {
                 if (list.isEmpty()) item { RidgeCard { Subtle("No alarms on the strap.") } }
                 else item {
-                    Grouped(list) { a, shape ->
+                    Grouped(shown.orEmpty()) { (a, z), shape ->
                         val color = if (a.enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
-                        ListRow(shape, "%02d:%02d".format(a.hour, a.minute), daysLabel(a.days), onClick = { editing = a to false }, enabled = !busy,
+                        ListRow(shape, "%02d:%02d".format(z?.hour ?: a.hour, z?.minute ?: a.minute), alarmDetail(a, z, phoneZone),
+                            onClick = { editing = a to false }, enabled = !busy && clock != null,
                             headlineStyle = RidgeType.cardNumber.copy(fontSize = 34.sp, lineHeight = 40.sp, color = color),
-                            trailing = { Switch(checked = a.enabled, enabled = !busy, onCheckedChange = { apply(Alarms.update(a.copy(enabled = it))) }) })
+                            trailing = { Switch(checked = a.enabled, enabled = !busy, onCheckedChange = { apply(AlarmChange.Toggle(a, it)) }) })
                     }
                 }
             } else if (!busy) item { TextButton(onClick = { apply(null) }) { Text("Read again") } }
@@ -151,7 +174,7 @@ fun StrapScreen(app: StrapApp, sync: SyncState) {
         AnimatedVisibility(list != null && list.size < MAX_ALARMS, Modifier.align(Alignment.BottomEnd).padding(16.dp)) {
             ExtendedFloatingActionButton(
                 onClick = {
-                    if (busy || list == null) return@ExtendedFloatingActionButton
+                    if (busy || list == null || clock == null) return@ExtendedFloatingActionButton
                     val slot = (0 until MAX_ALARMS).first { s -> list.none { it.slot == s } }
                     editing = StrapAlarm(slot, true, 7, 0, DayOfWeek.entries.take(5).toSet()) to true
                 },
@@ -165,11 +188,14 @@ fun StrapScreen(app: StrapApp, sync: SyncState) {
     }
 
     editing?.let { (alarm, isNew) ->
+        val start = if (isNew) ZonedAlarm(alarm.hour, alarm.minute, alarm.days, phoneZone) else clock?.let { app.alarms.intent(alarm, it, phoneZone) }
+        if (start == null) return@let
         AlarmEditor(
-            alarm, isNew,
+            start, isNew,
+            recentZones = (listOf(phoneZone) + shown.orEmpty().mapNotNull { it.second?.zone }).distinct(),
             onDismiss = { editing = null },
-            onSave = { editing = null; apply(if (isNew) Alarms.create(it) else Alarms.update(it)) },
-            onDelete = { editing = null; apply(Alarms.delete(alarm.slot)) },
+            onSave = { editing = null; apply(AlarmChange.Save(alarm, it, isNew)) },
+            onDelete = { editing = null; apply(AlarmChange.Delete(alarm.slot)) },
         )
     }
 }
@@ -222,9 +248,18 @@ private fun SettingsGroup(title: String, group: ConfigGroup?, rows: List<Pair<St
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AlarmEditor(alarm: StrapAlarm, isNew: Boolean, onDismiss: () -> Unit, onSave: (StrapAlarm) -> Unit, onDelete: () -> Unit) {
+private fun AlarmEditor(
+    alarm: ZonedAlarm,
+    isNew: Boolean,
+    recentZones: List<ZoneId>,
+    onDismiss: () -> Unit,
+    onSave: (ZonedAlarm) -> Unit,
+    onDelete: () -> Unit,
+) {
     val time = rememberTimePickerState(alarm.hour, alarm.minute, is24Hour = true)
     var days by remember { mutableStateOf(alarm.days) }
+    var zone by remember { mutableStateOf(alarm.zone) }
+    var pickingZone by remember { mutableStateOf(false) }
     val scheme = MaterialTheme.colorScheme
     // Wider than the platform's dialog default: seven 36 dp day toggles need the room.
     BasicAlertDialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
@@ -248,15 +283,84 @@ private fun AlarmEditor(alarm: StrapAlarm, isNew: Boolean, onDismiss: () -> Unit
                 DayOfWeek.entries.forEach { d -> DayToggle(d, d in days) { days = if (d in days) days - d else days + d } }
             }
             Text(daysLabel(days), style = RidgeType.body, color = scheme.onSurfaceVariant)
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(LocalRidgeColors.current.surface4)
+                    .clickable { pickingZone = true }.padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text("Time zone", style = RidgeType.caption, color = scheme.onSurfaceVariant)
+                    Text(zoneLabel(zone), style = RidgeType.body)
+                }
+                Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, tint = scheme.onSurfaceVariant)
+            }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 if (!isNew) TextButton(onClick = onDelete) { Text("Delete", color = scheme.error) }
                 Spacer(Modifier.weight(1f))
                 TextButton(onClick = onDismiss) { Text("Cancel") }
                 Spacer(Modifier.width(4.dp))
-                TextButton(onClick = { onSave(alarm.copy(hour = time.hour, minute = time.minute, days = days)) }) { Text("Save") }
+                TextButton(onClick = { onSave(ZonedAlarm(time.hour, time.minute, days, zone)) }) { Text("Save") }
             }
         }
     }
+    if (pickingZone) ZonePicker(recentZones, onDismiss = { pickingZone = false }) { zone = it; pickingZone = false }
+}
+
+/** Every region zone, searchable by city or region; the phone's and the alarms' zones first. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ZonePicker(recent: List<ZoneId>, onDismiss: () -> Unit, onPick: (ZoneId) -> Unit) {
+    var query by remember { mutableStateOf("") }
+    val all = remember {
+        ZoneId.getAvailableZoneIds().filter { '/' in it && !it.startsWith("Etc/") && !it.startsWith("SystemV/") }
+            .map(ZoneId::of).sortedBy { cityOf(it) }
+    }
+    val shown = remember(query) {
+        val q = query.trim()
+        if (q.isEmpty()) recent + all.filter { it !in recent }
+        else all.filter { it.id.replace('_', ' ').contains(q, ignoreCase = true) }
+    }
+    BasicAlertDialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Column(
+            Modifier.padding(horizontal = 24.dp, vertical = 48.dp).widthIn(max = 400.dp).fillMaxWidth()
+                .clip(RoundedCornerShape(28.dp)).background(LocalRidgeColors.current.surface3).padding(vertical = 16.dp),
+        ) {
+            OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                placeholder = { Text("Search city or region") }, singleLine = true)
+            LazyColumn(Modifier.padding(top = 8.dp)) {
+                items(shown, key = { it.id }) { z ->
+                    Text(zoneLabel(z), style = RidgeType.body,
+                        modifier = Modifier.fillMaxWidth().clickable { onPick(z) }.padding(horizontal = 24.dp, vertical = 14.dp))
+                }
+            }
+        }
+    }
+}
+
+/** One change the owner makes to the alarms; written inside one strap job. */
+private sealed interface AlarmChange {
+    data class Save(val alarm: StrapAlarm, val intent: ZonedAlarm, val isNew: Boolean) : AlarmChange
+
+    data class Toggle(val alarm: StrapAlarm, val on: Boolean) : AlarmChange
+
+    data class Delete(val slot: Int) : AlarmChange
+}
+
+/** Days, and for an alarm in another zone: which, and the strap time it rings at. */
+private fun alarmDetail(a: StrapAlarm, z: ZonedAlarm?, phone: ZoneId): String {
+    if (z == null) return daysLabel(a.days)
+    val parts = mutableListOf(daysLabel(z.days))
+    if (z.zone.rules.getOffset(Instant.now()) != phone.rules.getOffset(Instant.now())) parts += cityOf(z.zone)
+    if (z.hour != a.hour || z.minute != a.minute) parts += "strap %02d:%02d".format(a.hour, a.minute)
+    return parts.joinToString(" · ")
+}
+
+private fun cityOf(zone: ZoneId): String = zone.id.substringAfterLast('/').replace('_', ' ')
+
+private fun zoneLabel(zone: ZoneId): String {
+    val offset = zone.rules.getOffset(Instant.now())
+    val utc = if (offset.totalSeconds == 0) "UTC" else "UTC" + offset.id.replace("-", "−").removeSuffix(":00")
+    return "${cityOf(zone)} · $utc"
 }
 
 @Composable

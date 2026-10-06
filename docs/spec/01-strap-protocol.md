@@ -185,6 +185,13 @@ capabilities gets the same reply).
   bytes and HEALTH stopped decoding after `01`; it did not recur. An incomplete group now
   logs its raw bytes (`config group … not fully decoded`) so a repeat can be studied.
 
+**Current Time `2a2b`** (standard GATT characteristic, plain read; read on every connection
+since 2026-10-06, D30): `year u16 · month · day · hour · minute · second · weekday · fractions ·
+adjust reason · tz` with tz = offset / 15 min, signed. Seen: `ea07 0a 06 0a 15 36 02 00 00 08` =
+2026-10-06 10:21:54, Tuesday, **+02:00** — with the phone on a +04:00 zone. So the strap's
+clock keeps the zone the Zepp app last set; nothing in Ridge sets it. Its local reading minus the
+true UTC time, rounded to 15 min, is the offset alarms are converted against.
+
 Battery `0029`: `03` → 21 bytes `04 · 0f · level · charging · 2 × (u16 year, month, day,
 hour, minute, second, tz byte) · level`; the second timestamp is likely the last charge. Device info `0043`: `01` → `02 …` with the
 strap's MAC, serial number and firmware/hardware versions as NUL-terminated strings — kept

@@ -33,7 +33,7 @@ from uuid import UUID
 from psycopg import Connection
 from psycopg.rows import TupleRow
 
-from strap_server.derive._common import Cur, _upsert_daily, _wake_date
+from strap_server.derive._common import Cur, _day_bounds_utc, _upsert_daily, _wake_date
 from strap_server.derive.activity import derive_daily_activity
 from strap_server.derive.cardio_load import derive_cardio_load
 from strap_server.derive.hrv_spo2_resp import derive_night_vitals
@@ -43,6 +43,7 @@ from strap_server.derive.rhr import derive_rhr
 from strap_server.derive.sleep_score import derive_sleep_debt, derive_sleep_score
 from strap_server.derive.vo2max import derive_vo2max
 from strap_server.log import get_logger
+from strap_server.zones import ZoneLike
 
 log = get_logger(__name__)
 
@@ -51,7 +52,7 @@ log = get_logger(__name__)
 SleepWindow = tuple[datetime, datetime]
 
 
-def derive_night(cur: Cur, user_id: UUID, tz: str, start_ts: datetime, end_ts: datetime) -> dict:
+def derive_night(cur: Cur, user_id: UUID, tz: ZoneLike, start_ts: datetime, end_ts: datetime) -> dict:
     """Derive per-night metrics for one sleep session; returns what was written.
 
     Every metric is read and materialized under `user_id` (0004 folded the owner
@@ -109,7 +110,7 @@ def derive_night(cur: Cur, user_id: UUID, tz: str, start_ts: datetime, end_ts: d
     return out
 
 
-def _warn_if_the_wake_date_is_shared(cur: Cur, user_id: UUID, tz: str, day: date) -> None:
+def _warn_if_the_wake_date_is_shared(cur: Cur, user_id: UUID, tz: ZoneLike, day: date) -> None:
     """Log when more than one MAIN session ends on ``day`` (write-path audit B7).
 
     Every metric :func:`derive_night` writes is keyed to the wake date, so two main
@@ -131,13 +132,14 @@ def _warn_if_the_wake_date_is_shared(cur: Cur, user_id: UUID, tz: str, day: date
     rather than against the possibility that it might. The condition is invisible today;
     after this it is a warning naming the date and the count.
 
-    Bounded by the wake date's own ``AT TIME ZONE`` cast — the same expression
-    :func:`stored_nights` uses, so "which night belongs to which day" has one spelling.
+    Bounded by the wake date's own day range — the same bounds :func:`stored_nights` uses,
+    so "which night belongs to which day" has one spelling.
     """
+    start, end = _day_bounds_utc(day, tz)
     cur.execute(
         "SELECT count(*) FROM sleep_session WHERE user_id = %s AND kind = 'main' "
-        "AND (end_ts AT TIME ZONE %s)::date = %s",
-        (user_id, tz, day),
+        "AND end_ts >= %s AND end_ts < %s",
+        (user_id, start, end),
     )
     row = cur.fetchone()
     sessions = int(row[0]) if row else 0
@@ -149,7 +151,7 @@ def _warn_if_the_wake_date_is_shared(cur: Cur, user_id: UUID, tz: str, day: date
         )
 
 
-def derive_day(cur: Cur, user_id: UUID, tz: str, day: date) -> dict:
+def derive_day(cur: Cur, user_id: UUID, tz: ZoneLike, day: date) -> dict:
     """Full daily derive pass in dependency order.
 
     MVPA -> activity/calories -> VO2max (needs rhr) -> cardio-load (needs rhr) -> sleep
@@ -176,7 +178,7 @@ def derive_day(cur: Cur, user_id: UUID, tz: str, day: date) -> dict:
 def derive_batch(
     conn: Connection[TupleRow],
     user_id: UUID,
-    tz: str,
+    tz: ZoneLike,
     nights: list[SleepWindow],
     days: list[date],
 ) -> None:
@@ -211,7 +213,7 @@ def derive_batch(
             derive_day(cur, user_id, tz, day)
 
 
-def stored_nights(cur: Cur, user_id: UUID, tz: str, since: date) -> list[SleepWindow]:
+def stored_nights(cur: Cur, user_id: UUID, tz: ZoneLike, since: date) -> list[SleepWindow]:
     """The owner's stored MAIN sleep sessions waking on/after ``since``, oldest first.
 
     The repair path's input (``healthee.db.rederive``), bounded by WAKE date — the
@@ -222,7 +224,7 @@ def stored_nights(cur: Cur, user_id: UUID, tz: str, since: date) -> list[SleepWi
     """
     cur.execute(
         "SELECT start_ts, end_ts FROM sleep_session WHERE user_id = %s AND kind = 'main' "
-        "AND (end_ts AT TIME ZONE %s)::date >= %s ORDER BY start_ts",
-        (user_id, tz, since),
+        "AND end_ts >= %s ORDER BY start_ts",
+        (user_id, _day_bounds_utc(since, tz)[0]),
     )
     return [(row[0], row[1]) for row in cur.fetchall()]

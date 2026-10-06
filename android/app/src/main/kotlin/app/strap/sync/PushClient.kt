@@ -17,10 +17,18 @@ import java.net.URL
  * A row is marked sent only after a 200, so an interrupted push resumes where it stopped.
  * Called by [SyncRunner] under its lock, so nothing writes the outbox concurrently.
  */
-class PushClient(private val store: LocalStore, private val log: (String) -> Unit) {
+class PushClient(private val store: LocalStore, private val zones: ZoneLog, private val log: (String) -> Unit) {
     data class Outcome(val samples: Int, val records: Int, val failure: String?)
 
     fun push(link: ServerLink, onProgress: (String) -> Unit = {}): Outcome {
+        // Timezone changes go first (D31): the server dates everything after by them.
+        zones.record()
+        val changes = zones.unpushed()
+        if (changes.length() > 0) {
+            onProgress("uploading timezone changes")
+            post(link, JSONObject().put("zones", changes))?.let { return Outcome(0, 0, it) }
+            zones.markPushed()
+        }
         var sent = 0
         while (true) {
             val page = store.unpushedSamples(PAGE)

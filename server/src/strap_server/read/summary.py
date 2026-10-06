@@ -10,7 +10,7 @@ Two formulas are read-time and ported verbatim from healthee@049c9ad: strain
 
 from __future__ import annotations
 
-from datetime import date, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
@@ -20,6 +20,7 @@ from strap_server.derive import freshness, sleep_score, vo2max
 from strap_server.derive._common import _day_bounds_utc
 from strap_server.derive.hr_validity import HR_VALID_BOUNDS, HR_VALID_SQL
 from strap_server.derive.robust import MAD_TO_SD, median, median_abs_deviation
+from strap_server.zones import ZoneLike, Zones, as_zones
 
 BASELINE_DAYS = 30
 BASELINE_MIN_POINTS = 5
@@ -91,7 +92,7 @@ def _metric_card(cur: Cursor, user_id: UUID, day: date, metric: str, digits: int
     return {"value": round(value, digits) if digits else round(value), "flags": flags, "baseline": _baseline(cur, user_id, day, metric, value)}
 
 
-def _raw_stats(cur: Cursor, user_id: UUID, tz: str, day: date, metric: str, extra: str = "", params: tuple = ()) -> dict | None:
+def _raw_stats(cur: Cursor, user_id: UUID, tz: ZoneLike, day: date, metric: str, extra: str = "", params: tuple = ()) -> dict | None:
     start, end = _day_bounds_utc(day, tz)
     cur.execute(
         f"SELECT min(value), max(value), avg(value), count(*), last(ts, value), first(ts, value) FROM sample "
@@ -104,24 +105,34 @@ def _raw_stats(cur: Cursor, user_id: UUID, tz: str, day: date, metric: str, extr
     return {"min": mn, "max": mx, "mean": round(avg, 1), "n": n, "t_max": int(t_max.timestamp() * 1000), "t_min": int(t_min.timestamp() * 1000)}
 
 
-def _local_day(tz: str) -> str:
-    return "(ts AT TIME ZONE '" + tz.replace("'", "''") + "')"
+def _baseline_days(zones: Zones, day: date, until: time | None) -> tuple[list[datetime], list[datetime]]:
+    """The 30 days before `day` as SQL bucket edges (each day's start, then the last day's
+    end; ``width_bucket(ts, edges)`` = the day's 1-based index) and, per day, the instant to
+    count up to: `until` on that day's own local clock (D31), or the day's end."""
+    first = day - timedelta(days=BASELINE_DAYS)
+    edges = zones.starts(first, day - timedelta(days=1))
+    cutoffs = []
+    for i in range(BASELINE_DAYS):
+        d = first + timedelta(days=i)
+        cut = edges[i + 1]
+        if until is not None:
+            cut = min(cut, max(edges[i], datetime.combine(d, until, ZoneInfo(zones.zone_of(d))).astimezone(UTC)))
+        cutoffs.append(cut)
+    return edges, cutoffs
 
 
 def _usual_mean(
-    cur: Cursor, user_id: UUID, tz: str, day: date, metric: str, until: time | None, extra: str = "", params: tuple = ()
+    cur: Cursor, user_id: UUID, tz: ZoneLike, day: date, metric: str, until: time | None, extra: str = "", params: tuple = ()
 ) -> dict | None:
     """Median, over the 30 days before `day`, of each day's mean up to the same local clock
     time (`until`; the whole day when None) — a day still running is compared with the
     same hours of other days, never with whole days. None under 5 such days."""
-    start, _ = _day_bounds_utc(day - timedelta(days=BASELINE_DAYS), tz)
-    end, _ = _day_bounds_utc(day, tz)
-    local = _local_day(tz)
-    clock = f"AND {local}::time < %s" if until else ""
+    edges, cutoffs = _baseline_days(as_zones(tz), day, until)
     cur.execute(
-        f"SELECT avg(value) FROM sample WHERE user_id = %s AND metric = %s {extra} AND ts >= %s AND ts < %s {clock} "
-        f"GROUP BY {local}::date",
-        (user_id, metric, *params, start, end, *((until,) if until else ())),
+        f"SELECT avg(value) FROM sample WHERE user_id = %s AND metric = %s {extra} AND ts >= %s AND ts < %s "
+        "AND ts < (%s::timestamptz[])[width_bucket(ts, %s::timestamptz[])] "
+        "GROUP BY width_bucket(ts, %s::timestamptz[])",
+        (user_id, metric, *params, edges[0], edges[-1], cutoffs, edges, edges),
     )
     means = [float(r[0]) for r in cur.fetchall()]
     if len(means) < BASELINE_MIN_POINTS:
@@ -129,23 +140,23 @@ def _usual_mean(
     return {"median": round(median(means), 1), "n": len(means), "until": until.strftime("%H:%M") if until else None}
 
 
-def steps_usual_by(cur: Cursor, user_id: UUID, tz: str, day: date, until: time) -> dict | None:
+def steps_usual_by(cur: Cursor, user_id: UUID, tz: ZoneLike, day: date, until: time) -> dict | None:
     """Steps usually walked by `until`: for each of the 30 days before `day`, that day's
     ``steps_total`` times the share of its per-minute steps taken before `until`; the median.
 
     The per-minute stream only supplies the day's SHAPE (a unitless share); the count is
     always the served ``steps_total``, so the stream's stalls shrink both halves of the share
     alike instead of undercounting the reference. None under 5 such days."""
-    start, _ = _day_bounds_utc(day - timedelta(days=BASELINE_DAYS), tz)
-    end, _ = _day_bounds_utc(day, tz)
-    local = _local_day(tz)
+    edges, cutoffs = _baseline_days(as_zones(tz), day, until)
+    first = day - timedelta(days=BASELINE_DAYS)
     cur.execute(
-        f"SELECT {local}::date, sum(value) FILTER (WHERE {local}::time < %s), sum(value) FROM sample "
+        "SELECT width_bucket(ts, %s::timestamptz[]) AS i, "
+        "sum(value) FILTER (WHERE ts < (%s::timestamptz[])[width_bucket(ts, %s::timestamptz[])]), sum(value) FROM sample "
         "WHERE user_id = %s AND metric = 'steps_per_minute' AND value > 0 AND value < 250 AND ts >= %s AND ts < %s "
-        f"GROUP BY {local}::date",
-        (until, user_id, start, end),
+        "GROUP BY i",
+        (edges, cutoffs, edges, user_id, edges[0], edges[-1]),
     )
-    shares = {d: float(before or 0) / float(total) for d, before, total in cur.fetchall() if total}
+    shares = {first + timedelta(days=i - 1): float(before or 0) / float(total) for i, before, total in cur.fetchall() if total}
     cur.execute(
         "SELECT day, value FROM derived_daily WHERE user_id = %s AND metric = 'steps_total' AND day < %s AND day >= %s",
         (user_id, day, day - timedelta(days=BASELINE_DAYS)),
@@ -186,7 +197,7 @@ def strain_card(cur: Cursor, user_id: UUID, day: date) -> dict:
     return {"value": strain_from_load(row[0], float(p95) if p95 else None), "max": 21.0, "cardio_load": round(row[0], 1), "flags": row[1]}
 
 
-def sleep_card(cur: Cursor, user_id: UUID, tz: str, day: date, today: date) -> dict:
+def sleep_card(cur: Cursor, user_id: UUID, tz: ZoneLike, day: date, today: date) -> dict:
     start, end = _day_bounds_utc(day, tz)
     cur.execute(
         "SELECT start_ts, end_ts, kind, rem_min, light_min, deep_min, wake_min, stages, score FROM sleep_session "
@@ -224,7 +235,7 @@ def _last_day(cur: Cursor, user_id: UUID, day: date, metric: str) -> date | None
     return cur.fetchone()[0]
 
 
-def vo2max_card(cur: Cursor, user_id: UUID, tz: str, day: date) -> dict:
+def vo2max_card(cur: Cursor, user_id: UUID, tz: ZoneLike, day: date) -> dict:
     last = _last_day(cur, user_id, day, "vo2max_estimate")
     reason = freshness.unavailable_reason(day, last, lambda: vo2max.withhold_reason_for_day(cur, user_id, tz, day))
     if reason is not None:
@@ -263,10 +274,13 @@ def illness_card(cur: Cursor, user_id: UUID, day: date) -> dict | None:
     }
 
 
-def day_summary(cur: Cursor, user_id: UUID, tz: str, day: date) -> dict:
-    now = datetime.now(ZoneInfo(tz))
-    today = now.date()
-    until = now.time().replace(second=0, microsecond=0) if day == today else None
+def day_summary(cur: Cursor, user_id: UUID, tz: ZoneLike, day: date, now: datetime | None = None) -> dict:
+    zones = as_zones(tz)
+    now = now or datetime.now(UTC)
+    today = zones.date_of(now)
+    local_now = now.astimezone(ZoneInfo(zones.zone_of(today)))
+    until = local_now.time().replace(second=0, microsecond=0) if day == today else None
+    start, end = zones.bounds(day)
     hr = _raw_stats(cur, user_id, tz, day, "hr", f"AND {HR_VALID_SQL}", HR_VALID_BOUNDS)
     if hr:
         hr["usual"] = _usual_mean(cur, user_id, tz, day, "hr", until, f"AND {HR_VALID_SQL}", HR_VALID_BOUNDS)
@@ -278,7 +292,11 @@ def day_summary(cur: Cursor, user_id: UUID, tz: str, day: date) -> dict:
         steps["usual_by_now"] = steps_usual_by(cur, user_id, tz, day, until)
     return {
         "date": day.isoformat(),
-        "timezone": tz,
+        # The day as lived (D31): the zone it began in, and its real start and end (22 to
+        # 26 hours on a travel day). Times on the day's screens are told in this zone.
+        "timezone": zones.zone_of(day),
+        "start": int(start.timestamp() * 1000),
+        "end": int(end.timestamp() * 1000),
         "recovery": recovery_card(cur, user_id, day, today),
         "strain": strain_card(cur, user_id, day),
         "sleep": sleep_card(cur, user_id, tz, day, today),

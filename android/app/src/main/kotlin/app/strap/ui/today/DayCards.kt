@@ -43,6 +43,7 @@ import app.strap.ui.components.Span
 import app.strap.ui.components.Subtle
 import app.strap.ui.components.bar
 import app.strap.ui.components.changeNote
+import app.strap.ui.components.DayWindow
 import app.strap.ui.components.clockOf
 import app.strap.ui.theme.LocalMetricColors
 import app.strap.ui.theme.LocalRidgeColors
@@ -66,9 +67,9 @@ internal fun StressCard(data: TodayData, onOpen: () -> Unit) {
         }
         Figures(
             "${s.mean.roundToInt()}", "average", changeNote(s.usual?.let { s.mean - it }, usualSuffix(data.day), neutral = true),
-            listOf("${s.max.roundToInt()}" to "high · ${clockOf(s.maxAt)}", "${s.min.roundToInt()}" to "low"),
+            listOf("${s.max.roundToInt()}" to "high · ${clockOf(s.maxAt, data.curves.window.zone)}", "${s.min.roundToInt()}" to "low"),
         )
-        DayStrip(data.curves.dayStart, data.curves.sleep) { x, day ->
+        DayStrip(data.curves.window, data.curves.sleep) { x, day ->
             val slot = size.width * (SLICE_MS.toFloat() / day)
             for (sl in data.curves.stress) {
                 val f = (sl.mean / 100).toFloat().coerceIn(0f, 1f)
@@ -100,7 +101,7 @@ internal fun HeartCard(data: TodayData, onOpen: () -> Unit) {
             ),
         )
         val slices = data.curves.hr
-        DayStrip(data.curves.dayStart, data.curves.sleep) { x, day ->
+        DayStrip(data.curves.window, data.curves.sleep) { x, day ->
             if (slices.isEmpty()) return@DayStrip
             val lo = slices.minOf { it.min } - 5
             val hi = slices.maxOf { it.max } + 5
@@ -205,15 +206,16 @@ private fun Figures(value: String, label: String, note: Note?, side: List<Pair<S
     }
 }
 
-/** A 00-24 strip for a local day: sleep shaded, 6-hourly grid, [draw] on top. */
+/** A 00-24 strip for a local day (its real length on a travel day): sleep shaded, 6-hourly grid, [draw] on top. */
 @Composable
-private fun DayStrip(dayStart: Long, sleep: List<Span>, draw: DrawScope.(x: (Long) -> Float, dayMs: Long) -> Unit) {
+private fun DayStrip(window: DayWindow, sleep: List<Span>, draw: DrawScope.(x: (Long) -> Float, dayMs: Long) -> Unit) {
+    val dayStart = window.start
     val grid = LocalRidgeColors.current.surface3
     val sleepShade = LocalMetricColors.current.sleepTone.container.copy(alpha = 0.55f)
     Column {
         Spacer(
             Modifier.fillMaxWidth().height(56.dp).drawWithCache {
-                val dayMs = 24 * 3_600_000L
+                val dayMs = window.end - window.start
                 fun x(t: Long) = ((t - dayStart).toFloat() / dayMs) * size.width
                 val shades = sleep.map { s -> x(s.start.coerceAtLeast(dayStart)) to x(s.end.coerceAtMost(dayStart + dayMs)) }.filter { (l, r) -> r > l }
                 onDrawBehind {

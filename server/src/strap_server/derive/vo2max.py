@@ -45,6 +45,7 @@ from strap_server.derive.srpa import (
     srpa_mets,
 )
 from strap_server.log import get_logger
+from strap_server.zones import ZoneLike
 
 log = get_logger(__name__)
 
@@ -244,7 +245,7 @@ def rhr_week(cur: Cur, user_id: UUID, day: date) -> list[float]:
     return [float(r[0]) for r in cur.fetchall()]
 
 
-def withhold_reason_for_day(cur: Cur, user_id: UUID, tz: str, day: date) -> str | None:
+def withhold_reason_for_day(cur: Cur, user_id: UUID, tz: ZoneLike, day: date) -> str | None:
     """Why ``day`` has no estimate, or None when its inputs CAN carry one.
 
     The same two checks :func:`derive_vo2max` makes, in the same order, over the same
@@ -331,7 +332,7 @@ def _withheld(user_id: UUID, day: date, reason: str) -> None:
     )
 
 
-def derive_vo2max(cur: Cur, user_id: UUID, tz: str, day: date) -> dict | None:
+def derive_vo2max(cur: Cur, user_id: UUID, tz: ZoneLike, day: date) -> dict | None:
     """Non-exercise VO2max: profile (incl. the owner's SR-PA) + 7-day median rhr_daily.
 
     None when the estimate is WITHHELD — either because an input is missing (no

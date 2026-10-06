@@ -29,8 +29,14 @@ reads them back from there.
   days; heart rate, stress and steps open per-minute charts with the peaks kept.
 - **Sleep, Activity, Journal**: nights and their stages, workouts and daily activity, and
   a journal for caffeine, alcohol and weight.
-- **Strap**: battery, the strap's own alarms (read, add, edit, delete), and its heart-rate,
-  stress, SpO₂, sleep and workout-detection settings (read-only for now).
+- **Strap**: battery, the strap's own alarms (read, add, edit, delete, each in a timezone
+  you pick, so a 07:00 alarm rings at 07:00 there), and its heart-rate, stress, SpO₂, sleep
+  and workout-detection settings (read-only for now).
+- **Sync that keeps up**: opening the app syncs when the last sync is over 15 minutes old,
+  and optional background sync collects from the strap and uploads on intervals you choose
+  (Settings → Background sync).
+- **Days follow you when you travel**: each day starts at midnight wherever you are, and
+  its charts and times are shown in that day's own timezone.
 - **Metrics that say why when they can't answer.** A number that lacks the data it needs
   is withheld and names the reason ("sync the strap", "log your weight"), never shown as
   a zero or a guess. Every formula, constant, gate and source is written down in
@@ -57,8 +63,8 @@ reads them back from there.
 - **You need a server.** The app syncs without one, but the daily numbers are computed on
   the server. A small always-on machine with Docker is enough.
 - **One person per server.** There is one device token, no accounts and no sign-up.
-- **Syncing is manual.** Press sync when you want fresh data; nothing runs in the
-  background (D19).
+- **Background sync is best effort.** Android decides when the scheduled jobs actually run
+  (the intervals are the shortest gaps), and may hold them back while the phone is idle.
 - **Getting the strap's auth key needs your Zepp account, once per pairing**, signed in
   with email and password (see [What you need](#what-you-need)).
 - Strap settings other than alarms can be read, not yet changed.
