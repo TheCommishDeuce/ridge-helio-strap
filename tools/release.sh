@@ -14,6 +14,11 @@ cd "$repo"
 version=$(sed -nE 's/^val appVersion = "([0-9]+\.[0-9]+\.[0-9]+)"$/\1/p' android/app/build.gradle.kts)
 [ -n "$version" ] || { echo "No appVersion in android/app/build.gradle.kts." >&2; exit 1; }
 tag="v$version"
+# Every release says what changed, in a committed file that ships with the code it describes.
+whats_new="docs/releases/$version.md"
+[ -f "$whats_new" ] && grep -q "^## What's new" "$whats_new" || {
+    echo "Write $whats_new first: a \"## What's new\" section (see docs/releases/0.3.0.md), then commit it." >&2; exit 1; }
+git ls-files --error-unmatch "$whats_new" >/dev/null 2>&1 || { echo "Commit $whats_new first." >&2; exit 1; }
 [ -z "$(git status --porcelain --untracked-files=no)" ] || { echo "Commit or stash your changes first." >&2; exit 1; }
 [ -f "$HOME/.android/ridge-release.jks" ] || { echo "Release key missing: ~/.android/ridge-release.jks (D24)." >&2; exit 1; }
 if gh release view "$tag" -R "$public" >/dev/null 2>&1; then echo "$tag already exists on $public." >&2; exit 1; fi
@@ -36,9 +41,8 @@ cp "$apk" "$out/$name"
 cert=$("$apksigner" verify --print-certs "$apk" | sed -nE 's/.*certificate SHA-256 digest: //p' | head -1)
 
 notes="$out/notes-$version.md"
-cat > "$notes" <<EOF
-Ridge $version for Android 12+ (Amazfit Helio Strap).
-
+{ printf 'Ridge %s for Android 12+ (Amazfit Helio Strap).\n\n' "$version"; cat "$whats_new"; printf '\n'; } > "$notes"
+cat >> "$notes" <<EOF
 Install \`$name\` (allow installs from your browser or file manager). Updates install over
 the previous version. Pairing needs your strap's auth key (see tools/keyfetch); the server
 is optional to sync but needed for the daily numbers (see deploy/README.md).
