@@ -1,11 +1,12 @@
-"""The day's cards: recovery, strain, sleep, steps, stress, heart rate, VO2max, illness.
+"""The day's cards: recovery, charge, strain, sleep, steps, stress, heart rate, PAI, VO2max, illness.
 
 Every card is either a value with its context (baseline, z, the flags the derivation
 stored) or `withheld` with a reason id and one sentence — never a silent null, never an
 older day's number presented as this day's (the freshness gates are the science's own).
 
-Two formulas are read-time and ported verbatim from healthee@049c9ad: strain
-(`read/fitness.strain_from_load`) and live readiness (`read/recovery.decayed_readiness`).
+Strain is read-time, ported verbatim from healthee@049c9ad (`strain_from_load`). Charge is
+read-time too (`derive/charge`, D33); it replaced the old live readiness. PAI and the
+breathing-disturbance summary are the strap's own figures, shown as the strap's.
 """
 
 from __future__ import annotations
@@ -16,7 +17,7 @@ from zoneinfo import ZoneInfo
 
 from psycopg import Cursor
 
-from strap_server.derive import freshness, sleep_score, vo2max
+from strap_server.derive import charge, freshness, sleep_score, vo2max
 from strap_server.derive._common import _day_bounds_utc
 from strap_server.derive.hr_validity import HR_VALID_BOUNDS, HR_VALID_SQL
 from strap_server.derive.robust import MAD_TO_SD, median, median_abs_deviation
@@ -32,6 +33,7 @@ _MESSAGES: dict[str, str] = {
     **vo2max.WITHHOLD_MESSAGES,
     **sleep_score.SRI_MESSAGES,
     **sleep_score.SLEEP_DEBT_MESSAGES,
+    "odi_not_measured": "The strap did not measure blood oxygen through this night.",
 }
 
 
@@ -48,13 +50,6 @@ def strain_from_load(load: float, p95: float | None) -> float | None:
     if not (p95 and p95 > 0):
         return None
     return round(max(0.0, min(21.0, 21.0 * (load / p95) ** 0.75)), 1)
-
-
-def decayed_readiness(recovery: int, strain_today: float, typical: float) -> int:
-    """Live readiness = recovery x (1 - decay); decay = 0.5 * min(1, strain/typical), capped
-    at -50%. Conservative, no validated intraday formula exists."""
-    decay = 0.5 * min(1.0, strain_today / typical) if typical > 0 else 0.0
-    return round(recovery * (1 - decay))
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -170,18 +165,11 @@ def steps_usual_by(cur: Cursor, user_id: UUID, tz: ZoneLike, day: date, until: t
 # ── cards ─────────────────────────────────────────────────────────────────────
 
 
-def recovery_card(cur: Cursor, user_id: UUID, day: date, today: date) -> dict:
+def recovery_card(cur: Cursor, user_id: UUID, day: date) -> dict:
     row = _row(cur, user_id, day, "recovery_score")
     if row is None:
         return withheld(freshness.NOT_DERIVED_YET)
-    score, flags = int(row[0]), row[1]
-    card: dict = {"value": score, "flags": flags, "readiness": None}
-    load = _row(cur, user_id, day, "cardio_load")
-    hist = _history(cur, user_id, day, "cardio_load", 30)
-    if day == today and load and len(hist) >= 5:  # only the reference day's own recovery decays
-        typical = median(hist) or 1.0
-        card["readiness"] = {"value": decayed_readiness(score, load[0], typical), "load": round(load[0], 1), "typical": round(typical, 1)}
-    return card
+    return {"value": int(row[0]), "flags": row[1]}
 
 
 def strain_card(cur: Cursor, user_id: UUID, day: date) -> dict:
@@ -194,7 +182,10 @@ def strain_card(cur: Cursor, user_id: UUID, day: date) -> dict:
         (user_id, day - timedelta(days=90), day),
     )
     p95 = cur.fetchone()[0]
-    return {"value": strain_from_load(row[0], float(p95) if p95 else None), "max": 21.0, "cardio_load": round(row[0], 1), "flags": row[1]}
+    hist = _history(cur, user_id, day, "cardio_load", BASELINE_DAYS)
+    typical = round(median(hist), 1) if len(hist) >= BASELINE_MIN_POINTS else None
+    return {"value": strain_from_load(row[0], float(p95) if p95 else None), "max": 21.0, "cardio_load": round(row[0], 1),
+            "typical_load": typical, "flags": row[1]}
 
 
 def sleep_card(cur: Cursor, user_id: UUID, tz: ZoneLike, day: date, today: date) -> dict:
@@ -226,7 +217,79 @@ def sleep_card(cur: Cursor, user_id: UUID, tz: ZoneLike, day: date, today: date)
         "regularity": {"sri": sri[0]} if sri else withheld(
             sleep_score.sri_unavailable_reason(cur, user_id, tz, day, last_sri) or freshness.NOT_DERIVED_YET
         ),
+        "breathing": breathing_card(cur, user_id, tz, day),
         "note_ids": ["no_validated_sleep_score", "wearable_sleep_stage_validity"],
+    }
+
+
+_ODI_METRICS = ("odi_events_device", "odi_valid_time_device")
+
+
+def _odi_nights(cur: Cursor, user_id: UUID, start: datetime, end: datetime) -> dict[datetime, dict[str, float]]:
+    cur.execute(
+        "SELECT ts, metric, value FROM sample WHERE user_id = %s AND metric = ANY(%s) AND ts >= %s AND ts < %s",
+        (user_id, list(_ODI_METRICS), start, end),
+    )
+    nights: dict[datetime, dict[str, float]] = {}
+    for ts, metric, value in cur.fetchall():
+        nights.setdefault(ts, {})[metric] = float(value)
+    return nights
+
+
+def _drops_per_hour(night: dict[str, float]) -> float | None:
+    seconds = night.get("odi_valid_time_device") or 0.0
+    events = night.get("odi_events_device")
+    return events * 3600.0 / seconds if seconds > 0 and events is not None else None
+
+
+def breathing_card(cur: Cursor, user_id: UUID, tz: ZoneLike, day: date) -> dict:
+    """The strap's sleep-apnea summary for the night that ended on `day` (stamped at that
+    day's local midnight): blood-oxygen drops, hours measured, drops per hour, and the median
+    per hour of the 30 nights before. The strap's own figures; no severity words (D33)."""
+    start, end = _day_bounds_utc(day, tz)
+    tonight = _odi_nights(cur, user_id, start, end)
+    if not tonight:
+        return withheld("no_data")
+    night = next(iter(tonight.values()))
+    per_hour = _drops_per_hour(night)
+    if per_hour is None:
+        return withheld("odi_not_measured")
+    first, _ = _day_bounds_utc(day - timedelta(days=BASELINE_DAYS), tz)
+    past = [v for v in map(_drops_per_hour, _odi_nights(cur, user_id, first, start).values()) if v is not None]
+    usual = {"median": round(median(past), 1), "n": len(past)} if len(past) >= BASELINE_MIN_POINTS else None
+    return {
+        "value": round(per_hour, 1),
+        "drops": round(night["odi_events_device"]),
+        "hours": round(night["odi_valid_time_device"] / 3600.0, 1),
+        "usual": usual,
+        "note_ids": ["wearable_spo2_validity"],
+    }
+
+
+def pai_card(cur: Cursor, user_id: UUID, tz: ZoneLike, day: date) -> dict:
+    """The strap's PAI: the day's points and its 7-day total (the latest reading of the day),
+    and each of the seven days' points ending on `day`."""
+    zones = as_zones(tz)
+    first = day - timedelta(days=6)
+    edges = zones.starts(first, day)
+    cur.execute(
+        "SELECT DISTINCT ON (b, metric) b, metric, value FROM (SELECT width_bucket(ts, %s::timestamptz[]) b, metric, value, ts "
+        "FROM sample WHERE user_id = %s AND metric IN ('pai_daily_device', 'pai_total_device') AND ts >= %s AND ts < %s) x "
+        "ORDER BY b, metric, ts DESC",
+        (edges, user_id, edges[0], edges[-1]),
+    )
+    by_day: dict[date, dict[str, float]] = {}
+    for b, metric, value in cur.fetchall():
+        by_day.setdefault(first + timedelta(days=b - 1), {})[metric] = float(value)
+    today = by_day.get(day)
+    if not today or "pai_total_device" not in today:
+        return withheld("no_data")
+    return {
+        "value": round(today["pai_total_device"]),
+        "today": round(today.get("pai_daily_device", 0.0)),
+        "week": [{"day": d.isoformat(), "points": round(v["pai_daily_device"])} for d, v in sorted(by_day.items()) if "pai_daily_device" in v],
+        "goal": 100,
+        "note_ids": ["pai_personal_activity_intelligence"],
     }
 
 
@@ -297,7 +360,8 @@ def day_summary(cur: Cursor, user_id: UUID, tz: ZoneLike, day: date, now: dateti
         "timezone": zones.zone_of(day),
         "start": int(start.timestamp() * 1000),
         "end": int(end.timestamp() * 1000),
-        "recovery": recovery_card(cur, user_id, day, today),
+        "recovery": recovery_card(cur, user_id, day),
+        "charge": charge.charge_card(cur, user_id, tz, day, now),
         "strain": strain_card(cur, user_id, day),
         "sleep": sleep_card(cur, user_id, tz, day, today),
         "steps": {
@@ -313,6 +377,7 @@ def day_summary(cur: Cursor, user_id: UUID, tz: ZoneLike, day: date, now: dateti
             "today": hr or withheld("no_data"),
         },
         "stress": {**(stress or withheld("no_data")), "note_ids": ["wearable_stress_validity"]},
+        "pai": pai_card(cur, user_id, tz, day),
         "vo2max": vo2max_card(cur, user_id, tz, day),
         "illness": illness_card(cur, user_id, day),
     }

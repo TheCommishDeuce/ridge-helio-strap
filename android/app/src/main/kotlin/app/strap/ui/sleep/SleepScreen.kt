@@ -56,6 +56,7 @@ import app.strap.ui.theme.LocalMetricColors
 import app.strap.ui.theme.LocalRidgeColors
 import app.strap.ui.theme.RidgeType
 import app.strap.ui.Loading
+import app.strap.ui.today.NEWER_SERVER
 import org.json.JSONObject
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -129,6 +130,7 @@ fun SleepScreen(api: ApiClient, refreshKey: Any?) {
             }
         }
         item { HealthGroup(health, flags, s.getJSONObject("regularity")) }
+        item { BreathingCard(s.optJSONObject("breathing")) }
         item {
             val debt = s.getJSONObject("debt")
             val f = debt.optJSONObject("flags")
@@ -166,6 +168,30 @@ fun SleepScreen(api: ApiClient, refreshKey: Any?) {
                 }
             }
         }
+    }
+}
+
+/** The strap's sleep-apnea summary: blood-oxygen drops per hour measured, against your usual. No severity words. */
+@Composable
+private fun BreathingCard(b: JSONObject?) {
+    RidgeCard {
+        CardHeader("Breathing disturbances", "the strap's", info = Infos.breathing)
+        if (b == null) {
+            Subtle(NEWER_SERVER)
+            return@RidgeCard
+        }
+        if (b.has("withheld")) {
+            Subtle(b.getJSONObject("withheld").getString("message"))
+            return@RidgeCard
+        }
+        val perHour = b.getDouble("value")
+        val usual = b.optJSONObject("usual")?.getDouble("median")
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text("%.1f".format(perHour), style = RidgeType.cardNumber)
+            Subtle("  an hour", Modifier.padding(bottom = 6.dp))
+        }
+        Subtle("${b.getInt("drops")} blood-oxygen drops in ${"%.1f".format(b.getDouble("hours"))} h measured")
+        StatRow("Your usual", usual?.let { "%.1f an hour".format(it) } ?: "learning")
     }
 }
 

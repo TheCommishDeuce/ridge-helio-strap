@@ -23,6 +23,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.strap.api.ApiClient
@@ -49,6 +50,7 @@ import app.strap.ui.components.clockOf
 import app.strap.ui.theme.LocalMetricColors
 import app.strap.ui.theme.LocalRidgeColors
 import app.strap.ui.theme.RidgeType
+import app.strap.ui.today.NEWER_SERVER
 import app.strap.ui.today.workoutLine
 import org.json.JSONArray
 import org.json.JSONObject
@@ -86,7 +88,7 @@ fun ActivityScreen(api: ApiClient, refreshKey: Any?) {
     }
     val first = today.minusDays(days - 1L)
     val strain = d.summary.getJSONObject("strain")
-    val readiness = d.summary.getJSONObject("recovery").optJSONObject("readiness")
+    val typical = strain.optDouble("typical_load").takeIf { !it.isNaN() }
     val mvpa = series("mvpa_min")
     val weekActive = (0..6).mapNotNull { mvpa[today.minusDays(it.toLong())] }.takeIf { it.isNotEmpty() }?.sum()
     LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -96,7 +98,7 @@ fun ActivityScreen(api: ApiClient, refreshKey: Any?) {
             HeroRow(
                 left = {
                     SideStat(load?.roundToInt()?.toString() ?: "—", "Load · TRIMP",
-                        changeNote(load?.let { l -> readiness?.optDouble("typical")?.takeIf { !it.isNaN() }?.let { l - it } }, "vs typical", neutral = true), it)
+                        changeNote(load?.let { l -> typical?.let { l - it } }, "vs typical", neutral = true), it)
                 },
                 right = {
                     SideStat(weekActive?.roundToInt()?.toString() ?: "—", "Active min",
@@ -142,6 +144,7 @@ fun ActivityScreen(api: ApiClient, refreshKey: Any?) {
                 DailyBars(load, first, today, c.strain, { "%.0f TRIMP".format(it) }, highlightLast = true, height = 90.dp)
             }
         }
+        item { PaiCard(d.summary.optJSONObject("pai"), today) }
         item { ZonesCard(strain) }
         item { GroupHeader("Workouts", trailing = "${d.workouts.length()} in 30 days") }
         item { Workouts(d.workouts) }
@@ -165,6 +168,33 @@ fun ActivityScreen(api: ApiClient, refreshKey: Any?) {
                 }
             }
         }
+    }
+}
+
+/** The strap's own PAI: the 7-day total against 100, today's points, and the week's days. */
+@Composable
+private fun PaiCard(p: JSONObject?, today: LocalDate) {
+    val c = LocalMetricColors.current
+    val r = LocalRidgeColors.current
+    RidgeCard {
+        CardHeader("PAI", "the strap's", info = Infos.pai)
+        if (p == null) {
+            Subtle(NEWER_SERVER)
+            return@RidgeCard
+        }
+        if (p.has("withheld")) {
+            Subtle(p.getJSONObject("withheld").getString("message"))
+            return@RidgeCard
+        }
+        val total = p.getInt("value")
+        val goal = p.getInt("goal")
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text("$total", style = RidgeType.cardNumber, color = if (total >= goal) r.zoneGreen else Color.Unspecified)
+            Subtle("  over 7 days · goal $goal · +${p.getInt("today")} today", Modifier.padding(bottom = 5.dp))
+        }
+        val week = p.getJSONArray("week").let { a -> (0 until a.length()).map { a.getJSONObject(it) } }
+            .associate { LocalDate.parse(it.getString("day")) to it.getDouble("points") }
+        DailyBars(week, today.minusDays(6), today, c.heart, { "${it.roundToInt()} PAI" }, highlightLast = true, height = 90.dp)
     }
 }
 

@@ -4,16 +4,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,11 +25,15 @@ import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.unit.dp
 import app.strap.ui.components.BaselineRow
 import app.strap.ui.components.BaselineRows
+import app.strap.ui.components.CardHeader
+import app.strap.ui.components.DayLineChart
 import app.strap.ui.components.HeroGauge
 import app.strap.ui.components.HeroRow
+import app.strap.ui.components.Infos
 import app.strap.ui.components.RidgeCard
 import app.strap.ui.components.SectionLabel
 import app.strap.ui.components.SideStat
+import app.strap.ui.components.StatRow
 import app.strap.ui.components.Subtle
 import app.strap.ui.components.changeNote
 import app.strap.ui.theme.LocalMetricColors
@@ -42,9 +43,9 @@ import java.time.LocalDate
 import java.time.format.TextStyle
 import kotlin.math.roundToInt
 
-/** Recovery (pushed from Today): the score with its parts, readiness now, and the week. */
+/** Recovery (pushed from Today): the score with its parts, Charge, and the week. */
 @Composable
-fun RecoveryContent(data: TodayData, onSelectDay: (LocalDate) -> Unit) {
+fun RecoveryContent(data: TodayData, onSelectDay: (LocalDate) -> Unit, onSdnn: () -> Unit) {
     val r = LocalRidgeColors.current
     val recovery = data.recovery
     val value = recovery.valueOrNull
@@ -62,7 +63,8 @@ fun RecoveryContent(data: TodayData, onSelectDay: (LocalDate) -> Unit) {
             }
         }
         if (recovery is Reading.Withheld) item { RidgeCard { Subtle(recovery.message) } }
-        if (value != null) item { ReadinessCard(value, data, zone) }
+        item { ChargeCard(data) }
+        item { SdnnRow(onSdnn) }
         if (data.factors.isNotEmpty()) {
             item { SectionLabel("What went into it", "vs your last 42 days") }
             item {
@@ -82,33 +84,36 @@ fun RecoveryContent(data: TodayData, onSelectDay: (LocalDate) -> Unit) {
 }
 
 @Composable
-private fun ReadinessCard(recovery: Double, data: TodayData, zone: androidx.compose.ui.graphics.Color) {
-    val readiness = data.readiness
-    val now = readiness?.value?.toDouble() ?: recovery
+private fun ChargeCard(data: TodayData) {
+    val c = data.charge
     RidgeCard(spacing = 8.dp) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Readiness now", style = RidgeType.cardTitle, modifier = Modifier.weight(1f))
-            Text("${now.roundToInt()}%", style = RidgeType.rowValue.copy(fontSize = RidgeType.cardNumber.fontSize * 0.78f))
+        CardHeader("Charge", c?.let { if (data.day == LocalDate.now()) "now" else "end of day" }, info = Infos.charge(c?.threshold, c?.personal == true))
+        if (c == null) {
+            Subtle(data.chargeNote ?: "Not available.")
+            return@RidgeCard
         }
-        Subtle(
-            when {
-                readiness != null -> "Recovery reduced by today's load so far: ${readiness.load.roundToInt()} vs your typical ${readiness.typical.roundToInt()}."
-                data.day == LocalDate.now() -> "Not reduced yet: today's load is not known."
-                else -> "Final value for that day."
-            },
-        )
-        val muted = MaterialTheme.colorScheme.onSurfaceVariant
-        val onSurface = MaterialTheme.colorScheme.onSurface
-        BoxWithConstraints(Modifier.fillMaxWidth().height(16.dp).padding(top = 0.dp), contentAlignment = Alignment.CenterStart) {
-            Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(LocalRidgeColors.current.surface3))
-            Box(Modifier.fillMaxWidth((now / 100).toFloat().coerceIn(0f, 1f)).height(8.dp).clip(RoundedCornerShape(4.dp)).background(zone))
-            Box(Modifier.offset(x = maxWidth * (recovery / 100).toFloat().coerceIn(0f, 1f) - 1.dp).size(2.dp, 16.dp).background(onSurface))
+        val color = LocalRidgeColors.current.zone(c.value.toDouble())
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text("${c.value}", style = RidgeType.cardNumber)
+            Subtle(c.atWake?.let { "  of 100 · ${it} when you woke" } ?: "  of 100", Modifier.padding(bottom = 5.dp))
         }
-        Row {
-            Text("0", style = RidgeType.caption, color = muted)
-            Text("recovery ${recovery.roundToInt()}", style = RidgeType.caption, color = muted, modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-            Text("100", style = RidgeType.caption, color = muted)
-        }
+        DayLineChart(c.curve, data.curves.window.start, color, 11 * 60_000L, "", dayEnd = data.curves.window.end,
+            zone = data.curves.window.zone, shaded = data.curves.sleep, height = 110.dp)
+        StatRow("Recharged", "+${c.recharged.roundToInt()}")
+        StatRow("Drained by activity", drained(c.activity))
+        StatRow("Drained by stress", drained(c.stress))
+        StatRow("Drained by the waking day", drained(c.living))
+    }
+}
+
+/** "−12", or "0" when it rounds to nothing (never "−0"). */
+private fun drained(v: Double): String = v.roundToInt().let { if (it == 0) "0" else "−$it" }
+
+/** The strap's own HRV as SDNN, through the day: opens its chart. */
+@Composable
+private fun SdnnRow(onOpen: () -> Unit) {
+    RidgeCard(onClick = onOpen) {
+        CardHeader("HRV through the day", "the strap's SDNN", chevron = true)
     }
 }
 

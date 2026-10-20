@@ -30,6 +30,7 @@ SERIES: dict[str, tuple[str, str | None]] = {
     "spo2": ("spo2", None),
     "skin_temp": ("skin_temp_c", "value > %s"),
     "respiratory_rate": ("respiratory_rate", None),
+    "hrv_sdnn": ("hrv_sdnn", None),  # the strap's own SDNN, 3-4 a day (D32)
 }
 _EXTRA_PARAMS: dict[str, tuple] = {"hr": HR_VALID_BOUNDS, "steps": (250,), "skin_temp": (25.0,)}
 

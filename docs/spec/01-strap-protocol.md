@@ -431,6 +431,9 @@ sum 3940 on the same day.
 | sleep sessions + naps + hypnogram | per night | yes |
 | workout summaries | per session | yes |
 | daily totals | live counter | yes (own table) |
+| hrv_sdnn (`0x4E`) | 3–4 a day | yes, raw (D32). First sync 2026-10-20: 107 over the whole 30-day window |
+| PAI (`0x0D`) | one per day at local 23:59, plus today's running figure | yes, raw (D32). 32 over the whole 30-day window |
+| ODI summary (`0x4A`) | one per night, belongTime = local midnight of the wake day | yes, raw (D32). The strap held **6 nights** only: sync at least weekly or nights are lost |
 | battery % | per connect | no (UI only) |
 
 GPS: the strap has none. The old app recorded phone GPS for VO₂max; that recorder was

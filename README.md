@@ -12,7 +12,7 @@ reads them back from there.
 
 <p>
   <img src="docs/screenshots/demo-today.png" width="19%" alt="Today: week strip, strain, recovery and sleep gauges, recovery parts against your usual">
-  <img src="docs/screenshots/demo-recovery.png" width="19%" alt="Recovery: the score, readiness now and the weighted parts">
+  <img src="docs/screenshots/demo-recovery.png" width="19%" alt="Recovery: the score, Charge and the weighted parts">
   <img src="docs/screenshots/demo-heart-rate.png" width="19%" alt="Heart rate: day, week and month">
   <img src="docs/screenshots/demo-sleep.png" width="19%" alt="Sleep: time asleep against your need, stages, sleep health">
   <img src="docs/screenshots/demo-activity.png" width="19%" alt="Activity: strain, load, active minutes and weekly steps">
@@ -27,8 +27,12 @@ reads them back from there.
   rate cards draw the whole day and compare it with your usual for the same hours; steps
   show where you usually are by now. A week strip and a date picker step back through past
   days; heart rate, stress and steps open per-minute charts with the peaks kept.
+- **Charge**: a body battery from 0 to 100, minute by minute. Sleep fills it; activity,
+  stress and the waking day drain it, and the Recovery screen shows what did which.
 - **Sleep, Activity, Journal**: nights and their stages, workouts and daily activity, and
-  a journal for caffeine, alcohol and weight.
+  a journal for caffeine, alcohol and weight. The strap's own PAI (Activity) and its
+  nightly breathing disturbances (Sleep) are shown as the strap's figures, and its HRV
+  (SDNN) through the day has its own chart.
 - **Strap**: battery, the strap's own alarms (read, add, edit, delete, each in a timezone
   you pick, so a 07:00 alarm rings at 07:00 there), and its heart-rate, stress, SpO₂, sleep
   and workout-detection settings (read-only for now).

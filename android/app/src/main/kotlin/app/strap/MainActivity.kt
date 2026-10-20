@@ -357,7 +357,9 @@ private fun AppShell(app: StrapApp) {
                     top == Pushed.Background -> BackgroundScreen(app)
                     api == null -> Centered("Add your server in Settings (the gear) first.")
                     top is Pushed.Detail -> MetricDetailScreen(api, top.metric, day)
-                    top == Pushed.Recovery -> today?.takeIf { it.day == day }?.let { RecoveryContent(it) { d -> day = d } } ?: Loading(todayError)
+                    top == Pushed.Recovery -> today?.takeIf { it.day == day }?.let {
+                        RecoveryContent(it, { d -> day = d }) { push(Pushed.Detail(DetailMetric("hrv_sdnn", "HRV (SDNN)", "ms", colors.recoveryTone, 8 * 3_600_000L))) }
+                    } ?: Loading(todayError)
                     else -> Refreshable(running, onRefresh = { SyncService.start(app) }) {
                         when (tab) {
                             Tab.TODAY -> today?.takeIf { it.day == day }?.let { TodayContent(it, nav) } ?: Loading(todayError)

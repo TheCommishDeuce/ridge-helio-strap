@@ -2,6 +2,7 @@ package app.strap.ui.today
 
 import app.strap.api.ApiClient
 import app.strap.ui.components.DayWindow
+import app.strap.ui.components.Point
 import app.strap.ui.components.Span
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -9,6 +10,9 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.time.LocalDate
 import java.time.ZoneId
+
+/** Shown for a card an older server does not send yet. */
+const val NEWER_SERVER = "Needs a newer Ridge server: update it to see this."
 
 /** A number, or the server's reason for not having one. */
 sealed interface Reading {
@@ -22,8 +26,25 @@ val Reading.valueOrNull: Double? get() = (this as? Reading.Value)?.value
 /** The 30-day median the server compares a daily card with, if it has one. */
 val Reading.usual: Double? get() = (this as? Reading.Value)?.json?.optJSONObject("baseline")?.optDouble("median")?.takeIf { !it.isNaN() }
 
-/** Readiness now: recovery reduced by today's load against the typical load. */
-data class Readiness(val value: Int, val load: Double, val typical: Double)
+/**
+ * Charge (D33): the body battery now, or at the day's end for a past day. Sleep refilled
+ * [recharged]; [activity], [stress] and everyday [living] drained it. [threshold] is the
+ * stress level that starts to drain it, [personal] when learned from your calm readings.
+ */
+data class Charge(
+    val value: Int,
+    val at: Long,
+    val atWake: Int?,
+    val high: Int,
+    val low: Int,
+    val recharged: Double,
+    val activity: Double,
+    val stress: Double,
+    val living: Double,
+    val threshold: Int,
+    val personal: Boolean,
+    val curve: List<Point>,
+)
 
 /**
  * One part of the recovery score. [key] hrv / rhr / rr carry value, baseline and z; sleep
@@ -59,7 +80,9 @@ data class Night(val start: Long, val end: Long, val deviceScore: Int?)
 data class TodayData(
     val day: LocalDate,
     val recovery: Reading,
-    val readiness: Readiness?,
+    val charge: Charge?,
+    /** Why there is no [charge], when there is none. */
+    val chargeNote: String?,
     val factors: List<Factor>,
     /** recovery_score for the two weeks ending on [stripEnd] — the week strip and "vs week". */
     val recoveryByDay: Map<LocalDate, Double>,
@@ -110,6 +133,16 @@ private fun slices(points: JSONArray, dayStart: Long): List<Slice> =
 
 private fun JSONArray.objects(): List<JSONObject> = (0 until length()).map { getJSONObject(it) }
 
+private fun charge(o: JSONObject): Charge? = if (o.has("withheld")) null else o.getJSONObject("drained").let { d ->
+    val t = o.getJSONObject("threshold")
+    val curve = o.getJSONArray("curve")
+    Charge(
+        o.getInt("value"), o.getLong("at"), o.num("at_wake")?.toInt(), o.getInt("high"), o.getInt("low"), o.getDouble("recharged"),
+        d.getDouble("activity"), d.getDouble("stress"), d.getDouble("living"), t.getInt("stress"), t.getBoolean("personal"),
+        List(curve.length()) { i -> curve.getJSONArray(i).let { Point(it.getLong(0), it.getDouble(1)) } },
+    )
+}
+
 private fun JSONObject.num(key: String): Double? = if (isNull(key)) null else optDouble(key).takeIf { !it.isNaN() }
 
 /** The week strip shows the last seven days, or the week ending on an older picked day. */
@@ -145,7 +178,8 @@ suspend fun loadToday(api: ApiClient, day: LocalDate): TodayData = coroutineScop
     TodayData(
         day = day,
         recovery = reading(recoveryCard),
-        readiness = recoveryCard.optJSONObject("readiness")?.let { Readiness(it.getInt("value"), it.getDouble("load"), it.getDouble("typical")) },
+        charge = s.optJSONObject("charge")?.let(::charge),
+        chargeNote = s.optJSONObject("charge")?.optJSONObject("withheld")?.getString("message") ?: NEWER_SERVER,
         factors = factors,
         recoveryByDay = recoveryCall.await().getJSONObject("metrics").getJSONArray("recovery_score").objects()
             .associate { LocalDate.parse(it.getString("day")) to it.getDouble("value") },

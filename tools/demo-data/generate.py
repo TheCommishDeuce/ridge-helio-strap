@@ -101,9 +101,34 @@ def day(rng: random.Random, wake: datetime, until: datetime, workout: bool) -> t
     return samples, workouts, steps_total
 
 
+def strap_summaries(rng: random.Random, session: dict, wake: datetime, until: datetime, workout: bool, week: list[float]) -> list[dict]:
+    """The strap's own figures (D32): SDNN 3-4 times a day, the night's breathing summary at
+    the wake day's local midnight, and PAI at 23:59 (or as it stands now on the last day)."""
+    out = []
+    midnight = wake.replace(hour=0, minute=0)
+    hours = (session["end_ts"] - session["start_ts"]) / 3_600_000
+    drops = max(0, round(hours * (2.2 + rng.gauss(0, 0.6))))
+    out += [{"metric": "odi_valid_time", "ts": ms(midnight), "value": round(hours * 3600)},
+            {"metric": "odi_events", "ts": ms(midnight), "value": drops},
+            {"metric": "odi_raw", "ts": ms(midnight), "value": round(100 * drops / hours)},
+            {"metric": "odi_score", "ts": ms(midnight), "value": rng.randint(93, 97)}]
+    for h in (3, 10, 15, 20):
+        at = midnight + timedelta(hours=h, minutes=rng.randint(0, 50))
+        if at <= until:
+            out.append({"metric": "hrv_sdnn", "ts": ms(at), "value": round(80 + rng.gauss(0, 18), 2)})
+    points = (28 + rng.uniform(0, 12) if workout else 0) + rng.uniform(1, 5)
+    week.append(points)
+    at = min(until, wake.replace(hour=23, minute=59))
+    out += [{"metric": "pai_daily", "ts": ms(at), "value": round(points, 1)},
+            {"metric": "pai_total", "ts": ms(at), "value": round(sum(week[-7:]), 1)}]
+    return out
+
+
 def build(days: int, now: datetime) -> dict:
     """[now] carries the demo person's timezone: bedtimes and walks are local clock times."""
     rng = random.Random(20260927)
+    strap_rng = random.Random(20261020)  # its own stream, so the older demo data is unchanged
+    pai_week: list[float] = []
     samples, sleep, workouts, totals = [], [], [], []
     start = (now - timedelta(days=days)).replace(hour=22, minute=45, second=0, microsecond=0)
     for d in range(days):
@@ -116,6 +141,7 @@ def build(days: int, now: datetime) -> dict:
         wake = datetime.fromtimestamp(session["end_ts"] / 1000, now.tzinfo)
         day_samples, day_workouts, steps = day(rng, wake, now, workout=d % 7 in (1, 3, 5))
         samples += day_samples
+        samples += strap_summaries(strap_rng, session, wake, now, d % 7 in (1, 3, 5), pai_week)
         workouts += day_workouts
         read_at = min(now, wake.replace(hour=21, minute=0))
         totals.append({"read_at": ms(read_at), "steps": steps, "distance_m": round(steps * 0.74), "calories": round(steps * 0.04)})

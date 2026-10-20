@@ -169,10 +169,11 @@ sleep sub = clamp(100 × TST / need)   only if a sleep_need row exists (no fallb
 weights: hrv 0.42 · rhr 0.28 · sleep 0.20 · rr 0.10, renormalised over factors present
 score = Σ w·sub / Σ w                  withhold unless HRV or RHR present
 ```
-**Live readiness** (only for the current day):
-`decay = 0.5 × min(1, cardio_load_today / median(cardio_load, prior 30 d))`,
-`readiness = round(recovery × (1 − decay))`; needs ≥ 5 history rows. Weights are not
-fitted — a product decision documented in recovery_readiness (Probable).
+Weights are not fitted — a product decision documented in recovery_readiness (Probable).
+The old **live readiness** (recovery × (1 − 0.5 × min(1, today's load ÷ typical))) was
+removed in 0.3.0 (D33): only exercise could move it. Charge (§2.12) answers "how much is
+left now" instead. The typical load it used is still served, as the strain card's
+`typical_load` (median `cardio_load` of the 30 days before, ≥ 5 rows).
 
 ### 2.8 Recovery signals (no composite)
 
@@ -240,6 +241,51 @@ FRIEND medians (male/female by decade 20…80): 46.5/36.6, 39.7/28.3, 35.3/25.7,
 29.2/22.9, 24.6/19.6, 20.6/17.2, 17.6/15.4. Regularity term deliberately excluded.
 Framed as a motivational estimate. Source: biological_age_estimate (Probable).
 
+### 2.12 Charge 0–100, minute by minute (read-time, D33)
+
+A body battery: sleep fills it, the waking day drains it. Model from OpenStrap
+(`docs/algorithms/calculations.md` §7, MIT/Apache-2.0), adapted to Ridge's definitions. **No
+study validates a body-battery formula; every constant is a design choice.**
+
+```
+inputs per minute: valid HR (minute mean), steps (sum, 0 < spm < 250), stress (latest reading
+  ≤ 10 min old), sleep stage (any stage but the 0x80 gap is in sleep)
+rhr, HRmax = cardio load's (§2.4: latest rhr_daily ≤ 30 d; Tanaka); HRR = clamp((HR − rhr)/(HRmax − rhr), 0, 1)
+start 48 h before the day at 50; one state per minute, first match wins:
+  sleep              + 0.006 × stage_w × relax × hrv_f × (100 − c)
+                       stage_w deep 1.0 · light 0.8 · REM 0.65 · awake-in-sleep 0.1 · other 0.8
+                       relax = clamp(1.2 − 0.04 × (HR − that night's rhr_daily), 0.5, 1.2); 1 without HR
+                       hrv_f = clamp(0.75 + 0.25 × recovery HRV part / 50, 0.6, 1.1); 1 without one
+  no HR              0 (holds)
+  exercise           HRR ≥ 0.30: − 0.04 − 0.32 × TRIMP_minute (§2.4's one TRIMP)
+  exercise recovery  after-burn tally > 5 and HR ≤ previous + 2: − 0.04
+                       (tally += exercise TRIMP; × 0.966 each non-exercise minute, half-life ~20 min)
+  activity           HRR ≥ 0.20 or ≥ 60 steps: − 0.04 − 0.32 × TRIMP_minute
+  stress             stress ≥ threshold for ≥ 3 minutes in a row: − 0.04 − 0.007 × (stress − threshold)
+  relax              stress < 25 and < 10 steps: − 0.04 + 0.0012 × (100 − c)
+  rest               − 0.04  (≈ 2.4 an hour)
+c kept in 0–100
+threshold = median(calm stress readings, 14 d before the day) + 10, kept in 50–70
+  calm = awake, < 10 steps, HRR < 0.20; needs ≥ 3 days and ≥ 60 readings, else 60 (Zepp's "medium")
+```
+Served: the value at the last measured minute (today) or the day's end, at wake (the end of
+the day's longest sleep run), high, low, recharged, drained split into activity / stress /
+living (the 0.04 base of every awake minute is "living"), the threshold used, and the curve
+every 10 min. Withheld without a date of birth or a fresh measured RHR
+(`charge_needs_profile`), before the simulation has seen a sleep (`charge_no_sleep`), and on
+a day with no measured minute (`charge_no_data`).
+
+### 2.13 The strap's own figures, shown as the strap's (D33)
+
+- **PAI:** the latest `pai_total_device` of the day (7-day total) and `pai_daily_device`;
+  the week's daily points; goal 100 (Nes et al. 2017, HUNT). Not recomputed.
+- **Breathing disturbances (ODI):** the `odi_*_device` night stamped at the day's local
+  midnight. `drops/hour = odi_events × 3600 / odi_valid_time` (s); usual = median of the
+  30 nights before (≥ 5). `odi_raw` = ODI × 100 (checked against real nights: the two agree
+  within about 1 %). No severity words; under 5 an hour is stated as the usual
+  range only in the explanation. Withheld when the strap measured 0 s (`odi_not_measured`).
+- **SDNN:** chart series `hrv_sdnn` only; not mixed into recovery (which uses RMSSD).
+
 ---
 
 ## 3. Analytics (pattern finding over daily metrics)
@@ -263,8 +309,8 @@ Profile: date of birth, sex, height, weight log (time series), timezone, SR-PA a
 ## 5. Streams collected but unused by any formula
 
 `stress` (per minute), device `resting_hr`/`max_hr`, `manual_hr`, `stress_manual`,
-device sleep score, device workout max HR, `hrv_sdnn`, the strap's PAI
-(`pai_daily_device`, `pai_total_device`) and its sleep-apnea summary (`odi_*_device`, D32). wearable_stress_validity is Probable — if the
+device sleep score, device workout max HR, `odi_score_device`. `stress` feeds Charge
+(§2.12) since D33; PAI, ODI and SDNN are shown as the strap's figures (§2.13). wearable_stress_validity is Probable — if the
 rebuild shows stress, it needs its own honest framing.
 
 ## 6. Where the math runs

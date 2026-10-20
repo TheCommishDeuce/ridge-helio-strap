@@ -44,7 +44,7 @@ val LocalSnackbar = staticCompositionLocalOf<(String, String?, (() -> Unit)?) ->
 /** The app's existing explanatory copy, moved off the screens into sheets (verbatim). */
 object Infos {
     val today = Info("Today", listOf(
-        "Readiness now is your recovery reduced by today's strain so far.",
+        "Charge is your body battery: sleep fills it; activity, stress and the waking day drain it.",
         "Strain is today's load on your own scale: 21 is your hardest day of the last 90.",
         "Sleep is the strap's own 0–100 score. Ridge computes no composite sleep score of its own.",
     ))
@@ -64,6 +64,22 @@ object Infos {
     val recovery = Info("Recovery", listOf(
         "The recovery score is an evidence-weighted estimate, not a validated formula, so it is always shown with its parts.",
         "Parts are compared with your own last 42 days. The weights reflect how strong the evidence is for each marker; no study fits them (recovery_readiness).",
+    ))
+    fun charge(threshold: Int?, personal: Boolean) = Info(
+        "Charge",
+        listOf(
+            "A body battery from 0 to 100, worked out minute by minute. Sleep fills it, more in deep sleep and with a calm heart and a good HRV night. Activity drains it by its load (the same TRIMP as strain), stress drains it once it stays over your threshold for three minutes, and every waking minute drains a little.",
+            "It starts two days back, so two nights wash out its starting guess. No study validates a body-battery formula: the constants are design choices, written down in the science spec, and the model follows OpenStrap's.",
+        ),
+        listOfNotNull(threshold?.let { "Stress threshold" to "$it" + if (personal) " (from your calm readings)" else " (default)" }),
+    )
+    val pai = Info("PAI", listOf(
+        "The strap's own Personal Activity Intelligence: points for raising your heart rate, summed over the last 7 days.",
+        "Keeping it at 100 or more was linked with lower cardiovascular risk in a large Norwegian study (Nes et al. 2017, HUNT). Ridge shows the strap's number as it is.",
+    ))
+    val breathing = Info("Breathing disturbances", listOf(
+        "How often your blood oxygen dipped during the night, per hour the strap measured (the strap's own count, ODI).",
+        "Under 5 an hour is the usual range. This is not a sleep-apnea test and says nothing about a diagnosis; if you are worried about your breathing at night, talk to a doctor.",
     ))
     val active = Info("Active minutes", listOf("Moderate + 2 × vigorous minutes from step cadence (WHO counts a vigorous minute double); guideline 150 a week."))
     val load = Info("Load", listOf("Daily cardio load (Banister TRIMP over waking minutes) — the number strain is scaled from."))

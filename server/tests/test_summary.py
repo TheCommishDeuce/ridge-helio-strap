@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import date, time
+from datetime import date, time, timedelta
 from pathlib import Path
 
 import psycopg
@@ -13,7 +13,6 @@ from strap_server.derive import derive_day, derive_night
 from strap_server.read.summary import (
     _usual_mean,
     day_summary,
-    decayed_readiness,
     steps_usual_by,
     strain_from_load,
 )
@@ -36,12 +35,6 @@ def test_strain_is_21_at_the_personal_p95_and_concave_below() -> None:
     assert strain_from_load(50, 100) == 12.5  # 21 x 0.5^0.75 = 12.487
     assert strain_from_load(300, 100) == 21.0  # capped
     assert strain_from_load(50, None) is None
-
-
-def test_readiness_decays_at_most_by_half() -> None:
-    assert decayed_readiness(80, 50, 100) == 60
-    assert decayed_readiness(80, 300, 100) == 40
-    assert decayed_readiness(80, 50, 0) == 80
 
 
 def test_illness_framing_names_the_baseline_and_is_not_a_diagnosis() -> None:
@@ -94,7 +87,8 @@ def test_cards_carry_the_derived_numbers(seeded) -> None:
 def test_a_day_without_data_is_withheld_by_name_never_null(seeded) -> None:
     with psycopg.connect(seeded) as conn:
         out = day_summary(conn.cursor(), _seed.OWNER, TZ, date(2026, 6, 1))
-    for card in (out["recovery"], out["strain"], out["steps"]["steps"], out["heart"]["resting"], out["heart"]["today"], out["vo2max"]):
+    for card in (out["recovery"], out["strain"], out["steps"]["steps"], out["heart"]["resting"], out["heart"]["today"], out["vo2max"],
+                 out["charge"], out["pai"], out["sleep"]["breathing"]):
         assert card["withheld"]["reason"] and card["withheld"]["message"]
     assert out["sleep"]["sessions"] == [] and "withheld" in out["sleep"]["health"]
 
@@ -125,3 +119,52 @@ def test_usual_mean_compares_the_same_hours_of_other_days(seeded) -> None:
     assert out["heart"]["today"]["usual"]["n"] == 8  # the first seeded night starts the evening before DAYS[0]
     assert out["heart"]["today"]["usual"]["until"] is None  # a past day compares whole days
     assert "usual_by_now" not in out["steps"]["steps"]  # only a day still running gets one
+
+
+@pytest.mark.db
+def test_charge_replaces_live_readiness_and_runs_over_the_day(seeded) -> None:
+    day = _seed.DAYS[-1]
+    with psycopg.connect(seeded) as conn:
+        out = day_summary(conn.cursor(), _seed.OWNER, TZ, day)
+    assert "readiness" not in out["recovery"]
+    c = out["charge"]
+    assert 0 <= c["low"] <= c["value"] <= c["high"] <= 100
+    assert c["at_wake"] is not None and c["at_wake"] >= c["value"]  # the seed's day after waking only drains
+    assert c["recharged"] > 0 and c["drained"]["activity"] > 0  # the 08:00 walk at 125 bpm
+    assert c["threshold"] == {"stress": 60, "personal": False}  # the seed has no stress readings
+    assert c["curve"][0][0] == int(_seed._local(day, 0, 0).timestamp() * 1000)
+    assert out["strain"]["typical_load"] is not None  # moved here from the old readiness card
+
+
+def _insert(cur, rows: list[tuple]) -> None:
+    for ts, metric, value in rows:
+        cur.execute("INSERT INTO sample (user_id, ts, metric, value) VALUES (%s, %s, %s, %s)", (_seed.OWNER, ts, metric, value))
+
+
+@pytest.mark.db
+def test_pai_is_the_days_latest_reading_with_the_week_of_daily_points(seeded) -> None:
+    day = _seed.DAYS[-1]
+    with psycopg.connect(seeded) as conn, conn.cursor() as cur:
+        for k, d in enumerate(_seed.DAYS[-3:]):
+            _insert(cur, [(_seed._local(d, 23, 59), "pai_daily_device", 10.0 + k), (_seed._local(d, 23, 59), "pai_total_device", 60.0 + k)])
+        _insert(cur, [(_seed._local(day, 14, 0), "pai_daily_device", 4.0), (_seed._local(day, 14, 0), "pai_total_device", 55.0)])
+        out = day_summary(cur, _seed.OWNER, TZ, day)
+    assert out["pai"]["value"] == 62 and out["pai"]["today"] == 12  # 23:59 beats 14:00
+    assert [w["points"] for w in out["pai"]["week"]] == [10, 11, 12] and out["pai"]["goal"] == 100
+
+
+@pytest.mark.db
+def test_breathing_disturbances_are_drops_per_hour_measured_against_your_usual(seeded) -> None:
+    day = _seed.DAYS[-1]
+    with psycopg.connect(seeded) as conn, conn.cursor() as cur:
+        for k, d in enumerate(_seed.DAYS):
+            midnight = _seed._local(d, 0, 0)
+            _insert(cur, [(midnight, "odi_events_device", 18.0 + k), (midnight, "odi_valid_time_device", 32400.0)])
+        unmeasured = _seed.DAYS[0] - timedelta(days=1)
+        _insert(cur, [(_seed._local(unmeasured, 0, 0), "odi_valid_time_device", 0.0)])
+        out = day_summary(cur, _seed.OWNER, TZ, day)
+        gap = day_summary(cur, _seed.OWNER, TZ, unmeasured)
+    b = out["sleep"]["breathing"]
+    assert b["drops"] == 25 and b["hours"] == 9.0 and b["value"] == round(25 / 9, 1)
+    assert b["usual"] == {"median": 2.3, "n": 7}  # 18..24 drops in 9 h: median 21 / 9
+    assert gap["sleep"]["breathing"]["withheld"]["reason"] == "odi_not_measured"
