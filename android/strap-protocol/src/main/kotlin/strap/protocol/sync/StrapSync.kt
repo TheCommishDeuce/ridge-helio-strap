@@ -17,8 +17,10 @@ import kotlin.time.Duration.Companion.seconds
 
 /**
  * One full sync, in the proven order (spec/01 §6 "Fetch plan"): daily totals first, then
- * each metric from its watermark, the one-shot stress backfill, sleep, workouts. The first
- * failing fetch ends the sync; everything collected before it is returned with the failure.
+ * each metric from its watermark, the one-shot stress backfill, sleep, workouts, and last
+ * the strap's own summaries (SDNN, PAI, ODI), so a newer type cannot cost the core streams.
+ * The first failing fetch ends the sync; everything collected before it is returned with
+ * the failure.
  */
 public class StrapSync(
     private val session: StrapSession,
@@ -56,7 +58,12 @@ public class StrapSync(
         fetch(FetchType.SLEEP, SyncPlan.sleepSince(window.lastSleepStart, window.napBackfillDone, t))?.let { return it }
         napBackfillRan = !window.napBackfillDone
         progress("workouts")
-        return fetch(FetchType.WORKOUTS, SyncPlan.workoutsSince(window.lastWorkoutStart, t), SyncPlan.WORKOUT_ROUNDS, WORKOUT_TIMEOUT)
+        fetch(FetchType.WORKOUTS, SyncPlan.workoutsSince(window.lastWorkoutStart, t), SyncPlan.WORKOUT_ROUNDS, WORKOUT_TIMEOUT)?.let { return it }
+        for ((code, label, watermark) in SyncPlan.SUMMARIES) {
+            progress(label)
+            fetchMetric(code, window.lastSampleAt[watermark], t)?.let { return it }
+        }
+        return null
     }
 
     /** A metric from its watermark, re-established from 2 days back if a stale feed came back empty. */
@@ -119,8 +126,15 @@ public object SyncPlan {
         Triple(FetchType.MAX_HR, "max_hr", Metric.MAX_HR),
     )
 
-    /** Totals + each metric + stress backfill + sleep + workouts. */
-    public val STEPS: Int = METRICS.size + 4
+    /** The strap's own summaries, fetched after workouts, same watermark rules as [METRICS]. */
+    public val SUMMARIES: List<Triple<Int, String, Metric>> = listOf(
+        Triple(FetchType.HRV_SDNN, "hrv_sdnn", Metric.HRV_SDNN),
+        Triple(FetchType.PAI, "pai", Metric.PAI_TOTAL),
+        Triple(FetchType.ODI, "odi", Metric.ODI_VALID_TIME),
+    )
+
+    /** Totals + each metric + stress backfill + sleep + workouts + each summary. */
+    public val STEPS: Int = METRICS.size + SUMMARIES.size + 4
     public const val ROUNDS: Int = 400
     public const val WORKOUT_ROUNDS: Int = 100
     public val BACKFILL: Duration = Duration.ofDays(30)

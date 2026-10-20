@@ -19,6 +19,21 @@ public enum class Metric(public val wireName: String) {
     RESPIRATORY_RATE("respiratory_rate"),
     SPO2("spo2"),
     SPO2_SLEEP("spo2_sleep"),
+    HRV_SDNN("hrv_sdnn"),
+
+    /** The strap's own PAI (`0x0D`): the day's points and the rolling 7-day total. */
+    PAI_DAILY("pai_daily"),
+    PAI_TOTAL("pai_total"),
+
+    /**
+     * The strap's nightly sleep-apnea summary (`0x4A`), stamped at the local midnight that
+     * starts the wake day. Only [ODI_EVENTS] (desaturation count) has a known meaning; the
+     * other two are kept as sent until checked on the strap.
+     */
+    ODI_EVENTS("odi_events"),
+    ODI_SCORE("odi_score"),
+    ODI_VALID_TIME("odi_valid_time"),
+    ODI_RAW("odi_raw"),
 
     /** A marker per sleep record in a `0x48` round; the sessions come from `SleepParser`. */
     SLEEP_SESSION("sleep_session"),

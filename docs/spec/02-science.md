@@ -263,7 +263,8 @@ Profile: date of birth, sex, height, weight log (time series), timezone, SR-PA a
 ## 5. Streams collected but unused by any formula
 
 `stress` (per minute), device `resting_hr`/`max_hr`, `manual_hr`, `stress_manual`,
-device sleep score, device workout max HR. wearable_stress_validity is Probable — if the
+device sleep score, device workout max HR, `hrv_sdnn`, the strap's PAI
+(`pai_daily_device`, `pai_total_device`) and its sleep-apnea summary (`odi_*_device`, D32). wearable_stress_validity is Probable — if the
 rebuild shows stress, it needs its own honest framing.
 
 ## 6. Where the math runs

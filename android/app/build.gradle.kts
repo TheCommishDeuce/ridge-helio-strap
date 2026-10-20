@@ -8,14 +8,20 @@ val releaseKeystore = file("${System.getProperty("user.home")}/.android/ridge-re
 
 // The one version number (SemVer). Releases are tagged v<appVersion>; the version code is
 // derived so it always grows: MAJOR * 10000 + MINOR * 100 + PATCH (0.1.0 -> 100).
-val appVersion = "0.2.5"
+val appVersion = "0.2.6"
 val appVersionCode = appVersion.split('.').map(String::toInt).let { (major, minor, patch) ->
     require(minor < 100 && patch < 100) { "minor and patch must stay below 100" }
     major * 10000 + minor * 100 + patch
 }
 
+// The keystore password, from the macOS Keychain or, elsewhere, the libsecret keyring; both hold
+// it under the name ridge-release-keystore (D24).
 fun releasePassword(): String = providers.exec {
-    commandLine("security", "find-generic-password", "-s", "ridge-release-keystore", "-w")
+    if (System.getProperty("os.name").startsWith("Mac")) {
+        commandLine("security", "find-generic-password", "-s", "ridge-release-keystore", "-w")
+    } else {
+        commandLine("secret-tool", "lookup", "service", "ridge-release-keystore")
+    }
 }.standardOutput.asText.get().trim()
 
 android {

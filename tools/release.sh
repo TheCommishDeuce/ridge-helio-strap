@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Builds the signed release APK on the owner's Mac (the key never leaves it, D24) and attaches
-# it to a DRAFT GitHub release v<appVersion> on the public repo. Publishing the draft is a
-# manual click on GitHub. Nothing here pushes code: sync the public repo first
-# (tools/export-public.sh) so the tag lands on the matching commit.
+# Builds the signed release APK on the owner's Mac or Linux machine (the key lives only on the
+# owner's own machines, D24) and attaches it to a DRAFT GitHub release v<appVersion> on the
+# public repo. Publishing the draft is a manual click on GitHub. Nothing here pushes code:
+# sync the public repo first (tools/export-public.sh) so the tag lands on the matching commit.
 #
 #   tools/release.sh            version from android/app/build.gradle.kts (appVersion)
 set -euo pipefail
@@ -18,7 +18,9 @@ tag="v$version"
 [ -f "$HOME/.android/ridge-release.jks" ] || { echo "Release key missing: ~/.android/ridge-release.jks (D24)." >&2; exit 1; }
 if gh release view "$tag" -R "$public" >/dev/null 2>&1; then echo "$tag already exists on $public." >&2; exit 1; fi
 
-export JAVA_HOME=${JAVA_HOME:-/opt/homebrew/opt/openjdk@17} PATH="${JAVA_HOME:-/opt/homebrew/opt/openjdk@17}/bin:$PATH"
+# Homebrew's JDK on the Mac; elsewhere the system Java unless JAVA_HOME says otherwise.
+if [ -z "${JAVA_HOME:-}" ] && [ -d /opt/homebrew/opt/openjdk@17 ]; then export JAVA_HOME=/opt/homebrew/opt/openjdk@17; fi
+[ -n "${JAVA_HOME:-}" ] && export PATH="$JAVA_HOME/bin:$PATH"
 (cd android && ./gradlew -q :strap-protocol:test :app:lintRelease :app:assembleRelease)
 
 sdk=$(sed -nE 's/^sdk.dir=//p' android/local.properties)

@@ -12,6 +12,9 @@ internal object Bytes {
         (u8(b, i).toLong()) or (u8(b, i + 1).toLong() shl 8) or
             (u8(b, i + 2).toLong() shl 16) or (u8(b, i + 3).toLong() shl 24)
 
+    /** IEEE-754 single, LE. */
+    fun f32(b: ByteArray, i: Int): Float = Float.fromBits(u32(b, i).toInt())
+
     fun putU16(b: ByteArray, i: Int, v: Int) {
         b[i] = v.toByte()
         b[i + 1] = (v shr 8).toByte()

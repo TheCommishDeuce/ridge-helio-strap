@@ -16,6 +16,8 @@ import java.time.Instant
 public object ActivityParser {
     private const val SENTINEL = 0xFF
     private const val MINUTE_MS = 60_000L
+    private const val ODI_RECORD = 16 + 240 * 12
+    private const val PAI_MAX = 1000f
 
     public fun parse(code: Int, data: ByteArray, roundStart: Instant): List<Sample> = when (code) {
         FetchType.ACTIVITY -> activity(data, roundStart)
@@ -30,6 +32,9 @@ public object ActivityParser {
         FetchType.MAX_HR -> sixByte(data, Metric.MAX_HR)
         FetchType.SLEEP -> sleepMarkers(data)
         FetchType.HRV -> sixByte(data, Metric.HRV)
+        FetchType.HRV_SDNN -> sdnn(data)
+        FetchType.PAI -> pai(data)
+        FetchType.ODI -> odi(data)
         else -> emptyList()
     }
 
@@ -90,6 +95,61 @@ public object ActivityParser {
             .map { Sample(epoch(data, it), Metric.SPO2_SLEEP, Bytes.u8(data, it + 4).toDouble()) }
     }
 
+    /** HRV as SDNN: 9-byte `sec u32 · tz i8 · sdnn u32` in 0.01 ms. */
+    private fun sdnn(data: ByteArray): List<Sample> = (0 until data.size / 9)
+        .map { it * 9 }
+        .filter { Bytes.u32(data, it + 5) in 1 until 0xFFFFFFFFL }
+        .map { Sample(epoch(data, it), Metric.HRV_SDNN, Bytes.u32(data, it + 5) / 100.0) }
+
+    /**
+     * PAI: version byte, then one record (the strap sends one per round). Its length grows
+     * with the version (`nextActivityScores` from v2, gender/age from v4, zone limits from
+     * v5); only `dailyPai` @55 and `totalPai` @59 are read.
+     */
+    private fun pai(data: ByteArray): List<Sample> {
+        if (data.isEmpty()) return emptyList()
+        val v = Bytes.u8(data, 0)
+        val size = when {
+            v < 2 -> 69
+            v < 4 -> 97
+            v < 5 -> 99
+            else -> 102
+        }
+        return (0 until data.size / size).map { it * size }
+            .filter { Bytes.u8(data, it) == v && plausible(Bytes.u32(data, it + 1)) }
+            .flatMap { r ->
+                val at = epoch(data, r + 1)
+                listOf(Metric.PAI_DAILY to Bytes.f32(data, r + 55), Metric.PAI_TOTAL to Bytes.f32(data, r + 59))
+                    .filter { (_, x) -> x.isFinite() && x in 0f..PAI_MAX }
+                    .map { (m, x) -> Sample(at, m, x.toDouble()) }
+            }
+    }
+
+    /**
+     * Sleep-apnea summary: 2896-byte records, `belongTime u32 @0 · validTime u32 @4 ·
+     * odiRefined u32 @8 · odiScore u8 @12 · dispCode @13 · version @14 · eventCount u8 @15`,
+     * then 240 desaturation slots (not read). The valid time is always kept, so a night the
+     * strap did not measure says so; its other fields are kept only when it measured, never
+     * as a zero for an unmeasured night.
+     */
+    private fun odi(data: ByteArray): List<Sample> = (0 until data.size / ODI_RECORD)
+        .map { it * ODI_RECORD }
+        .filter { plausible(Bytes.u32(data, it)) }
+        .flatMap { r ->
+            val at = epoch(data, r)
+            val valid = Bytes.u32(data, r + 4)
+            val out = mutableListOf(Sample(at, Metric.ODI_VALID_TIME, valid.toDouble()))
+            if (valid > 0) {
+                out += Sample(at, Metric.ODI_EVENTS, Bytes.u8(data, r + 15).toDouble())
+                out += Sample(at, Metric.ODI_RAW, Bytes.u32(data, r + 8).toDouble())
+                Bytes.u8(data, r + 12).takeIf { it != SENTINEL }?.let { out += Sample(at, Metric.ODI_SCORE, it.toDouble()) }
+            }
+            out
+        }
+
+    /** An epoch second inside the sleep parser's sane window (2020–2033). */
+    private fun plausible(sec: Long): Boolean = sec in 1_600_000_000L..2_000_000_000L
+
     private fun sleepMarkers(data: ByteArray): List<Sample> = (0 until data.size / SleepParser.RECORD_SIZE)
         .map { Sample(epoch(data, it * SleepParser.RECORD_SIZE), Metric.SLEEP_SESSION, 1.0) }
 }
@@ -99,6 +159,7 @@ public object FetchType {
     public const val ACTIVITY: Int = 0x01
     public const val MANUAL_HR: Int = 0x02
     public const val WORKOUTS: Int = 0x05
+    public const val PAI: Int = 0x0D
     public const val STRESS_MANUAL: Int = 0x12
     public const val STRESS: Int = 0x13
     public const val SPO2: Int = 0x25
@@ -109,4 +170,6 @@ public object FetchType {
     public const val MAX_HR: Int = 0x3D
     public const val SLEEP: Int = 0x48
     public const val HRV: Int = 0x49
+    public const val ODI: Int = 0x4A
+    public const val HRV_SDNN: Int = 0x4E
 }

@@ -180,3 +180,16 @@ def test_a_rewritten_night_replaces_its_earlier_version(db, test_dsn) -> None:
         ingest(conn, OWNER, IngestPayload.model_validate(moved))
         rows = conn.execute("SELECT start_ts FROM sleep_session WHERE kind = 'main'").fetchall()
     assert [int(r[0].timestamp() * 1000) for r in rows] == [moved["sleep"][0]["start_ts"]]
+
+
+def test_the_straps_own_summaries_are_kept_under_their_own_names(db, test_dsn) -> None:
+    """SDNN, PAI and the sleep-apnea summary are stored raw; no formula reads them (spec/02 §5)."""
+    at = ms(datetime(2026, 9, 24, 22, 0, tzinfo=UTC))
+    names = ["hrv_sdnn", "pai_daily", "pai_total", "odi_events", "odi_score", "odi_valid_time", "odi_raw"]
+    payload = {"samples": [{"metric": n, "ts": at, "value": 1.0} for n in names]}
+    with psycopg.connect(test_dsn) as conn:
+        summary = ingest(conn, OWNER, IngestPayload.model_validate(payload))
+        stored = {r[0] for r in conn.execute("SELECT metric FROM sample")}
+    assert summary.samples_dropped == 0
+    assert stored == {"hrv_sdnn", "pai_daily_device", "pai_total_device", "odi_events_device",
+                      "odi_score_device", "odi_valid_time_device", "odi_raw_device"}

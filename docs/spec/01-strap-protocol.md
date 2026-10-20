@@ -308,6 +308,7 @@ app → 0004  [0x03, 0x09]     ← 0x09 = ACK and KEEP data on the strap. Never 
 | 11 | stress backfill | `0x13` | one-shot, now − 25 d |
 | 12 | sleep | `0x48` | min(lastSleepStart, now − 2 d); one-shot 14 d on first run (nap backfill). Always re-pulls 2 d so a nap appended later in the day is caught |
 | 13 | workouts | `0x05` | lastWorkoutStart − 1 d, else 90 d back |
+| 14–16 | strap summaries | `0x4E 0x0D 0x4A` | as the metrics (rows 2–10); last, so a refused type costs nothing before it. Watermarks `hrv_sdnn`, `pai_total`, `odi_valid_time` |
 
 Dedup: sleep by session start, workouts by start (overlaps are intentional).
 Watermark key per type: `0x2E → temperature_c`, `0x38 → respiratory_rate`, rest by label.
@@ -331,6 +332,9 @@ HR out of holes.
 | `0x3A` | `resting_hr` (device's) | 6 B | same | same |
 | `0x3D` | `max_hr` (device's) | 6 B | same | same |
 | `0x49` | `hrv` (ms) | 6 B | same | same |
+| `0x4E` | `hrv_sdnn` (ms) | 9 B | +0 sec · +4 tz i8 (quarter hours) · +5 SDNN u32 in 0.01 ms | value ≠ 0, ≠ 0xFFFFFFFF |
+| `0x0D` | `pai_daily`, `pai_total` (strap's own PAI) | version byte at +0, then one record per round; 69 B (v < 2), 97 (v 2–3), 99 (v 4), 102 (v ≥ 5) | +1 sec · +55 daily f32 · +59 7-day total f32 (also zone PAI/minutes, resting/max HR: not read) | version matches, sec plausible, value finite in 0–1000 |
+| `0x4A` | `odi_valid_time`, `odi_events`, `odi_score`, `odi_raw` (nightly sleep-apnea summary) | 2896 B | +0 belongTime (local midnight starting the wake day) · +4 valid time u32 · +8 odiRefined u32 · +12 score u8 · +13 disp code · +14 version · +15 desaturation count u8 · +16 240 × {sec u32, value i32, duration i32} (not read) | belongTime plausible; valid time always kept, the rest only when it is > 0 (an unmeasured night is not a zero); score ≠ 0xFF |
 | `0x38` | `respiratory_rate` (sleep) | 8 B | +0 sec · +5 br/min | ≠0xFF, >0 |
 | `0x25` | `spo2` (spot) | first byte version must be `2`, then 65 B | +0 sec · +4 value (`v≥128 ? v−128 : v`) | — |
 | `0x26` | `spo2_sleep` | version `2`, then 30 B | +0 sec · +4 % · +5 duration · +6 24 B undecoded | 1–100 |
@@ -387,10 +391,19 @@ mapped (legacy knew 10 climbing, 14 strength, 21 HIIT, 22 core).
 
 ## 8. Known-but-undecoded (future work)
 
-Fetch codes with data found by probing 0x00–0x4f: `0x4e` (9 B `sec + 0x16 + u32`,
-episodic — AFib/OSA/ODI candidate), `0x27` (version 2 + sec + float32[]), `0x3b`
-(protobuf daily summary), `0x4a` (large sparse buffer, PPG-RR candidate), `0x06`
-(per-second workout detail). Decoding path: our own authenticated session + APK parsers.
+Fetch codes with data found by probing 0x00–0x4f. `0x4e` (SDNN), `0x4a` (ODI summary) and
+`0x0d` (PAI) are now decoded (§7). Their layouts are OpenStrap's
+(github.com/sayed0am/openstrap, `docs/protocol/02-history-sync.md` §3.5–3.9, from static
+analysis of Zepp 10.9.0) and match our 2026-06-04 probe dumps: `0x4e` records decode to
+plausible SDNN in ms with the tz byte in quarter hours, and `0x4a` arrived as exactly two
+2896 B records whose belongTime is local midnight. ⚠ The ODI valid-time unit (seconds?),
+`odiRefined` and `odiScore` are unverified.
+
+Still undecoded, layouts per OpenStrap: `0x27` (OSA events: 485 B `sec, spo2Drop u8,
+spo2[240], hr[240]`; our "floats" were a misreading), `0x3b` (sport effect, protobuf),
+`0x06` (per-second workout detail, tag-length-value nodes; tag 8 HR, 9 SpO₂), `0x46` (recovery HR
+after a workout), `0x56` (rest HR with baseline). OpenStrap also reads the strap's own
+Readiness on channel module `0x0049`.
 
 ---
 

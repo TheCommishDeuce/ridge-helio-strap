@@ -39,6 +39,15 @@ METRIC_NAMES: dict[str, str] = {
     "max_hr": "max_hr_device",
     "manual_hr": "manual_hr",
     "stress_manual": "stress_manual",
+    "hrv_sdnn": "hrv_sdnn",
+    "pai_daily": "pai_daily_device",
+    "pai_total": "pai_total_device",
+    # The strap's nightly sleep-apnea summary, stamped at the wake day's local midnight.
+    # Only the event count has a known meaning; the rest are kept as sent (spec/01 §7).
+    "odi_events": "odi_events_device",
+    "odi_score": "odi_score_device",
+    "odi_valid_time": "odi_valid_time_device",
+    "odi_raw": "odi_raw_device",
 }
 
 # Samples inside a stored night change that night's derived vitals.
