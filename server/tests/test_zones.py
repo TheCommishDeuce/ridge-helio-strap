@@ -3,7 +3,6 @@
 from datetime import UTC, date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from strap_server.derive._common import _day_bounds_utc
 from strap_server.zones import Zones
 
 BERLIN = "Europe/Berlin"  # +2 in October 2026
@@ -18,7 +17,8 @@ def utc(s: str) -> datetime:
 def test_no_change_is_the_old_single_zone_day():
     z = Zones(BERLIN)
     for day in (date(2026, 3, 29), date(2026, 10, 6), date(2026, 10, 25)):  # incl. both DST days
-        assert z.bounds(day) == _day_bounds_utc(day, BERLIN)
+        midnight = lambda d: datetime(d.year, d.month, d.day, tzinfo=ZoneInfo(BERLIN)).astimezone(UTC)
+        assert z.bounds(day) == (midnight(day), midnight(day + timedelta(days=1)))
     ts = utc("2026-10-05T22:30:00")  # 00:30 Berlin on the 6th
     assert z.date_of(ts) == date(2026, 10, 6)
 

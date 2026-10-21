@@ -56,19 +56,10 @@ private val CLOCK = DateTimeFormatter.ofPattern("HH:mm")
 /** HH:mm in [zone]: a day's own zone on that day's screens (D31), else the phone's. */
 internal fun clockOf(ms: Long, zone: ZoneId = ZoneId.systemDefault()): String = Instant.ofEpochMilli(ms).atZone(zone).format(CLOCK)
 
-/**
- * A day as the server cut it (D31): its real start and end, 22 to 26 hours on a travel day,
- * and the zone it began in. A server from before D31 sends only the zone; the day is then
- * that zone's midnight to midnight, as it always was.
- */
+/** A day as the owner lived it (D31): its real start and end, 22 to 26 hours on a travel day, and the zone it began in. */
 data class DayWindow(val start: Long, val end: Long, val zone: ZoneId) {
     companion object {
-        fun of(json: org.json.JSONObject, day: java.time.LocalDate): DayWindow {
-            val zone = ZoneId.of(json.getString("timezone"))
-            val start = if (json.has("start")) json.getLong("start") else day.atStartOfDay(zone).toInstant().toEpochMilli()
-            val end = if (json.has("end")) json.getLong("end") else day.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
-            return DayWindow(start, end, zone)
-        }
+        fun of(start: Instant, end: Instant, timezone: String) = DayWindow(start.toEpochMilli(), end.toEpochMilli(), ZoneId.of(timezone))
     }
 }
 

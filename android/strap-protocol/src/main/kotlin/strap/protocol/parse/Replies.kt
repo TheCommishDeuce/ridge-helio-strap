@@ -13,6 +13,17 @@ public object Replies {
         return DailyTotals(Bytes.u32(payload, 3), Bytes.u32(payload, 7), Bytes.u32(payload, 11), readAt)
     }
 
+    /** Real-time step reporting on endpoint `0x0016` (spec/01 §5): on, off, and the frames it sends. */
+    public val realtimeStepsOn: ByteArray get() = byteArrayOf(0x05, 0x01)
+    public val realtimeStepsOff: ByteArray get() = byteArrayOf(0x05, 0x00)
+    public const val REALTIME_STEPS_ACK: Int = 0x06
+
+    /** A real-time steps frame: `07 0c · steps u32 · metres u32 · kcal u32`, the reply's counters. */
+    public fun realtimeSteps(payload: ByteArray, readAt: Instant): DailyTotals? {
+        if (payload.size < 14 || Bytes.u8(payload, 0) != 0x07 || Bytes.u8(payload, 1) != 0x0c) return null
+        return DailyTotals(Bytes.u32(payload, 2), Bytes.u32(payload, 6), Bytes.u32(payload, 10), readAt)
+    }
+
     /** Services list on endpoint `0x0000`: `04 · n u16 · (endpoint u16, encrypted u8) × n`. */
     public fun services(payload: ByteArray): Map<Int, Boolean>? {
         if (payload.size < 3 || Bytes.u8(payload, 0) != 0x04) return null

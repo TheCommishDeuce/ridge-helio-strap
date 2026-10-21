@@ -20,8 +20,8 @@ jobs:
           java-version: 17
       # The runner image ships the Android SDK (ANDROID_HOME); Gradle fetches the platform it needs.
       - uses: gradle/actions/setup-gradle@v6
-      # Protocol tests, lint, and an (unsigned) release build: R8 must still pass.
-      - run: ./gradlew --no-daemon :strap-protocol:test :app:lintRelease :app:assembleRelease
+      # Protocol, science and app tests, lint, and an (unsigned) release build: R8 must still pass.
+      - run: ./gradlew --no-daemon :strap-protocol:test :strap-science:test :app:testDebugUnitTest :app:lintRelease :app:assembleRelease
 
   server:
     runs-on: ubuntu-latest

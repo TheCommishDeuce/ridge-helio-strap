@@ -13,12 +13,11 @@ from uuid import UUID
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, status
 
-from strap_server import journal
+from strap_server import backup, journal
 from strap_server.config import Settings, get_settings
 from strap_server.db import connection
 from strap_server.ingest.models import IngestPayload, IngestSummary
 from strap_server.ingest.service import ingest
-from strap_server.read import history, series, summary
 from strap_server.zones import Zones
 
 app = FastAPI(title="strap", docs_url=None, redoc_url=None)
@@ -60,82 +59,53 @@ def _owner_tz(conn, user_id: UUID, settings: Settings) -> Zones:
     return zones if exists else Zones(settings.owner_timezone)
 
 
-@app.get("/v1/day/{day}/series")
-def get_day_series(
-    day: date,
-    user_id: Annotated[UUID, Depends(owner)],
-    settings: Annotated[Settings, Depends(get_settings)],
-    metrics: str = "hr,stress,steps",
-) -> dict:
-    """Raw per-minute points for one local day (D12) and the sleep windows to shade."""
-    names = [m for m in metrics.split(",") if m]
-    unknown = [m for m in names if m not in series.SERIES]
-    if unknown or not names:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"unknown series: {unknown}; known: {sorted(series.SERIES)}")
-    with connection() as conn, conn.cursor() as cur:
-        return series.day_series(cur, user_id, _owner_tz(conn, user_id, settings), day, names)
-
-
-@app.get("/v1/day/{day}/summary")
-def get_day_summary(
-    day: date,
+@app.get("/v1/profile")
+def get_profile(
     user_id: Annotated[UUID, Depends(owner)],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> dict:
-    """The day's cards, each a value with context or a named withheld reason."""
+    """The profile, weights and zones the phone needs to compute the numbers itself (D34)."""
     with connection() as conn, conn.cursor() as cur:
-        return summary.day_summary(cur, user_id, _owner_tz(conn, user_id, settings), day)
+        return backup.profile(cur, user_id, settings.owner_timezone)
 
 
-@app.get("/v1/series/{name}")
-def get_bucket_series(
-    name: str,
+@app.put("/v1/profile")
+def put_profile(
+    profile: journal.ProfileIn,
     user_id: Annotated[UUID, Depends(owner)],
     settings: Annotated[Settings, Depends(get_settings)],
-    start: Annotated[date, Query(alias="from")],
-    end: Annotated[date, Query(alias="to")],
-    bucket: str = "1h",
 ) -> dict:
-    """Buckets that keep the peaks: min, max, mean, sum, count and the time of the max."""
-    if name not in series.SERIES:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"unknown series; known: {sorted(series.SERIES)}")
+    """The phone's profile (D34: the phone owns it); the server keeps a copy."""
+    with connection() as conn:
+        _ensure_owner(conn, user_id, settings)
+        return journal.set_profile(conn, user_id, profile)
+
+
+@app.get("/v1/backup/records")
+def get_backup_records(
+    user_id: Annotated[UUID, Depends(owner)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> dict:
+    """Everything but the samples, for a phone restoring from this server (D34 S5)."""
     with connection() as conn, conn.cursor() as cur:
-        try:
-            return series.bucket_series(cur, user_id, _owner_tz(conn, user_id, settings), name, start, end, bucket)
-        except ValueError as e:
-            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(e)) from e
+        return backup.records(cur, user_id, settings.owner_timezone)
+
+
+@app.get("/v1/backup/samples")
+def get_backup_samples(
+    user_id: Annotated[UUID, Depends(owner)],
+    after_ts: int | None = None,
+    after_metric: str = "",
+    limit: int = backup.SAMPLE_PAGE,
+) -> dict:
+    """One page of samples, oldest first; pass ``next`` back for the following page."""
+    with connection() as conn, conn.cursor() as cur:
+        return backup.samples(cur, user_id, after_ts, after_metric, limit)
 
 
 def _local_bounds(tz: Zones, first: date, last: date) -> tuple:
-    from strap_server.derive._common import _day_bounds_utc
-
-    return _day_bounds_utc(first, tz)[0], _day_bounds_utc(last, tz)[1]
-
-
-@app.get("/v1/daily")
-def get_daily(
-    user_id: Annotated[UUID, Depends(owner)],
-    metrics: str,
-    start: Annotated[date, Query(alias="from")],
-    end: Annotated[date, Query(alias="to")],
-) -> dict:
-    """Derived daily rows per metric (value + flags); absent days are gaps."""
-    with connection() as conn, conn.cursor() as cur:
-        try:
-            return history.daily(cur, user_id, [m for m in metrics.split(",") if m], start, end)
-        except ValueError as e:
-            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(e)) from e
-
-
-@app.get("/v1/workouts")
-def get_workouts(
-    user_id: Annotated[UUID, Depends(owner)],
-    settings: Annotated[Settings, Depends(get_settings)],
-    start: Annotated[date, Query(alias="from")],
-    end: Annotated[date, Query(alias="to")],
-) -> list[dict]:
-    with connection() as conn, conn.cursor() as cur:
-        return history.workouts(cur, user_id, *_local_bounds(_owner_tz(conn, user_id, settings), start, end))
+    """From the start of [first] to the end of [last], in the owner's days (D31)."""
+    return tz.bounds(first)[0], tz.bounds(last)[1]
 
 
 @app.get("/v1/journal")
@@ -157,7 +127,7 @@ def post_journal(
 ) -> dict:
     with connection() as conn:
         _ensure_owner(conn, user_id, settings)
-        return journal.add(conn, None, user_id, entry)
+        return journal.add(conn, user_id, entry)
 
 
 @app.delete("/v1/journal/{entry_id}")

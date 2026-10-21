@@ -1,4 +1,4 @@
-"""Ingest: the push the phone sends lands in the raw tables and re-derives what it touched."""
+"""Ingest: the push the phone sends lands in the raw tables (the server derives nothing, D34)."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 from strap_server import api, config
 from strap_server.ingest.models import IngestPayload
 from strap_server.ingest.service import ingest
-from tests.derive._seed import OWNER
+from tests.seed import OWNER
 
 pytestmark = pytest.mark.db
 
@@ -57,17 +57,15 @@ def night_payload() -> dict:
     }
 
 
-def test_a_push_stores_raw_rows_and_derives_the_night_and_day(db, test_dsn) -> None:
+def test_a_push_stores_raw_rows_under_the_servers_names_and_derives_nothing(db, test_dsn) -> None:
     with psycopg.connect(test_dsn) as conn:
         summary = ingest(conn, OWNER, IngestPayload.model_validate(night_payload()))
         metrics = dict(conn.execute("SELECT metric, count(*) FROM sample GROUP BY metric").fetchall())
-        derived = {r[0]: r[1] for r in conn.execute("SELECT metric, value FROM derived_daily WHERE day = '2026-09-25'")}
-    assert summary.samples_dropped == 1 and summary.nights_derived == 1
+        derived = conn.execute("SELECT count(*) FROM derived_daily").fetchone()[0]
+        steps = conn.execute("SELECT steps FROM device_daily_total").fetchone()[0]
+    assert summary.samples_dropped == 1 and summary.sleep == 1
     assert metrics["skin_temp_c"] == 1 and metrics["steps_per_minute"] == 20 and "temperature_c" not in metrics
-    assert derived["rhr_daily"] == pytest.approx(53.0, abs=1.5)  # min 5-min bucket of the 50..56 cycle
-    assert derived["hrv_sleep_avg"] == 60.0
-    assert derived["steps_total"] == 2400  # the strap's counter wins over the per-minute sum
-    assert "sleep_health_score_4dim" in derived
+    assert steps == 2400 and derived == 0
 
 
 def test_a_repush_that_omits_fields_keeps_the_measured_values(db, test_dsn) -> None:
@@ -144,10 +142,6 @@ def test_a_cloud_day_total_lands_on_its_own_day_as_a_closed_day(db, test_dsn) ->
         assert ingest(conn, OWNER, IngestPayload.model_validate(cloud)).daily_totals == 0  # idempotent
         assert conn.execute("SELECT day::text, steps, source FROM device_daily_total").fetchone() == (
             "2026-07-01", 8000, "zepp_cloud")
-        flags = conn.execute(
-            "SELECT value, flags FROM derived_daily WHERE day = '2026-07-01' AND metric = 'steps_total'"
-        ).fetchone()
-    assert flags[0] == 8000 and flags[1]["caveats"] == [] and flags[1]["source"] == "zepp_cloud"
 
 
 def test_a_strap_push_after_the_backfill_replaces_what_the_cloud_put_there(db, test_dsn) -> None:

@@ -39,7 +39,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import app.strap.api.ApiClient
+import app.strap.api.Reader
+import app.strap.sync.JournalEntry
+import app.strap.sync.Owner
 import app.strap.api.ApiException
 import app.strap.ui.components.Grouped
 import app.strap.ui.components.IconCircle
@@ -54,10 +56,8 @@ import app.strap.ui.today.journalHeadline
 import app.strap.ui.today.journalIcon
 import app.strap.ui.today.journalName
 import kotlinx.coroutines.launch
-import org.json.JSONObject
 import java.time.Instant
 import java.time.LocalDate
-import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -71,8 +71,9 @@ private val QUICK = listOf(
 )
 
 @Composable
-fun JournalScreen(api: ApiClient) {
-    var entries by remember { mutableStateOf<List<JSONObject>?>(null) }
+/** The journal the phone owns (D34 S3): [owner] keeps it, [onChanged] re-derives after an entry. */
+fun JournalScreen(api: Reader, owner: Owner, onChanged: suspend (Instant) -> Unit) {
+    var entries by remember { mutableStateOf<List<JournalEntry>?>(null) }
     var reload by remember { mutableIntStateOf(0) }
     var weightDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -80,33 +81,22 @@ fun JournalScreen(api: ApiClient) {
     val today = LocalDate.now()
     LaunchedEffect(reload) {
         try {
-            val arr = api.journal(today.minusDays(6), today)
-            entries = List(arr.length()) { arr.getJSONObject(it) }.sortedByDescending { it.getLong("ts") }
+            entries = api.journal(today.minusDays(6), today).sortedByDescending { it.ts }
         } catch (e: ApiException) {
             snack(e.message ?: "Could not load the journal.", null, null)
         }
     }
-    fun add(kind: String, amount: Double, name: String?, ts: String = OffsetDateTime.now().toString(), done: (JSONObject) -> String) = scope.launch {
-        try {
-            val body = JSONObject().put("kind", kind).put("amount", amount).put("ts", ts)
-            name?.let { body.put("name", it) }
-            snack(done(api.addJournal(body)), null, null)
-            reload++
-        } catch (e: ApiException) {
-            snack(e.message ?: "Could not save.", null, null)
-        }
+    fun add(kind: String, amount: Double, name: String?, at: Instant = Instant.now(), done: String) = scope.launch {
+        owner.add(kind, amount, name, at)
+        reload++
+        snack(done, null, null)
+        if (kind == "weight") onChanged(at)
     }
-    fun delete(e: JSONObject) = scope.launch {
-        try {
-            api.deleteJournal(e.getString("id"))
-            reload++
-            snack("Entry deleted", "Undo") {
-                val ts = Instant.ofEpochMilli(e.getLong("ts")).atZone(ZoneId.systemDefault()).toOffsetDateTime().toString()
-                add(e.getString("kind"), e.getDouble("amount"), e.optString("name").takeIf { it.isNotEmpty() && it != "null" }, ts) { "Entry restored" }
-            }
-        } catch (x: ApiException) {
-            snack(x.message ?: "Could not delete.", null, null)
-        }
+    fun delete(e: JournalEntry) = scope.launch {
+        owner.delete(e.id)
+        reload++
+        snack("Entry deleted", "Undo") { add(e.kind, e.amount, e.name?.takeIf { it.isNotEmpty() }, e.ts, "Entry restored") }
+        if (e.kind == "weight") onChanged(e.ts)
     }
     Box(Modifier.fillMaxSize()) {
         LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 104.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -115,20 +105,20 @@ fun JournalScreen(api: ApiClient) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     QUICK.chunked(2).forEach { pair ->
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            pair.forEach { q -> QuickTile(q, Modifier.weight(1f)) { add(q.kind, q.value, q.name) { q.logged } } }
+                            pair.forEach { q -> QuickTile(q, Modifier.weight(1f)) { add(q.kind, q.value, q.name, done = q.logged) } }
                         }
                     }
                 }
             }
             val list = entries
             if (list != null && list.isEmpty()) item { Subtle("Nothing logged in the last 7 days.", Modifier.padding(4.dp)) }
-            list?.groupBy { Instant.ofEpochMilli(it.getLong("ts")).atZone(ZoneId.systemDefault()).toLocalDate() }?.forEach { (day, items) ->
+            list?.groupBy { it.ts.atZone(ZoneId.systemDefault()).toLocalDate() }?.forEach { (day, items) ->
                 item(key = day.toString()) { DayLabel(dayTitle(day, today)) }
                 item(key = "$day-items") {
                     Grouped(items) { e, shape ->
-                        val sub = listOfNotNull(journalName(e), clockOf(e.getLong("ts"))).joinToString(" · ")
+                        val sub = listOfNotNull(journalName(e), clockOf(e.ts.toEpochMilli())).joinToString(" · ")
                         ListRow(shape, journalHeadline(e), sub,
-                            leading = { IconCircle(journalIcon(e), LocalRidgeColors.current.surface3, MaterialTheme.colorScheme.onSurfaceVariant) },
+                            leading = { IconCircle(journalIcon(e.kind, e.name), LocalRidgeColors.current.surface3, MaterialTheme.colorScheme.onSurfaceVariant) },
                             trailing = { IconButton(onClick = { delete(e) }) { Icon(Icons.Outlined.Delete, "Delete", tint = MaterialTheme.colorScheme.onSurfaceVariant) } })
                     }
                 }
@@ -145,7 +135,7 @@ fun JournalScreen(api: ApiClient) {
     }
     if (weightDialog) WeightDialog(onDismiss = { weightDialog = false }) { kg ->
         weightDialog = false
-        add("weight", kg, null) { "Weight saved — ${it.getInt("rederived_days")} days recalculated." }
+        add("weight", kg, null, done = "Weight saved")
     }
 }
 
@@ -163,7 +153,7 @@ private fun DayLabel(text: String) {
 @Composable
 private fun QuickTile(q: Quick, modifier: Modifier, onClick: () -> Unit) {
     val tone = LocalMetricColors.current.stressTone
-    val icon: ImageVector = journalIcon(JSONObject().put("kind", q.kind).put("name", q.name ?: ""))
+    val icon: ImageVector = journalIcon(q.kind, q.name)
     Row(
         modifier.clip(RoundedCornerShape(24.dp)).background(tone.container).clickable(onClick = onClick).padding(horizontal = 18.dp, vertical = 18.dp),
         verticalAlignment = Alignment.CenterVertically,

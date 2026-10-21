@@ -1,0 +1,1 @@
+[{"date":"2026-11-01","severity":"moderate","rr_delta_bpm":2.986,"temp_delta_c":0.906,"sustained":false,"note_ids":["respiratory_rate_normal","skin_temp_signals"]},{"date":"2026-11-02","severity":"high","rr_delta_bpm":2.979,"temp_delta_c":0.904,"sustained":true,"note_ids":["respiratory_rate_normal","skin_temp_signals"]}]

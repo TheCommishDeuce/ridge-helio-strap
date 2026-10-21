@@ -23,6 +23,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.CloudDownload
+import androidx.compose.material.icons.outlined.DirectionsWalk
 import androidx.compose.material.icons.outlined.SettingsRemote
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material3.FilledTonalButton
@@ -36,6 +38,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
@@ -113,7 +116,10 @@ fun DiagnosticsScreen(app: StrapApp) {
                     modifier = Modifier.border(1.dp, LocalRidgeColors.current.surface4, RoundedCornerShape(8.dp)).padding(horizontal = 10.dp, vertical = 6.dp))
             }
         }
+        StrapBattery(app)
+        CopyHistory(app)
         SettingsProbe(app)
+        LiveStepsProbe(app)
         GroupHeader("Last sync")
         CodeBlock(summary?.toString(2) ?: "none yet")
     }
@@ -124,6 +130,71 @@ private fun CodeBlock(text: String) {
     Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(LocalRidgeColors.current.surface2).horizontalScroll(rememberScrollState()).padding(16.dp)) {
         Text(text, style = Mono)
     }
+}
+
+/**
+ * The strap's drain per day, from the battery level each sync reads: the falls between readings
+ * over the hours they span (a rise is a charge and is skipped). To see what live steps cost (S4).
+ */
+@Composable
+private fun StrapBattery(app: StrapApp) {
+    val readings = remember { app.store.batteryHistory(Instant.now().minus(java.time.Duration.ofDays(8))) }
+    GroupHeader("Strap battery", "Drain per day, from the level each sync reads; charges are skipped.")
+    val zone = ZoneId.systemDefault()
+    val lines = readings.zipWithNext().filter { (a, b) -> b.percent <= a.percent }
+        .groupBy { (a, _) -> a.at.atZone(zone).toLocalDate() }
+        .toSortedMap(compareByDescending { it })
+        .map { (day, pairs) ->
+            val drop = pairs.sumOf { (a, b) -> a.percent - b.percent }
+            val hours = pairs.sumOf { (a, b) -> java.time.Duration.between(a.at, b.at).toMinutes() } / 60.0
+            "%s  −%d %% over %.1f h  = %.2f %%/h · %.0f %%/day".format(day, drop, hours, if (hours > 0) drop / hours else 0.0, if (hours > 0) 24 * drop / hours else 0.0)
+        }
+    CodeBlock(if (lines.isEmpty()) "No battery readings in the last week." else lines.joinToString("\n"))
+}
+
+/**
+ * The server's raw history, copied again (D34): after a Zepp-cloud backfill reached the server,
+ * this phone takes the new days and works its whole history out again.
+ */
+@Composable
+private fun CopyHistory(app: StrapApp) {
+    var busy by remember { mutableStateOf(false) }
+    var result by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+    GroupHeader("Server history", "Copies what the server holds that this phone has not (after a Zepp-cloud backfill), then works every day out again.")
+    OutlinedButton(enabled = !busy && app.vault.loadServer() != null, modifier = Modifier.height(48.dp), onClick = {
+        scope.launch {
+            busy = true
+            result = app.restore.backfill(again = true) ?: app.science.update(null) ?: "Copied; every day worked out again."
+            busy = false
+        }
+    }) {
+        Icon(Icons.Outlined.CloudDownload, null, Modifier.size(18.dp))
+        Text(if (busy) "  Copying…" else "  Copy the server's history again")
+    }
+    result?.let { Text(it, style = RidgeType.body, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+}
+
+/** S4 (D34): how live the step count can be. Walk around while it listens. */
+@Composable
+private fun LiveStepsProbe(app: StrapApp) {
+    var lines by remember { mutableStateOf<List<String>>(emptyList()) }
+    var busy by remember { mutableStateOf(false) }
+    var failure by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+    GroupHeader("Live steps probe", "Three counter reads, then 60 s of the strap's real-time step reports. Walk around while it listens.")
+    OutlinedButton(enabled = !busy, modifier = Modifier.height(48.dp), onClick = {
+        scope.launch {
+            busy = true; lines = emptyList()
+            failure = app.syncRunner.probeLiveSteps { line -> lines = lines + line }
+            busy = false
+        }
+    }) {
+        Icon(Icons.Outlined.DirectionsWalk, null, Modifier.size(18.dp))
+        Text(if (busy) "  Listening…" else "  Probe live steps")
+    }
+    failure?.let { Text(it, style = RidgeType.body, color = MaterialTheme.colorScheme.error) }
+    if (lines.isNotEmpty()) CodeBlock(lines.joinToString("\n"))
 }
 
 /** R1.2: read-only requests to the strap's settings services, raw replies shown as hex. */

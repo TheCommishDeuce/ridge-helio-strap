@@ -1,4 +1,4 @@
-"""Journal writes and the history reads behind the week/month views."""
+"""Journal and profile writes: the server keeps the phone's copy (D34)."""
 
 from __future__ import annotations
 
@@ -12,9 +12,8 @@ from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from strap_server import api, config, journal
-from strap_server.derive import derive_day, derive_night
-from strap_server.read.history import daily, workouts
-from tests.derive import _seed
+from strap_server.backup import profile
+from tests import seed as _seed
 
 pytestmark = pytest.mark.db
 TZ = "Asia/Kolkata"
@@ -24,34 +23,14 @@ TZ = "Asia/Kolkata"
 def seeded(db, test_dsn):
     with psycopg.connect(test_dsn) as conn, conn.cursor() as cur:
         _seed.seed(cur)
-        for start, end in _seed.nights():
-            derive_night(cur, _seed.OWNER, TZ, start, end)
-        for day in _seed.DAYS:
-            derive_day(cur, _seed.OWNER, TZ, day)
     return test_dsn
-
-
-def test_daily_history_returns_each_derived_day_and_leaves_gaps(seeded) -> None:
-    with psycopg.connect(seeded) as conn:
-        out = daily(conn.cursor(), _seed.OWNER, ["steps_total", "sleep_health_score_4dim"], _seed.DAYS[0], _seed.DAYS[-1])
-    assert len(out["metrics"]["steps_total"]) == 8
-    assert "tst_min" in out["metrics"]["sleep_health_score_4dim"][0]["flags"]
-    with psycopg.connect(seeded) as conn:
-        empty = daily(conn.cursor(), _seed.OWNER, ["steps_total"], date(2026, 1, 1), date(2026, 1, 7))
-    assert empty["metrics"]["steps_total"] == []
-
-
-def test_workouts_in_range(seeded) -> None:
-    with psycopg.connect(seeded) as conn:
-        out = workouts(conn.cursor(), _seed.OWNER, datetime(2026, 2, 1, tzinfo=UTC), datetime(2026, 4, 1, tzinfo=UTC))
-    assert len(out) == 1 and out[0]["duration_s"] > 0
 
 
 def test_caffeine_and_alcohol_round_trip_and_delete(seeded) -> None:
     ts = datetime(2026, 3, 5, 9, 0, tzinfo=UTC)
     with psycopg.connect(seeded) as conn:
-        a = journal.add(conn, seeded, _seed.OWNER, journal.JournalIn(kind="caffeine", ts=ts, amount=80, name="flat white"))
-        journal.add(conn, seeded, _seed.OWNER, journal.JournalIn(kind="alcohol", ts=ts, amount=1))
+        a = journal.add(conn, _seed.OWNER, journal.JournalIn(kind="caffeine", ts=ts, amount=80, name="flat white"))
+        journal.add(conn, _seed.OWNER, journal.JournalIn(kind="alcohol", ts=ts, amount=1))
         listed = journal.entries(conn, _seed.OWNER, datetime(2026, 3, 5, tzinfo=UTC), datetime(2026, 3, 6, tzinfo=UTC))
         assert {e["kind"] for e in listed} >= {"caffeine", "alcohol"}
         assert next(e for e in listed if e["kind"] == "caffeine")["unit"] == "mg"
@@ -59,19 +38,12 @@ def test_caffeine_and_alcohol_round_trip_and_delete(seeded) -> None:
         assert not journal.delete(conn, _seed.OWNER, a["id"])
 
 
-def test_a_new_weight_rederives_the_days_after_it(seeded) -> None:
+def test_a_weight_is_stored_with_its_time_as_its_id(seeded) -> None:
     ts = datetime(2026, 3, 4, 6, 0, tzinfo=UTC)
     with psycopg.connect(seeded) as conn:
-        before = conn.execute("SELECT value FROM derived_daily WHERE metric = 'basal_calories' AND day = '2026-03-06'").fetchone()[0]
-        early = conn.execute("SELECT value FROM derived_daily WHERE metric = 'basal_calories' AND day = '2026-03-02'").fetchone()[0]
-        out = journal.add(conn, seeded, _seed.OWNER, journal.JournalIn(kind="weight", ts=ts, amount=82.0))
-    with psycopg.connect(seeded) as conn:
-        after = conn.execute("SELECT value FROM derived_daily WHERE metric = 'basal_calories' AND day = '2026-03-06'").fetchone()[0]
-        early_after = conn.execute("SELECT value FROM derived_daily WHERE metric = 'basal_calories' AND day = '2026-03-02'").fetchone()[0]
+        out = journal.add(conn, _seed.OWNER, journal.JournalIn(kind="weight", ts=ts, amount=82.0))
         listed = journal.entries(conn, _seed.OWNER, ts, datetime(2026, 3, 5, tzinfo=UTC))
-    assert out["rederived_days"] > 0
-    assert after == pytest.approx(before + 10 * (82.0 - 72.0))  # Mifflin: 10 kcal per kg
-    assert early_after == early  # days before the weigh-in keep the old weight
+    assert out == {"id": f"weight:{int(ts.timestamp() * 1000)}"}
     assert listed[0]["kind"] == "weight" and listed[0]["amount"] == 82.0
 
 
@@ -104,3 +76,30 @@ def test_a_weight_before_the_first_sync_is_stored(db, test_dsn, monkeypatch) -> 
             conn.execute("DELETE FROM app_user WHERE id = %s", (owner,))
     finally:
         config.get_settings.cache_clear()
+
+
+def test_the_profile_download_carries_what_the_phone_computes_with(seeded) -> None:
+    with psycopg.connect(seeded) as conn:
+        out = profile(conn.cursor(), _seed.OWNER, "UTC")
+    assert out["profile"] == {"height_cm": 175.0, "sex": "male", "dob": "1990-01-01", "srpa": 2}
+    assert out["weights"] == [{"ts": int(_seed.WEIGHT_TS.timestamp() * 1000), "kg": 72.0}]
+    assert out["timezone"] == "Asia/Kolkata" and out["zone_changes"] == []
+
+
+def test_a_fresh_server_has_no_profile_and_its_configured_zone(db, test_dsn) -> None:
+    with psycopg.connect(test_dsn) as conn:
+        out = profile(conn.cursor(), uuid.uuid4(), "Europe/Berlin")
+    assert out == {"profile": None, "weights": [], "timezone": "Europe/Berlin", "zone_changes": []}
+
+
+def test_the_phones_profile_replaces_the_servers(seeded) -> None:
+    with psycopg.connect(seeded) as conn:
+        journal.set_profile(conn, _seed.OWNER, journal.ProfileIn(height_cm=180, sex="male", dob=date(1990, 1, 1), srpa=3))
+        assert profile(conn.cursor(), _seed.OWNER, "UTC")["profile"] == {"height_cm": 180.0, "sex": "male", "dob": "1990-01-01", "srpa": 3}
+
+
+def test_an_implausible_profile_is_refused() -> None:
+    with pytest.raises(ValidationError):
+        journal.ProfileIn(height_cm=20)
+    with pytest.raises(ValidationError):
+        journal.ProfileIn(srpa=5)

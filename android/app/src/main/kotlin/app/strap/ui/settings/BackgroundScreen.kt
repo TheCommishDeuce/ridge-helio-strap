@@ -51,19 +51,15 @@ fun BackgroundScreen(app: StrapApp) {
         Toggle("Sync in the background", "Off by default", prefs.enabled) { change(prefs.copy(enabled = it)) }
         if (prefs.enabled) {
             Interval("Collect from the strap", BackgroundPrefs.COLLECT_OPTIONS, prefs.collectMinutes) { change(prefs.copy(collectMinutes = it)) }
-            Interval("Upload to the server", BackgroundPrefs.UPLOAD_OPTIONS, prefs.uploadMinutes) { change(prefs.copy(uploadMinutes = it)) }
-            Grouped(listOf(
-                Triple("Upload on Wi-Fi only", "Unmetered networks", prefs.wifiOnly),
-                Triple("Only while charging", "Both jobs", prefs.chargingOnly),
-            )) { (title, detail, on), shape ->
-                ListRow(shape, title, detail, trailing = {
-                    Switch(on, onCheckedChange = {
-                        change(if (title.startsWith("Upload")) prefs.copy(wifiOnly = it) else prefs.copy(chargingOnly = it))
-                    })
-                })
-            }
+            Toggle("Only while charging", "Collection waits for the charger", prefs.chargingOnly) { change(prefs.copy(chargingOnly = it)) }
             Subtle("Android decides the exact timing: these are the shortest gaps, and it may wait longer while the phone is idle.",
                 Modifier.padding(horizontal = 4.dp), RidgeType.caption)
+        }
+
+        Label("Backup to your server")
+        RidgeCard {
+            Subtle(if (app.vault.loadServer() == null) "No server is set, so nothing is backed up." else
+                "Once a night, while the phone charges on Wi-Fi. Your numbers are worked out on this phone; the server keeps a copy so a new phone can restore it.")
         }
 
         Label("Last background run")
@@ -78,7 +74,7 @@ fun BackgroundScreen(app: StrapApp) {
 }
 
 internal fun backgroundSummary(p: BackgroundPrefs): String = when {
-    p.enabled -> "Collect ${every(p.collectMinutes)}, upload ${every(p.uploadMinutes)}"
+    p.enabled -> "Collect ${every(p.collectMinutes)}"
     p.onOpen -> "When the app opens"
     else -> "Off"
 }

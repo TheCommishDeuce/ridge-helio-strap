@@ -16,4 +16,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "strap"
 include(":strap-protocol")
+include(":strap-science")
 include(":app")

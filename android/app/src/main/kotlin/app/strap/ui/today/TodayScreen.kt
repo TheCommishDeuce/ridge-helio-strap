@@ -60,7 +60,8 @@ import app.strap.ui.components.hm
 import app.strap.ui.theme.LocalMetricColors
 import app.strap.ui.theme.LocalRidgeColors
 import app.strap.ui.theme.RidgeType
-import org.json.JSONObject
+import app.strap.sync.JournalEntry
+import strap.science.Workout
 import java.time.LocalDate
 import kotlin.math.roundToInt
 
@@ -78,7 +79,8 @@ class TodayNav(
 
 /** Today: week strip, three gauges, the recovery card, the day's moments, stress, heart and steps. */
 @Composable
-fun TodayContent(data: TodayData, nav: TodayNav, modifier: Modifier = Modifier) {
+/** [liveSteps]: the strap's count as it changes, while Today shows today (S4); null otherwise. */
+fun TodayContent(data: TodayData, nav: TodayNav, modifier: Modifier = Modifier, liveSteps: Long? = null) {
     val c = LocalMetricColors.current
     val r = LocalRidgeColors.current
     val recovery = data.recovery.valueOrNull
@@ -110,7 +112,7 @@ fun TodayContent(data: TodayData, nav: TodayNav, modifier: Modifier = Modifier) 
         item { SectionLabel("Heart & stress", if (data.day == LocalDate.now()) "vs your usual by now" else "vs your usual day") }
         item { StressCard(data, nav.stress) }
         item { HeartCard(data, nav.heart) }
-        item { StepsRow(data, nav.steps) }
+        item { StepsRow(data, nav.steps, liveSteps) }
     }
 }
 
@@ -188,10 +190,10 @@ private fun IllnessBanner(text: String, onDismiss: () -> Unit) {
     }
 }
 
-internal fun journalIcon(e: JSONObject): ImageVector = when {
-    e.getString("kind") == "weight" -> Icons.Rounded.MonitorWeight
-    e.getString("kind") == "alcohol" -> Icons.Rounded.WineBar
-    else -> when (e.optString("name")) {
+internal fun journalIcon(kind: String, name: String?): ImageVector = when (kind) {
+    "weight" -> Icons.Rounded.MonitorWeight
+    "alcohol" -> Icons.Rounded.WineBar
+    else -> when (name) {
         "espresso" -> Icons.Rounded.CoffeeMaker
         "tea" -> Icons.Rounded.EmojiFoodBeverage
         else -> Icons.Rounded.Coffee
@@ -199,13 +201,13 @@ internal fun journalIcon(e: JSONObject): ImageVector = when {
 }
 
 /** "Caffeine · 95 mg" */
-internal fun journalHeadline(e: JSONObject): String {
-    val amount = e.getDouble("amount").let { if (it % 1.0 == 0.0) it.toInt().toString() else "%.1f".format(it) }
-    val unit = e.optString("unit").let { if (it == "drink" || it == "drinks" || it == "standard") "standard" else it }
-    return "${e.getString("kind").replaceFirstChar { it.uppercase() }} · $amount $unit"
+internal fun journalHeadline(e: JournalEntry): String {
+    val amount = e.amount.let { if (it % 1.0 == 0.0) it.toInt().toString() else "%.1f".format(it) }
+    val unit = e.unit.let { if (it == "drink" || it == "drinks" || it == "standard") "standard" else it }
+    return "${e.kind.replaceFirstChar { it.uppercase() }} · $amount $unit"
 }
 
-internal fun journalName(e: JSONObject): String? = e.optString("name").takeIf { it.isNotEmpty() && it != "null" }?.replaceFirstChar { it.uppercase() }
+internal fun journalName(e: JournalEntry): String? = e.name?.takeIf { it.isNotEmpty() }?.replaceFirstChar { it.uppercase() }
 
 @Composable
 private fun moments(data: TodayData, nav: TodayNav): List<Moment> {
@@ -218,8 +220,8 @@ private fun moments(data: TodayData, nav: TodayNav): List<Moment> {
                 n.deviceScore?.toString(), nav.sleep))
         }
         data.journal.forEach { e ->
-            val ts = e.getLong("ts")
-            add(Moment(ts, clockOf(ts, zone), journalIcon(e), c.stressTone, journalName(e) ?: e.getString("kind").replaceFirstChar { it.uppercase() },
+            val ts = e.ts.toEpochMilli()
+            add(Moment(ts, clockOf(ts, zone), journalIcon(e.kind, e.name), c.stressTone, journalName(e) ?: e.kind.replaceFirstChar { it.uppercase() },
                 journalHeadline(e), null, nav.journal))
         }
         data.stress?.let { s ->
@@ -227,7 +229,7 @@ private fun moments(data: TodayData, nav: TodayNav): List<Moment> {
                 "${s.max.roundToInt()}", nav.stress))
         }
         data.workouts.forEach { w ->
-            val start = w.getLong("start")
+            val start = w.start.toEpochMilli()
             add(Moment(start, clockOf(start, zone), Icons.AutoMirrored.Rounded.DirectionsRun, c.heartTone, "Workout", workoutLine(w), null, nav.activity))
         }
         if (data.day == LocalDate.now()) data.strain.valueOrNull?.let { s ->
@@ -238,8 +240,8 @@ private fun moments(data: TodayData, nav: TodayNav): List<Moment> {
 }
 
 /** "48 min · avg 138 bpm · 520 kcal" */
-internal fun workoutLine(w: JSONObject): String = listOfNotNull(
-    "${w.getInt("duration_s") / 60} min",
-    if (w.isNull("avg_hr")) null else "avg ${w.getInt("avg_hr")} bpm",
-    if (w.isNull("calories")) null else "${w.getInt("calories")} kcal",
+internal fun workoutLine(w: Workout): String = listOfNotNull(
+    "${w.durationS / 60} min",
+    w.avgHr?.let { "avg $it bpm" },
+    w.calories?.let { "$it kcal" },
 ).joinToString(" · ")

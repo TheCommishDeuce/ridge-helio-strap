@@ -33,6 +33,9 @@ class ZoneLog(context: Context) {
     fun unpushed(): JSONArray = JSONArray(entries().filter { !it.pushed }.map { JSONObject().put("since", it.since).put("timezone", it.zone) })
 
     @Synchronized
+    /** Every change this phone recorded, oldest first. */
+    fun all(): List<Pair<java.time.Instant, String>> = entries().map { java.time.Instant.ofEpochMilli(it.since) to it.zone }
+
     fun markPushed() = save(entries().map { it.copy(pushed = true) }.toMutableList())
 
     private data class Entry(val since: Long, val zone: String, val pushed: Boolean)

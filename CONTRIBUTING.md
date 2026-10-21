@@ -12,11 +12,12 @@ token anywhere.
 
 ## Building and testing
 
-**App and protocol** (JDK 17; Android SDK with platform 37):
+**App, protocol and science** (JDK 17; Android SDK with platform 37):
 
 ```sh
 cd android
 ./gradlew :strap-protocol:test            # the protocol, with no phone needed
+./gradlew :strap-science:test             # every formula, against the golden outputs
 ./gradlew :app:lintRelease :app:assembleRelease
 ```
 
@@ -45,7 +46,8 @@ tools/demo-data/load.sh                     # starts it on 127.0.0.1:8767, print
 cd android && ./gradlew :app:assembleDemo
 adb reverse tcp:8767 tcp:8767 && adb install -r app/build/outputs/apk/demo/app-demo.apk
 # "Ridge demo" opens on setup: any MAC and 32-hex key, then server http://127.0.0.1:8767 and
-# the printed token (Test, Next); the first sync fails without a strap: Continue to Today.
+# the printed token (Test, Next), then Restore; the first sync fails without a strap:
+# Continue to Today.
 tools/demo-data/load.sh down                # remove it afterwards
 ```
 
@@ -57,10 +59,11 @@ Screenshots for the repo come only from this demo, never from real data.
   new commands **read-only** on real hardware before any write, and read back every
   write. Add the real bytes as test vectors, with personal values (times, goals, MACs)
   replaced by neutral ones.
-- **Science.** A formula change is a decision: record it in `docs/DECISIONS.md`, update
-  `docs/spec/02-science.md`, and add known-value tests. The golden fixture
-  (`server/tests/fixtures/derive/expected_daily.json`) must keep passing unless the change
-  deliberately re-baselines it, and the pull request should say so.
+- **Science.** It lives in `android/strap-science` and runs on the phone (D34). A formula
+  change is a decision: record it in `docs/DECISIONS.md`, update `docs/spec/02-science.md`,
+  and add known-value tests. The golden cases in `strap-science/src/test/resources/golden/`
+  (outputs of the former server) must keep passing unless the change deliberately
+  re-baselines them, and the pull request should say so.
 - **No invented numbers.** When an input is missing, withhold the metric with a named
   reason rather than showing a default.
 - **Gadgetbridge is a reference, not a source.** Reading its code to learn the protocol is

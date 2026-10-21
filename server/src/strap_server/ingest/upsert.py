@@ -50,8 +50,6 @@ METRIC_NAMES: dict[str, str] = {
     "odi_raw": "odi_raw_device",
 }
 
-# Samples inside a stored night change that night's derived vitals.
-NIGHT_INPUTS = frozenset({"hr", "hrv", "spo2", "respiratory_rate", "skin_temp_c"})
 
 
 def epoch_to_utc(ms: int) -> datetime:
@@ -223,17 +221,3 @@ def upsert_daily_totals(
             (user_id, day, t.steps, t.distance_m, t.calories, epoch_to_utc(t.read_at)),
         )
     return days
-
-
-def nights_containing(cur: Cursor, user_id: UUID, instants: list[datetime]) -> list[tuple[datetime, datetime]]:
-    """Stored main sleeps that any of [instants] fall inside — late vitals re-derive their night."""
-    if not instants:
-        return []
-    cur.execute(
-        "SELECT start_ts, end_ts FROM sleep_session "
-        "WHERE user_id = %s AND kind = 'main' AND start_ts <= %s AND end_ts >= %s "
-        "AND EXISTS (SELECT 1 FROM unnest(%s::timestamptz[]) AS incoming(ts) "
-        "WHERE incoming.ts >= start_ts AND incoming.ts <= end_ts) ORDER BY start_ts",
-        (user_id, max(instants), min(instants), sorted(instants)),
-    )
-    return [(r[0], r[1]) for r in cur.fetchall()]

@@ -30,7 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import app.strap.api.ApiClient
+import app.strap.api.Reader
 import app.strap.api.ApiException
 import app.strap.ui.components.CardHeader
 import app.strap.ui.components.ConnectedButtons
@@ -56,29 +56,33 @@ import app.strap.ui.theme.LocalMetricColors
 import app.strap.ui.theme.LocalRidgeColors
 import app.strap.ui.theme.RidgeType
 import app.strap.ui.Loading
-import app.strap.ui.today.NEWER_SERVER
-import org.json.JSONObject
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.jsonPrimitive
+import strap.science.Breathing
+import strap.science.Card
+import strap.science.Night
+import strap.science.SleepCard
+import strap.science.SleepHealth
+import strap.science.shown
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 
-private class SleepData(val summary: JSONObject, val history: Map<LocalDate, Double>)
+private class SleepData(val sleep: SleepCard, val history: Map<LocalDate, Double>)
 
 @Composable
-fun SleepScreen(api: ApiClient, refreshKey: Any?) {
+fun SleepScreen(api: Reader, refreshKey: Any?) {
     var data by remember { mutableStateOf<SleepData?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var days by rememberSaveable { mutableIntStateOf(14) }
     val today = LocalDate.now()
     LaunchedEffect(refreshKey) {
         try {
-            val summary = api.summary(today).getJSONObject("sleep")
-            val rows = api.daily("sleep_health_score_4dim", today.minusDays(29), today).getJSONObject("metrics").getJSONArray("sleep_health_score_4dim")
-            val history = (0 until rows.length()).map { rows.getJSONObject(it) }
-                .associate { LocalDate.parse(it.getString("day")) to it.getJSONObject("flags").optDouble("tst_min") }
-                .filterValues { !it.isNaN() }
-            data = SleepData(summary, history)
+            val sleep = api.summary(today).sleep
+            val history = api.daily("sleep_health_score_4dim", today.minusDays(29), today)
+                .mapNotNull { r -> r.flags["tst_min"]?.jsonPrimitive?.doubleOrNull?.let { r.day to it } }.toMap()
+            data = SleepData(sleep, history)
             error = null
         } catch (e: ApiException) {
             error = e.message
@@ -87,19 +91,17 @@ fun SleepScreen(api: ApiClient, refreshKey: Any?) {
     val d = data ?: return Loading(error)
     val c = LocalMetricColors.current
     val r = LocalRidgeColors.current
-    val s = d.summary
-    val sessions = s.getJSONArray("sessions").let { a -> (0 until a.length()).map { a.getJSONObject(it) } }
-    val main = sessions.lastOrNull { it.getString("kind") == "main" }
-    val naps = sessions.filter { it.getString("kind") == "nap" }
-    val health = s.getJSONObject("health")
-    val flags = health.optJSONObject("flags")
-    val need = if (s.isNull("need_min")) null else s.getDouble("need_min")
-    val tst = flags?.optDouble("tst_min")?.takeIf { !it.isNaN() }
+    val s = d.sleep
+    val main = s.main
+    val naps = s.nights.filter { !it.isMain }
+    val health = s.health.shown
+    val need = s.needMin
+    val tst = health?.tstMin
     LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item {
-            val efficiency = flags?.optDouble("efficiency_pct")?.takeIf { !it.isNaN() }
+            val efficiency = health?.efficiencyPct
             HeroRow(
-                left = { SideStat(main?.takeIf { !it.isNull("device_score") }?.getInt("device_score")?.toString() ?: "—", "Amazfit", null, it) },
+                left = { SideStat(main?.deviceScore?.toString() ?: "—", "Amazfit", null, it) },
                 right = {
                     SideStat(efficiency?.let { "${it.roundToInt()}%" } ?: "—", "Efficiency",
                         efficiency?.let { Note("target ≥ 85%", if (it >= 85) r.zoneGreen else r.zoneRed) }, it)
@@ -120,32 +122,32 @@ fun SleepScreen(api: ApiClient, refreshKey: Any?) {
                     CardHeader("Stages")
                     Subtle("No night recorded that ended today.")
                 } else {
-                    val start = main.getLong("start")
-                    val end = main.getLong("end")
+                    val start = main.start.toEpochMilli()
+                    val end = main.end.toEpochMilli()
                     CardHeader("Stages", "${clockOf(start)} – ${clockOf(end)} · in bed ${hm((end - start) / 60_000.0)}")
-                    val st = main.getJSONArray("stages")
-                    Hypnogram(List(st.length()) { i -> st.getJSONArray(i).let { Triple(it.getLong(0), it.getLong(1), it.getInt(2)) } })
-                    StageTiles(main.getJSONObject("minutes"))
+                    Hypnogram(main.stages.map { Triple(it.startMs, it.endMs, it.code) })
+                    StageTiles(main)
                 }
             }
         }
-        item { HealthGroup(health, flags, s.getJSONObject("regularity")) }
-        item { BreathingCard(s.optJSONObject("breathing")) }
+        item { HealthGroup(s.health, s.regularity) }
+        item { BreathingCard(s.breathing) }
         item {
-            val debt = s.getJSONObject("debt")
-            val f = debt.optJSONObject("flags")
+            val debt = s.debt
             RidgeCard {
-                CardHeader("Sleep debt", info = Infos.debt(f?.optInt("window_nights", 14) ?: 14))
-                if (debt.has("withheld")) {
-                    Subtle(debt.getJSONObject("withheld").getString("message"))
-                } else if (f != null) {
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text(hm(debt.getDouble("minutes")), style = RidgeType.cardNumber)
-                        Subtle("  over ${f.getInt("window_nights")} nights", Modifier.padding(bottom = 6.dp))
+                CardHeader("Sleep debt", info = Infos.debt(debt.shown?.windowNights ?: 14))
+                when (debt) {
+                    is Card.Withheld -> Subtle(debt.message)
+                    is Card.Shown -> {
+                        val f = debt.value
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text(hm(f.minutes), style = RidgeType.cardNumber)
+                            Subtle("  over ${f.windowNights} nights", Modifier.padding(bottom = 6.dp))
+                        }
+                        need?.let { StatRow("Your need", hm(it)) }
+                        StatRow("Average asleep", hm(f.avgTstMin))
+                        StatRow("Nights below need", "${f.nightsBelow} of ${f.nights}")
                     }
-                    need?.let { StatRow("Your need", hm(it)) }
-                    StatRow("Average asleep", hm(f.getDouble("avg_tst_min")))
-                    StatRow("Nights below need", "${f.getInt("nights_below")} of ${f.getInt("nights")}")
                 }
             }
         }
@@ -162,9 +164,9 @@ fun SleepScreen(api: ApiClient, refreshKey: Any?) {
             item { GroupHeader("Naps") }
             item {
                 Grouped(naps) { n, shape ->
-                    ListRow(shape, "${clockOf(n.getLong("start"))} – ${clockOf(n.getLong("end"))}",
+                    ListRow(shape, "${clockOf(n.start.toEpochMilli())} – ${clockOf(n.end.toEpochMilli())}",
                         leading = { IconCircle(Icons.Rounded.Hotel, c.sleepTone.container, c.sleepTone.onContainer) },
-                        trailing = { Text(hm((n.getLong("end") - n.getLong("start")) / 60_000.0), style = RidgeType.label) })
+                        trailing = { Text(hm(java.time.Duration.between(n.start, n.end).toMillis() / 60_000.0), style = RidgeType.label) })
                 }
             }
         }
@@ -173,25 +175,19 @@ fun SleepScreen(api: ApiClient, refreshKey: Any?) {
 
 /** The strap's sleep-apnea summary: blood-oxygen drops per hour measured, against your usual. No severity words. */
 @Composable
-private fun BreathingCard(b: JSONObject?) {
+private fun BreathingCard(card: Card<Breathing>) {
     RidgeCard {
         CardHeader("Breathing disturbances", "the strap's", info = Infos.breathing)
-        if (b == null) {
-            Subtle(NEWER_SERVER)
-            return@RidgeCard
+        val b = when (card) {
+            is Card.Withheld -> return@RidgeCard Subtle(card.message)
+            is Card.Shown -> card.value
         }
-        if (b.has("withheld")) {
-            Subtle(b.getJSONObject("withheld").getString("message"))
-            return@RidgeCard
-        }
-        val perHour = b.getDouble("value")
-        val usual = b.optJSONObject("usual")?.getDouble("median")
         Row(verticalAlignment = Alignment.Bottom) {
-            Text("%.1f".format(perHour), style = RidgeType.cardNumber)
+            Text("%.1f".format(b.value), style = RidgeType.cardNumber)
             Subtle("  an hour", Modifier.padding(bottom = 6.dp))
         }
-        Subtle("${b.getInt("drops")} blood-oxygen drops in ${"%.1f".format(b.getDouble("hours"))} h measured")
-        StatRow("Your usual", usual?.let { "%.1f an hour".format(it) } ?: "learning")
+        Subtle("${b.drops} blood-oxygen drops in ${"%.1f".format(b.hours)} h measured")
+        StatRow("Your usual", b.usual?.let { "%.1f an hour".format(it.median) } ?: "learning")
     }
 }
 
@@ -202,11 +198,11 @@ private fun needLabel(minutes: Double): String {
 }
 
 @Composable
-private fun StageTiles(minutes: JSONObject) {
+private fun StageTiles(night: Night) {
     val c = LocalMetricColors.current
     val shades = stageShades(c.sleep, c.stress, MaterialTheme.colorScheme.onSurface)
-    val parts = listOf(Triple("Deep", "deep", 5), Triple("Light", "light", 4), Triple("REM", "rem", 8), Triple("Awake", "awake", 7))
-        .map { (label, key, code) -> Triple(label, if (minutes.isNull(key)) 0.0 else minutes.getDouble(key), shades.getValue(code)) }
+    val parts = listOf(Triple("Deep", night.deepMin, 5), Triple("Light", night.lightMin, 4), Triple("REM", night.remMin, 8), Triple("Awake", night.awakeMin, 7))
+        .map { (label, minutes, code) -> Triple(label, (minutes ?: 0).toDouble(), shades.getValue(code)) }
     val total = parts.sumOf { it.second }.takeIf { it > 0 } ?: return
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         parts.chunked(2).forEach { pair ->
@@ -230,20 +226,20 @@ private fun StageTiles(minutes: JSONObject) {
 
 /** The four dimensions, each shown with its own rule — never folded into one "score". */
 @Composable
-private fun HealthGroup(health: JSONObject, flags: JSONObject?, regularity: JSONObject) {
+private fun HealthGroup(card: Card<SleepHealth>, regularity: Card<Double>) {
     val r = LocalRidgeColors.current
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        GroupHeader("Sleep health", if (health.has("dimensions")) "${health.getInt("dimensions")} of 4 dimensions met" else null, Infos.health)
-        if (flags == null) {
-            RidgeCard { Subtle(health.optJSONObject("withheld")?.getString("message") ?: "Not computed yet.") }
-            return
+        GroupHeader("Sleep health", card.shown?.let { "${it.dimensions} of 4 dimensions met" }, Infos.health)
+        val health = when (card) {
+            is Card.Withheld -> return@Column RidgeCard { Subtle(card.message) }
+            is Card.Shown -> card.value
         }
-        val midpoint = flags.optString("midpoint_local").takeIf { it.isNotEmpty() }?.let { OffsetDateTime.parse(it).format(DateTimeFormatter.ofPattern("HH:mm")) }
+        val midpoint = OffsetDateTime.parse(health.midpointLocal).format(DateTimeFormatter.ofPattern("HH:mm"))
         val rows = listOf(
-            Row4("Duration", "7–9 h", hm(flags.getDouble("tst_min")), flags.getInt("duration")),
-            Row4("Efficiency", "≥ 85%", "${flags.getDouble("efficiency_pct").roundToInt()}%", flags.getInt("efficiency")),
-            Row4("Timing", "Midpoint 02:00–04:00", midpoint ?: "—", flags.getInt("timing")),
-            Row4("Regularity", "SRI ≥ 70", if (regularity.has("sri")) "%.0f".format(regularity.getDouble("sri")) else "—", flags.getInt("regularity")),
+            Row4("Duration", "7–9 h", hm(health.tstMin), health.duration),
+            Row4("Efficiency", "≥ 85%", "${health.efficiencyPct.roundToInt()}%", health.efficiency),
+            Row4("Timing", "Midpoint 02:00–04:00", midpoint, health.timing),
+            Row4("Regularity", "SRI ≥ 70", regularity.shown?.let { "%.0f".format(it) } ?: "—", health.regularity),
         )
         Grouped(rows) { row, shape ->
             ListRow(shape, row.name, row.rule,
@@ -253,7 +249,7 @@ private fun HealthGroup(health: JSONObject, flags: JSONObject?, regularity: JSON
                 },
                 trailing = { Text(row.value, style = RidgeType.label) })
         }
-        if (regularity.has("withheld")) Subtle(regularity.getJSONObject("withheld").getString("message"), Modifier.padding(horizontal = 4.dp), RidgeType.caption)
+        if (regularity is Card.Withheld) Subtle(regularity.message, Modifier.padding(horizontal = 4.dp), RidgeType.caption)
     }
 }
 

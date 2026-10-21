@@ -17,15 +17,14 @@ import java.time.Duration
 import java.time.Instant
 
 /**
- * Background sync (D30), ported from the old Healthee app: two periodic jobs, collection
- * (strap → phone) and upload (phone → server), each with its own interval; off by default.
- * Android picks the exact moment; these are the minimum gaps.
+ * Background work. Collection (strap → phone, D30) is the owner's choice: off by default, with
+ * its own interval. The backup (phone → server, D34 S5) runs whenever a server is set, once a day
+ * while charging on Wi-Fi: the server is cold storage, so one upload a night is enough. Android
+ * picks the exact moment; these are the minimum gaps.
  */
 data class BackgroundPrefs(
     val enabled: Boolean = false,
     val collectMinutes: Int = 30,
-    val uploadMinutes: Int = 60,
-    val wifiOnly: Boolean = false,
     val chargingOnly: Boolean = false,
     /**
      * Sync when the app comes to the front and the last complete sync is older than [OPEN_WINDOW].
@@ -35,7 +34,6 @@ data class BackgroundPrefs(
 ) {
     companion object {
         val COLLECT_OPTIONS = listOf(15, 30, 60, 180)
-        val UPLOAD_OPTIONS = listOf(30, 60, 360)
 
         /** An open within this of the last complete sync syncs nothing: opening is not a reason to pay a fetch. */
         val OPEN_WINDOW: Duration = Duration.ofMinutes(15)
@@ -51,8 +49,6 @@ class Background(private val context: Context) {
     fun prefs(): BackgroundPrefs = BackgroundPrefs(
         enabled = prefs.getBoolean("enabled", false),
         collectMinutes = prefs.getInt("collect", 30).takeIf { it in BackgroundPrefs.COLLECT_OPTIONS } ?: 30,
-        uploadMinutes = prefs.getInt("upload", 60).takeIf { it in BackgroundPrefs.UPLOAD_OPTIONS } ?: 60,
-        wifiOnly = prefs.getBoolean("wifi", false),
         chargingOnly = prefs.getBoolean("charging", false),
         onOpen = prefs.getBoolean("open", !BuildConfig.LOCAL_HTTP),
     )
@@ -65,18 +61,28 @@ class Background(private val context: Context) {
         write(p.copy(enabled = false))
         val work = WorkManager.getInstance(context)
         work.cancelUniqueWork(COLLECT)
-        work.cancelUniqueWork(UPLOAD)
         if (p.enabled) {
             work.enqueueUniquePeriodicWork(COLLECT, ExistingPeriodicWorkPolicy.UPDATE,
                 PeriodicWorkRequestBuilder<CollectWorker>(Duration.ofMinutes(p.collectMinutes.toLong()))
                     .setConstraints(Constraints.Builder().setRequiresCharging(p.chargingOnly).build()).build())
-            work.enqueueUniquePeriodicWork(UPLOAD, ExistingPeriodicWorkPolicy.UPDATE,
-                PeriodicWorkRequestBuilder<UploadWorker>(Duration.ofMinutes(p.uploadMinutes.toLong()))
-                    .setConstraints(Constraints.Builder()
-                        .setRequiredNetworkType(if (p.wifiOnly) NetworkType.UNMETERED else NetworkType.CONNECTED)
-                        .setRequiresCharging(p.chargingOnly).build()).build())
         }
         write(p)
+    }
+
+    /**
+     * The nightly backup, registered while a server is set. KEEP: registering again (every app
+     * start) leaves the running schedule alone. The hourly upload job before D34 is cancelled.
+     */
+    fun scheduleBackup(server: Boolean) {
+        val work = WorkManager.getInstance(context)
+        work.cancelUniqueWork(OLD_UPLOAD)
+        if (!server) {
+            work.cancelUniqueWork(BACKUP)
+            return
+        }
+        work.enqueueUniquePeriodicWork(BACKUP, ExistingPeriodicWorkPolicy.KEEP,
+            PeriodicWorkRequestBuilder<BackupWorker>(Duration.ofDays(1))
+                .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.UNMETERED).setRequiresCharging(true).build()).build())
     }
 
     fun lastRun(): BackgroundRun? = prefs.getString("last", null)?.split('|', limit = 3)?.let { (at, job, result) ->
@@ -89,13 +95,14 @@ class Background(private val context: Context) {
     }
 
     private fun write(p: BackgroundPrefs) = prefs.edit()
-        .putBoolean("enabled", p.enabled).putInt("collect", p.collectMinutes).putInt("upload", p.uploadMinutes)
-        .putBoolean("wifi", p.wifiOnly).putBoolean("charging", p.chargingOnly).putBoolean("open", p.onOpen)
+        .putBoolean("enabled", p.enabled).putInt("collect", p.collectMinutes)
+        .putBoolean("charging", p.chargingOnly).putBoolean("open", p.onOpen)
         .commit()
 
     private companion object {
         const val COLLECT = "collect"
-        const val UPLOAD = "upload"
+        const val OLD_UPLOAD = "upload"
+        const val BACKUP = "backup"
     }
 }
 
@@ -132,8 +139,12 @@ class CollectWorker(context: Context, params: WorkerParameters) : BackgroundWork
     }
 }
 
-class UploadWorker(context: Context, params: WorkerParameters) : BackgroundWorker(context, params) {
-    override val job = "Upload"
-
-    override suspend fun work(): SyncState.Finished? = app.syncRunner.upload()
+/** The nightly backup: on whenever a server is set, whatever the background-sync switch says. */
+class BackupWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
+    override suspend fun doWork(): Result {
+        val app = applicationContext as StrapApp
+        val outcome = app.syncRunner.upload()
+        app.background.record("Backup", outcome?.failure ?: if (outcome == null) "Skipped: another upload was running." else "Done.")
+        return Result.success()
+    }
 }

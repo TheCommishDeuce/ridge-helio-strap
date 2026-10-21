@@ -7,12 +7,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -94,6 +97,9 @@ public class StrapSession private constructor(
         }
         replies.tryEmit(endpoint to payload.copyOf())
     }
+
+    /** Every frame the strap sends on [endpoint] from now on, asked for or not (for probes). */
+    public fun frames(endpoint: Int): Flow<ByteArray> = replies.filter { it.first == endpoint }.map { it.second }
 
     /** Asks for the since-midnight counters; the answer lands in [dailyTotals]. */
     public suspend fun requestDailyTotals() {

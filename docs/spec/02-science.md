@@ -315,7 +315,8 @@ rebuild shows stress, it needs its own honest framing.
 
 ## 6. Where the math runs
 
-The old phone deliberately recomputes nothing (e.g. `data/models/recovery_signals.dart`:
-"not recomputed on the phone, ever"); it renders server payloads and caches them. Keep
-that: **one** definition per metric, on the server, unless a metric is explicitly moved
-on-device as its own decision.
+**On the phone (D34).** One definition per metric, in `android/strap-science`; the server
+stores raw data as a backup and computes nothing. The port was held to the former server's
+golden outputs and, on real data, to its numbers day by day (the shadow comparison, D34 S2)
+before the server's science was removed. (Before D34 the rule was the old app's: the phone
+recomputes nothing and renders server payloads.)

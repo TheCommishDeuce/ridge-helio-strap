@@ -2,7 +2,7 @@
 """Synthetic data for a demo server: five weeks of a made-up person, up to now.
 
 Deterministic (fixed seed), never anyone's real data. Pushes through the public API the
-phone uses, so every derived number comes from the real science:
+phone uses; the demo app then restores it and works every number out itself (D34):
 
     python3 tools/demo-data/generate.py http://127.0.0.1:8766 <token> [--days 35] [--timezone Europe/Berlin]
 

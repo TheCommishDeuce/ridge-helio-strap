@@ -131,7 +131,7 @@ chars 0004/0005 works and stays).
 | `000d` | File transfer | |
 | `000f` ✓ | Alarms | below |
 | `0015` | Connection | MTU request `01`→`02`, ping `03`/pong `04` |
-| `0016` ✓ | Steps (daily totals) | §5 |
+| `0016` ✓ | Steps (daily totals, real-time) | §5 |
 | `0017*` | User info | set only (`01`) |
 | `0018*` | Vibration patterns | |
 | `0019*` | Workout | live workout events (status `11`, app open `20`); no settings |
@@ -262,6 +262,23 @@ Stamp with `readAt` (arrival time). This counter beats the per-minute sum: the
 per-minute buffer freezes mid-day on June-2026 firmware (writes `0xFF`). It needs its
 own durable table — in the old system a re-derive overwrote it and 142 of 143 days lost
 it permanently. "No reply" ≠ "zero steps".
+
+### Real-time steps — probed on the strap 2026-10-21 (S4, D34)
+
+Command names from Gadgetbridge's steps service (reading only, D8); the bytes below are the
+strap's own, from one probe (Diagnostics → Live steps probe, walking for a minute).
+
+| send | reply | meaning |
+|---|---|---|
+| `05 01` | `06 01 01` | real-time on |
+| `05 00` | `06 01 00` | real-time off |
+| — | `07 0c` · steps u32 · metres u32 · kcal u32 | a change of the counters, unasked |
+
+The `07` frame carries the same three counters as the `04 01 0c` reply, after a two-byte
+header. While walking it came once a second (every second the count moved); standing still,
+nothing for 28 s, then it resumed. Costs measured on the same connection: connect and
+authenticate 4.8 s, one `03` read 33 ms. So a live count means one connection held while it is
+wanted, not repeated short ones. Disconnecting ends the subscription; `05 00` is sent first.
 
 ---
 

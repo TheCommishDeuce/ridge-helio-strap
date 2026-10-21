@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import app.strap.api.ApiClient
+import app.strap.api.Reader
 import app.strap.api.ApiException
 import app.strap.ui.components.Bucket
 import app.strap.ui.components.ConnectedButtons
@@ -47,7 +48,8 @@ import app.strap.ui.theme.MetricTone
 import app.strap.ui.theme.RidgeType
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import org.json.JSONObject
+import strap.science.DaySummary
+import strap.science.shown
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -62,15 +64,15 @@ data class DetailMetric(val series: String, val title: String, val unit: String,
 private enum class Range(val label: String, val days: Int) { DAY("Day", 1), WEEK("Week", 7), MONTH("Month", 30) }
 
 private sealed interface Loaded {
-    val summary: JSONObject
+    val summary: DaySummary
 
-    data class Day(val points: List<Point>, val sleep: List<Span>, val window: DayWindow, override val summary: JSONObject) : Loaded
+    data class Day(val points: List<Point>, val sleep: List<Span>, val window: DayWindow, override val summary: DaySummary) : Loaded
 
-    data class Hours(val hours: Map<Int, Double>, override val summary: JSONObject) : Loaded
+    data class Hours(val hours: Map<Int, Double>, override val summary: DaySummary) : Loaded
 
-    data class Buckets(val buckets: List<Bucket>, val start: Long, val end: Long, val bucketMs: Long, val axis: List<String>, override val summary: JSONObject) : Loaded
+    data class Buckets(val buckets: List<Bucket>, val start: Long, val end: Long, val bucketMs: Long, val axis: List<String>, override val summary: DaySummary) : Loaded
 
-    data class Days(val days: Map<LocalDate, Double>, val from: LocalDate, override val summary: JSONObject) : Loaded
+    data class Days(val days: Map<LocalDate, Double>, val from: LocalDate, override val summary: DaySummary) : Loaded
 }
 
 /** The headline: what it is, the number, its unit, and one supporting line. */
@@ -79,7 +81,7 @@ private data class Headline(val label: String, val value: String, val line: Stri
 private data class Stat(val label: String, val value: String, val note: Note? = null)
 
 @Composable
-fun MetricDetailScreen(api: ApiClient, metric: DetailMetric, day: LocalDate) {
+fun MetricDetailScreen(api: Reader, metric: DetailMetric, day: LocalDate) {
     var range by rememberSaveable { mutableStateOf(Range.DAY) }
     var loaded by remember { mutableStateOf<Loaded?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -157,15 +159,14 @@ private fun describe(metric: DetailMetric, l: Loaded, day: LocalDate): Pair<Head
     val today = day == LocalDate.now()
     val dayWord = if (today) "Today" else day.format(DateTimeFormatter.ofPattern("EEE d MMM"))
     val none = Headline("No readings", "—", "No ${metric.title.lowercase()} readings in this period.")
-    val steps = l.summary.optJSONObject("steps")
-    fun card(o: JSONObject?, key: String) = o?.optJSONObject(key)?.takeIf { it.has("value") && !it.isNull("value") }
+    val steps = l.summary.activity
     return when (l) {
         is Loaded.Day -> {
             val peak = l.points.maxByOrNull { it.v }
-            val resting = card(l.summary.optJSONObject("heart"), "resting")
+            val resting = l.summary.heart.resting.shown
             val third = if (metric.series == "hr") {
-                val v = resting?.getDouble("value")
-                val usual = resting?.optJSONObject("baseline")?.optDouble("median")?.takeIf { !it.isNaN() }
+                val v = resting?.value
+                val usual = resting?.baseline?.median
                 Stat("Resting", v?.roundToInt()?.toString() ?: "—", changeNote(v?.let { a -> usual?.let { a - it } }, "vs usual", lowerBetter = true))
             } else {
                 Stat("Peak at", peak?.let { clockOf(it.t, l.window.zone) } ?: "—")
@@ -181,8 +182,8 @@ private fun describe(metric: DetailMetric, l: Loaded, day: LocalDate): Pair<Head
             val busiest = l.hours.maxByOrNull { it.value }?.key
             Headline(if (today) "Total today" else "Total", "%,d".format(total.roundToInt()),
                 busiest?.let { "Busiest hour %02d:00 – %02d:00".format(it, it + 1) } ?: "") to listOf(
-                Stat("Distance", card(steps, "distance_m")?.let { "%.1f km".format(it.getDouble("value") / 1000) } ?: "—"),
-                Stat("Active kcal", card(steps, "active_calories")?.getDouble("value")?.roundToInt()?.toString() ?: "—"),
+                Stat("Distance", steps.distanceM.shown?.let { "%.1f km".format(it.value / 1000) } ?: "—"),
+                Stat("Active kcal", steps.activeCalories.shown?.value?.roundToInt()?.toString() ?: "—"),
                 Stat("Hours with steps", l.hours.count { it.value > 0 }.toString()),
             )
         }
@@ -209,35 +210,28 @@ private fun describe(metric: DetailMetric, l: Loaded, day: LocalDate): Pair<Head
 }
 
 /** Day = that day; Week and Month end on it. */
-private suspend fun load(api: ApiClient, metric: DetailMetric, range: Range, day: LocalDate): Loaded = coroutineScope {
+private suspend fun load(api: Reader, metric: DetailMetric, range: Range, day: LocalDate): Loaded = coroutineScope {
     val summaryCall = async { api.summary(day) }
     val from = day.minusDays(range.days - 1L)
     when {
         range == Range.DAY && metric.isSteps -> {
-            val json = api.buckets("steps", day, day, "1h")
-            val zone = ZoneId.of(json.getString("timezone"))
-            val arr = json.getJSONArray("buckets")
-            Loaded.Hours((0 until arr.length()).associate { i -> arr.getJSONObject(i).let { Instant.ofEpochMilli(it.getLong("t")).atZone(zone).hour to it.getDouble("sum") } },
-                summaryCall.await())
+            val series = api.buckets("steps", day, day, strap.science.Bucket.HOUR)
+            val zone = ZoneId.of(series.timezone)
+            Loaded.Hours(series.buckets.associate { it.start.atZone(zone).hour to it.sum }, summaryCall.await())
         }
         range == Range.DAY -> {
-            val json = api.daySeries(day, metric.series)
-            val arr = json.getJSONObject("series").getJSONArray(metric.series)
-            val sleep = json.optJSONArray("sleep")?.let { a -> (0 until a.length()).map { a.getJSONObject(it).let { o -> Span(o.getLong("start"), o.getLong("end")) } } }.orEmpty()
-            Loaded.Day(List(arr.length()) { arr.getJSONArray(it).let { p -> Point(p.getLong(0), p.getDouble(1)) } }, sleep,
-                DayWindow.of(json, day), summaryCall.await())
+            val series = api.daySeries(day, listOf(metric.series))
+            Loaded.Day(series.series[metric.series].orEmpty().map { Point(it.at.toEpochMilli(), it.value) },
+                series.sleep.map { Span(it.start.toEpochMilli(), it.end.toEpochMilli()) },
+                DayWindow.of(series.start, series.end, series.timezone), summaryCall.await())
         }
         metric.isSteps -> {
-            val rows = api.daily("steps_total", from, day).getJSONObject("metrics").getJSONArray("steps_total")
-            Loaded.Days((0 until rows.length()).map { rows.getJSONObject(it) }.associate { LocalDate.parse(it.getString("day")) to it.getDouble("value") },
-                from, summaryCall.await())
+            Loaded.Days(api.daily("steps_total", from, day).associate { it.day to it.value }, from, summaryCall.await())
         }
         else -> {
-            val bucket = if (range == Range.WEEK) "1h" else "1d"
-            val json = api.buckets(metric.series, from, day, bucket)
-            val zone = ZoneId.of(json.getString("timezone"))
-            val arr = json.getJSONArray("buckets")
-            val buckets = List(arr.length()) { i -> arr.getJSONObject(i).let { Bucket(it.getLong("t"), it.getDouble("min"), it.getDouble("max"), it.getDouble("mean"), it.getLong("t_max")) } }
+            val series = api.buckets(metric.series, from, day, if (range == Range.WEEK) strap.science.Bucket.HOUR else strap.science.Bucket.DAY)
+            val zone = ZoneId.of(series.timezone)
+            val buckets = series.buckets.map { Bucket(it.start.toEpochMilli(), it.min, it.max, it.mean, it.maxAt.toEpochMilli()) }
             val axis = if (range == Range.WEEK) (0 until 7).map { from.plusDays(it.toLong()).format(DateTimeFormatter.ofPattern("EEE")) }
             else (0..4).map { from.plusDays(it * 29L / 4).format(DateTimeFormatter.ofPattern("d MMM")) }
             Loaded.Buckets(

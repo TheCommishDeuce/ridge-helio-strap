@@ -44,6 +44,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import java.time.Instant
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -88,8 +89,8 @@ private const val KEY_DOCS = "$DOCS/tools/keyfetch/README.md"
 private const val SERVER_DOCS = "$DOCS/deploy/README.md"
 
 /**
- * First run (D27): welcome → pair the strap → connect the server → first sync → Today.
- * Shown whenever the pairing or the server is missing; each step checks its input first.
+ * First run (D27, D34): welcome → pair the strap → a server, or none → restore from it, when it
+ * holds data and this phone holds none → first sync → Today. Each step checks its input first.
  */
 @Composable
 fun SetupFlow(app: StrapApp, onDone: () -> Unit) {
@@ -97,8 +98,49 @@ fun SetupFlow(app: StrapApp, onDone: () -> Unit) {
     when (step) {
         0 -> Welcome { step = 1 }
         1 -> StrapStep(app) { step = 2 }
-        2 -> ServerStep(app) { step = 3 }
+        2 -> ServerStep(app, onSkip = { app.setUpWithoutServer(); step = 4 }) { app.background.scheduleBackup(true); step = 3 }
+        3 -> RestoreStep(app) { step = 4 }
         else -> FirstSync(app, onDone)
+    }
+}
+
+/** A server that already holds data, and a phone that holds none: offer to start from the server's. */
+@Composable
+private fun RestoreStep(app: StrapApp, onDone: () -> Unit) {
+    val scope = rememberCoroutineScope()
+    var offer by remember { mutableStateOf<Pair<Long, Instant?>?>(null) }
+    var asked by remember { mutableStateOf(false) }
+    var progress by remember { mutableStateOf<String?>(null) }
+    var failure by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) {
+        offer = if (app.store.isEmpty()) app.restore.offer() else null
+        asked = true
+        if (offer == null || offer!!.first == 0L) onDone()
+    }
+    val (count, since) = offer ?: (0L to null)
+    Frame(3, Icons.Rounded.CloudSync, "Restore from your server",
+        "Your server holds %,d readings%s. Restore them to this phone, and it works every number out from your whole history.".format(
+            count, since?.let { " from " + it.atZone(java.time.ZoneId.systemDefault()).format(java.time.format.DateTimeFormatter.ofPattern("d MMM yyyy")) } ?: ""),
+        buttons = {
+            if (asked && offer != null && progress == null) Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Primary(if (failure != null) "Try again" else "Restore") {
+                    scope.launch {
+                        failure = null
+                        progress = "Starting"
+                        failure = app.restore.run { progress = it }
+                        progress = null
+                        if (failure == null) onDone()
+                    }
+                }
+                TextButton(onClick = onDone, modifier = Modifier.fillMaxWidth().height(48.dp)) { Text("Start fresh") }
+            }
+        }) {
+        progress?.let {
+            LinearProgressIndicator(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)), strokeCap = StrokeCap.Round,
+                trackColor = LocalRidgeColors.current.surface3)
+            Text(it, style = RidgeType.paragraph)
+        }
+        failure?.let { Text(it, style = RidgeType.paragraph, color = MaterialTheme.colorScheme.error) }
     }
 }
 
@@ -201,7 +243,7 @@ private val KEY_IN = Regex("(?<![0-9A-Fa-f])[0-9A-Fa-f]{32}(?![0-9A-Fa-f])")
 
 /** The server: address + token, tested with one authenticated call before it is saved. Also Settings' "Change…". */
 @Composable
-fun ServerStep(app: StrapApp, onCancel: (() -> Unit)? = null, onSaved: () -> Unit) {
+fun ServerStep(app: StrapApp, onCancel: (() -> Unit)? = null, onSkip: (() -> Unit)? = null, onSaved: () -> Unit) {
     val links = LocalUriHandler.current
     val scope = rememberCoroutineScope()
     val scheme = MaterialTheme.colorScheme
@@ -212,7 +254,7 @@ fun ServerStep(app: StrapApp, onCancel: (() -> Unit)? = null, onSaved: () -> Uni
     var result by remember { mutableStateOf<String?>(null) }
     var tested by remember { mutableStateOf<ServerLink?>(null) }
     Frame(if (onCancel == null) 2 else null, Icons.Rounded.Dns, if (onCancel == null) "Connect your server" else "Change server",
-        "The HTTPS address of your Ridge server and the token its new-token.sh printed.",
+        "Optional. The HTTPS address of your Ridge server and the token its new-token.sh printed.",
         buttons = { Buttons(onCancel, if (onCancel != null) "Save" else "Next", enabled = tested != null) { tested?.let { app.vault.saveServer(it); onSaved() } } }) {
         OutlinedTextField(url, { url = it; tested = null; result = null }, label = { Text("Server address") }, placeholder = { Text("https://ridge.example.com") },
             singleLine = true, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri))
@@ -238,7 +280,7 @@ fun ServerStep(app: StrapApp, onCancel: (() -> Unit)? = null, onSaved: () -> Uni
                 scope.launch {
                     testing = true
                     result = try {
-                        ApiClient(link).summary(LocalDate.now())
+                        ApiClient(link).profile()
                         tested = link
                         "Connected: the server accepted the token."
                     } catch (e: ApiException) {
@@ -251,6 +293,11 @@ fun ServerStep(app: StrapApp, onCancel: (() -> Unit)? = null, onSaved: () -> Uni
                 Text(if (testing) "  Testing…" else "  Test")
             }
             DocsLink("How to run the server") { links.openUri(SERVER_DOCS) }
+        }
+        onSkip?.let {
+            TextButton(onClick = it) { Text("Continue without a server") }
+            Text("Ridge works every number out on this phone. A server keeps a copy, so a new phone can start from it; you can add one later in Settings.",
+                style = RidgeType.body, color = scheme.onSurfaceVariant)
         }
         result?.let { Text(it, style = RidgeType.body, color = if (tested != null) scheme.primary else scheme.error) }
     }

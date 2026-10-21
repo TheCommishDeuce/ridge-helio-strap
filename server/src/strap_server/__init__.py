@@ -1,1 +1,1 @@
-"""strap_server — ingest, derive, read, and the grounded LLM layer."""
+"""strap_server — the Ridge phone's backup: ingest, the journal and profile copy, restore (D34)."""

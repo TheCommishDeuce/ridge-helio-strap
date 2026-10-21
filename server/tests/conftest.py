@@ -13,7 +13,7 @@ import psycopg
 import pytest
 
 from strap_server import migrate
-from tests.derive._seed import OWNER
+from tests.seed import OWNER
 
 ADMIN_DSN = os.environ.get(
     "STRAP_TEST_DSN", "host=127.0.0.1 port=5598 dbname=strap user=strap password=local-test-only"
@@ -60,16 +60,6 @@ _DATA_TABLES = (
 
 @pytest.fixture
 def db(test_dsn: str) -> None:
-    """The test database with empty data tables, for the ported tests' helpers."""
-    from tests import compat
-
-    compat.DSN = test_dsn
+    """The test database with empty data tables."""
     with psycopg.connect(test_dsn) as conn:
         conn.execute("TRUNCATE " + ", ".join(_DATA_TABLES))
-
-
-@pytest.fixture(autouse=True)
-def _integration_db(request: pytest.FixtureRequest) -> None:
-    """Ported `integration` tests get `db` even when they do not ask for it by name."""
-    if request.node.get_closest_marker("integration") is not None:
-        request.getfixturevalue("db")

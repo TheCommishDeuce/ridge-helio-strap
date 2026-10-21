@@ -330,7 +330,7 @@ def push(args: argparse.Namespace) -> int:
                 first_day = None
         if page["samples"] or page["sleep"] or page["daily_totals"]:
             send(days[-1]["day"])
-    print("done. Re-derive on the server so the days after these get their new baselines.")
+    print("done. On the phone: Settings → Diagnostics → Copy the server's history again.")
     return 0
 
 

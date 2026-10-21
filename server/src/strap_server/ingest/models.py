@@ -94,5 +94,3 @@ class IngestSummary(BaseModel):
     sleep: int
     workouts: int
     daily_totals: int
-    nights_derived: int
-    days_derived: int

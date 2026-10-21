@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# A throwaway demo server with synthetic data, for screenshots and UI work without a strap.
+# A throwaway demo server with synthetic data, for screenshots and UI work without a strap:
+# the demo app restores from it (D34).
 # Runs the deploy/ stack as its own Compose project on 127.0.0.1:8767 (API and database only)
 # and prints what the demo app (`./gradlew :app:assembleDemo`) needs.
 #
@@ -19,10 +20,9 @@ printf 'POSTGRES_PASSWORD=%s\nOWNER_TIMEZONE=%s\nDEVICE_TOKEN_SHA256=%s\nRIDGE_P
 "${compose[@]}" up -d --build --wait db api
 
 python3 "$repo/tools/demo-data/generate.py" http://127.0.0.1:8767 "$token" --timezone "${DEMO_TIMEZONE:-Europe/Berlin}"
-# The profile (made up) has no API yet; then recompute every day with it in place.
+# The demo person's profile (made up), for the phone to restore with everything else.
 "${compose[@]}" exec -T db psql -q -U strap -d strap -c \
     "INSERT INTO profile (user_id, height_cm, sex, dob, srpa) VALUES ('00000000-0000-0000-0000-000000000001', 176, 'male', '1991-05-12', 2) ON CONFLICT (user_id) DO UPDATE SET height_cm = 176, sex = 'male', dob = '1991-05-12', srpa = 2"
-"${compose[@]}" exec -T api python -m strap_server.rederive | tail -1
 
 cat <<EOT
 
@@ -30,6 +30,7 @@ Demo server ready. On the phone (USB or wireless adb):
   adb reverse tcp:8767 tcp:8767
   adb install -r android/app/build/outputs/apk/demo/app-demo.apk
 In "Ridge demo" setup: any MAC and 32-hex key; server http://127.0.0.1:8767  token: $token
+then Restore: the phone copies the demo data and works every number out itself.
 (The first sync fails without a strap: press "Continue to Today".)
 Remove it afterwards: tools/demo-data/load.sh down
 EOT

@@ -108,6 +108,15 @@ class ParserTest {
     }
 
     @Test
+    fun `real-time steps frames, as the owner's strap sent them walking (2026-10-21)`() {
+        val totals = Replies.realtimeSteps("070cbb0000008400000014000000".unhex(), Instant.EPOCH)!!
+        assertEquals(listOf(187L, 132L, 20L), listOf(totals.steps, totals.distanceM, totals.calories))
+        assertEquals(227L, Replies.realtimeSteps("070ce30000008c00000014000000".unhex(), Instant.EPOCH)!!.steps)
+        assertNull(Replies.realtimeSteps("060101".unhex(), Instant.EPOCH)) // the on/off acknowledgement
+        assertNull(Replies.realtimeSteps("04010cb60000008400000014000000".unhex(), Instant.EPOCH)) // a read's reply
+    }
+
+    @Test
     fun `time8 is local wall time with the offset in 15-minute units`() {
         val t = LocalDateTime.of(2026, 6, 4, 10, 49, 37)
         assertEquals("ea0706040a310008", Replies.time8(t, utcOffsetMinutes = 120).hex())

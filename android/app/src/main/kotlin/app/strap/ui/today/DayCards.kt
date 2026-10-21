@@ -127,10 +127,12 @@ internal fun HeartCard(data: TodayData, onOpen: () -> Unit) {
  * the day usually stands by now (a day still running) — plus distance and active minutes.
  */
 @Composable
-internal fun StepsRow(data: TodayData, onOpen: () -> Unit) {
+internal fun StepsRow(data: TodayData, onOpen: () -> Unit, live: Long? = null) {
     val color = LocalMetricColors.current.steps
     val r = LocalRidgeColors.current
-    val steps = data.steps.valueOrNull
+    // The strap's live counter beats the last synced count (it is the same instrument, later).
+    val liveToday = live?.takeIf { data.day == LocalDate.now() }
+    val steps = liveToday?.toDouble() ?: data.steps.valueOrNull
     val usualDay = data.steps.usual
     val byNow = data.stepsUsualByNow
     val scale = listOfNotNull(steps, usualDay, byNow).maxOrNull()?.coerceAtLeast(1.0)
@@ -145,7 +147,8 @@ internal fun StepsRow(data: TodayData, onOpen: () -> Unit) {
             Icon(Icons.AutoMirrored.Rounded.DirectionsWalk, null, tint = color, modifier = Modifier.size(20.dp))
             Text(steps?.let { "%,d".format(it.roundToInt()) } ?: "—", style = RidgeType.cardTitle.copy(fontSize = 20.sp, lineHeight = 24.sp),
                 modifier = Modifier.padding(start = 8.dp))
-            Text(" steps", style = RidgeType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+            Text(" steps", style = RidgeType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(if (liveToday != null) " · live" else "", style = RidgeType.caption, color = color, modifier = Modifier.weight(1f))
             Text(listOfNotNull(data.distanceM?.let { "%.1f km".format(it / 1000) }, data.activeMin?.let { "${it.roundToInt()} min active" }).joinToString(" · "),
                 style = RidgeType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }

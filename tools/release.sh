@@ -26,7 +26,7 @@ if gh release view "$tag" -R "$public" >/dev/null 2>&1; then echo "$tag already 
 # Homebrew's JDK on the Mac; elsewhere the system Java unless JAVA_HOME says otherwise.
 if [ -z "${JAVA_HOME:-}" ] && [ -d /opt/homebrew/opt/openjdk@17 ]; then export JAVA_HOME=/opt/homebrew/opt/openjdk@17; fi
 [ -n "${JAVA_HOME:-}" ] && export PATH="$JAVA_HOME/bin:$PATH"
-(cd android && ./gradlew -q :strap-protocol:test :app:lintRelease :app:assembleRelease)
+(cd android && ./gradlew -q :strap-protocol:test :strap-science:test :app:lintRelease :app:assembleRelease)
 
 sdk=$(sed -nE 's/^sdk.dir=//p' android/local.properties)
 apksigner=$(ls "$sdk"/build-tools/*/apksigner | sort -V | tail -1)
@@ -44,8 +44,8 @@ notes="$out/notes-$version.md"
 { printf 'Ridge %s for Android 12+ (Amazfit Helio Strap).\n\n' "$version"; cat "$whats_new"; printf '\n'; } > "$notes"
 cat >> "$notes" <<EOF
 Install \`$name\` (allow installs from your browser or file manager). Updates install over
-the previous version. Pairing needs your strap's auth key (see tools/keyfetch); the server
-is optional to sync but needed for the daily numbers (see deploy/README.md).
+the previous version. Pairing needs your strap's auth key (see tools/keyfetch). The phone
+works every number out itself; a server is optional and keeps its backup (see deploy/README.md).
 
 - APK SHA-256: \`$(cut -d' ' -f1 "$out/$name.sha256")\`
 - Signing certificate SHA-256: \`$cert\` (the same for every release)

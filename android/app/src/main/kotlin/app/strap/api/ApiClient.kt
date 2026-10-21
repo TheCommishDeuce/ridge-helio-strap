@@ -10,24 +10,42 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.time.LocalDate
 
-/** Reads from the server's API. Every call returns the parsed JSON or throws [ApiException]. */
-class ApiClient(private val link: ServerLink) {
-    suspend fun summary(day: LocalDate): JSONObject = get("/v1/day/$day/summary")
+/** The server as the phone's backup (D34): what [app.strap.sync.Owner] and [app.strap.sync.Restore] fetch and send. */
+interface BackupServer {
+    /** The profile, weights and zones the phone computes with (D34). */
+    suspend fun profile(): JSONObject
 
-    suspend fun daySeries(day: LocalDate, metrics: String): JSONObject = get("/v1/day/$day/series?metrics=$metrics")
+    /** The server's backup (D34 S5): everything but the samples, then the samples a page at a time. */
+    suspend fun backupRecords(): JSONObject
 
-    suspend fun buckets(name: String, from: LocalDate, to: LocalDate, bucket: String): JSONObject =
-        get("/v1/series/$name?from=$from&to=$to&bucket=$bucket")
+    suspend fun backupSamples(afterTs: Long?, afterMetric: String): JSONObject
 
-    suspend fun daily(metrics: String, from: LocalDate, to: LocalDate): JSONObject = get("/v1/daily?metrics=$metrics&from=$from&to=$to")
+    /** Replaces the server's copy of the profile (D34: the phone owns it). */
+    suspend fun putProfile(profile: JSONObject): JSONObject
 
-    suspend fun workouts(from: LocalDate, to: LocalDate): JSONArray = JSONArray(request("GET", "/v1/workouts?from=$from&to=$to", null))
+    suspend fun journal(from: LocalDate, to: LocalDate): JSONArray
 
-    suspend fun journal(from: LocalDate, to: LocalDate): JSONArray = JSONArray(request("GET", "/v1/journal?from=$from&to=$to", null))
+    suspend fun addJournal(entry: JSONObject): JSONObject
 
-    suspend fun addJournal(entry: JSONObject): JSONObject = JSONObject(request("POST", "/v1/journal", entry.toString()))
+    suspend fun deleteJournal(id: String)
+}
 
-    suspend fun deleteJournal(id: String) {
+/** The server over HTTP. Every call returns the parsed JSON or throws [ApiException]. */
+class ApiClient(private val link: ServerLink) : BackupServer {
+    override suspend fun profile(): JSONObject = get("/v1/profile")
+
+    override suspend fun backupRecords(): JSONObject = get("/v1/backup/records")
+
+    override suspend fun backupSamples(afterTs: Long?, afterMetric: String): JSONObject =
+        get("/v1/backup/samples" + (afterTs?.let { "?after_ts=$it&after_metric=" + java.net.URLEncoder.encode(afterMetric, "UTF-8") } ?: ""))
+
+    override suspend fun putProfile(profile: JSONObject): JSONObject = JSONObject(request("PUT", "/v1/profile", profile.toString()))
+
+    override suspend fun journal(from: LocalDate, to: LocalDate): JSONArray = JSONArray(request("GET", "/v1/journal?from=$from&to=$to", null))
+
+    override suspend fun addJournal(entry: JSONObject): JSONObject = JSONObject(request("POST", "/v1/journal", entry.toString()))
+
+    override suspend fun deleteJournal(id: String) {
         request("DELETE", "/v1/journal/$id", null)
     }
 

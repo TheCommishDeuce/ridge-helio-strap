@@ -52,9 +52,9 @@ uv run tools/zepp-backfill/backfill.py push --server https://your-ridge-server -
 3. **push** asks for the server token (the one the app uses, or set `RIDGE_TOKEN`) and
    sends the days oldest first, about a week per request. Each line says how much was
    new and how much the strap already had.
-4. **Re-derive on the server** afterwards, so the days after the backfill rebuild their
-   baselines with the older history included. In `deploy/`:
-   `docker compose exec api python -m strap_server.rederive`
+4. **Bring it to the phone** afterwards. Ridge works every number out on the phone (D34), so
+   it has to copy the new history from the server: Settings → Diagnostics → **Copy the
+   server's history again**. A phone set up after the backfill gets it with its restore.
 
 `--tz` is the time zone you lived in back then (default: this computer's). The cloud
 stores each day in local time, so it decides which minute is which. On the two DST

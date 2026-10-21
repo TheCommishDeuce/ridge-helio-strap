@@ -72,13 +72,14 @@ Check from outside your network: `curl -fsS https://ridge.example.com/healthz`.
 ## 5 · Connect the app
 
 Ridge's first-run setup asks for the server: enter `https://ridge.example.com` and the
-token from step 2, press **Test**, then continue to the first sync. To change it later: the
-gear → Settings → Server. What the strap delivered is uploaded after every sync, and the server
-derives recovery, strain, sleep and the rest from it.
+token from step 2, press **Test**. A server that already holds data offers to restore it to a
+new phone. To change it later: the gear → Settings → Backup. The app works every number out on
+the phone; the server is its backup: everything the strap delivered, the profile and the journal
+are uploaded once a night while the phone charges on Wi-Fi (or Settings → Back up now), so a new
+phone can restore them.
 
 The first sync brings about the last 30 days. For older history from your Zepp account
-(optional), see [`tools/zepp-backfill`](../tools/zepp-backfill/README.md), then recompute
-every day as under [Updating](#updating).
+(optional), see [`tools/zepp-backfill`](../tools/zepp-backfill/README.md).
 
 ## Updating
 
@@ -86,12 +87,7 @@ every day as under [Updating](#updating).
 cd ridge-helio-strap && git pull && cd deploy && docker compose up -d --build
 ```
 
-Migrations run on start. After an update that changes how metrics are computed (the
-release notes say so), recompute every day from the raw data:
-
-```sh
-docker compose exec api python -m strap_server.rederive
-```
+Migrations run on start.
 
 ## Backups
 

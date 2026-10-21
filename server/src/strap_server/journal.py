@@ -1,21 +1,17 @@
 """The journal: caffeine, alcohol and weight logged by the owner.
 
 Caffeine and alcohol go to `manual_entry` (kinds the correlation and cut-off analytics read);
-weight goes to `weight_log`, and because BMR, calories and the Jurca VO2max read the weight
-in force on each day, logging one re-derives every day from its date onward.
+weight goes to `weight_log`. The phone owns the journal (D34); the server keeps its copy.
 """
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 from uuid import UUID
 
 from psycopg import Connection
 from pydantic import BaseModel, Field, model_validator
-
-from strap_server.rederive import rederive
-from strap_server.zones import Zones
 
 # Units are fixed per kind so entries stay comparable.
 UNITS = {"caffeine": "mg", "alcohol": "drinks", "weight": "kg"}
@@ -37,23 +33,39 @@ class JournalIn(BaseModel):
         return self
 
 
-def add(conn: Connection, conninfo: str | None, user_id: UUID, entry: JournalIn) -> dict:
-    """Stores one entry. A weight re-derives from its local date onward (after commit)."""
+def add(conn: Connection, user_id: UUID, entry: JournalIn) -> dict:
+    """Stores one entry and returns its id."""
     if entry.kind == "weight":
         conn.execute(
             "INSERT INTO weight_log (user_id, ts, kg) VALUES (%s, %s, %s) ON CONFLICT (user_id, ts) DO UPDATE SET kg = EXCLUDED.kg",
             (user_id, entry.ts, entry.amount),
         )
-        conn.commit()
-        with conn.cursor() as cur:
-            zones = Zones.load(cur, user_id)
-        days = rederive(conninfo, user_id, since=zones.date_of(entry.ts), log=lambda _: None)
-        return {"id": f"weight:{int(entry.ts.timestamp() * 1000)}", "rederived_days": days}
+        return {"id": f"weight:{int(entry.ts.timestamp() * 1000)}"}
     row = conn.execute(
         "INSERT INTO manual_entry (user_id, kind, ts, amount, unit, name) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
         (user_id, entry.kind, entry.ts, entry.amount, UNITS[entry.kind], entry.name),
     ).fetchone()
-    return {"id": str(row[0]), "rederived_days": 0}
+    return {"id": str(row[0])}
+
+
+class ProfileIn(BaseModel):
+    """The owner's profile as the phone holds it (D34: the phone owns it, the server keeps a copy)."""
+
+    height_cm: float | None = Field(default=None, ge=100, le=250)
+    sex: Literal["male", "female"] | None = None
+    dob: date | None = None
+    srpa: int | None = Field(default=None, ge=0, le=4)
+
+
+def set_profile(conn: Connection, user_id: UUID, p: ProfileIn) -> dict:
+    """Replaces the server's copy of the profile."""
+    conn.execute(
+        "INSERT INTO profile (user_id, height_cm, sex, dob, srpa) VALUES (%s, %s, %s, %s, %s) "
+        "ON CONFLICT (user_id) DO UPDATE SET height_cm = EXCLUDED.height_cm, sex = EXCLUDED.sex, "
+        "dob = EXCLUDED.dob, srpa = EXCLUDED.srpa, updated_at = now()",
+        (user_id, p.height_cm, p.sex, p.dob, p.srpa),
+    )
+    return {"stored": True}
 
 
 def entries(conn: Connection, user_id: UUID, first: datetime, last: datetime) -> list[dict]:
