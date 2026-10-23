@@ -43,9 +43,13 @@ data class Moment(
 
 /** "Your day": moments joined by a 2 dp connector, inside one card. */
 @Composable
-fun Timeline(moments: List<Moment>) {
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(LocalRidgeColors.current.card).padding(vertical = 8.dp)) {
+fun Timeline(moments: List<Moment>, footer: (@Composable () -> Unit)? = null) {
+    Column(Modifier.fillMaxWidth().cardSurface(RoundedCornerShape(20.dp)).padding(vertical = 8.dp)) {
         moments.forEachIndexed { i, m -> TimelineRow(m, first = i == 0, last = i == moments.lastIndex) }
+        footer?.let {
+            Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).height(1.dp).background(LocalRidgeColors.current.surface3))
+            Box(Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 8.dp)) { it() }
+        }
     }
 }
 
@@ -65,7 +69,7 @@ private fun TimelineRow(m: Moment, first: Boolean, last: Boolean) {
                 if (bottom > top) drawLine(line, Offset(x, top), Offset(x, bottom), 2.dp.toPx())
             },
             contentAlignment = Alignment.Center,
-        ) { IconCircle(m.icon, m.tone.container, m.tone.onContainer, size = 28.dp, iconSize = 16.dp) }
+        ) { IconCircle(m.icon, m.tone.container, m.tone.accent, size = 30.dp, iconSize = 16.dp) }
         Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
             Text(m.title, style = RidgeType.rowTitle)
             Text(m.subtitle, style = RidgeType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)

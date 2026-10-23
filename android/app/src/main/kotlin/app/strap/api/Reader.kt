@@ -5,8 +5,11 @@ import strap.science.Bucket
 import strap.science.BucketSeries
 import strap.science.DaySeries
 import strap.science.DaySummary
+import strap.science.DayRings
 import strap.science.Derived
+import strap.science.IllnessCheck
 import strap.science.Workout
+import strap.science.WorkoutDetail
 import java.time.LocalDate
 
 /**
@@ -28,4 +31,13 @@ interface Reader {
 
     /** The journal from [from] through [to], newest first. */
     suspend fun journal(from: LocalDate, to: LocalDate): List<JournalEntry>
+
+    /** Each day's recovery, strain, the strap's sleep score and mean stress, [from] through [to] (the calendar). */
+    suspend fun rings(from: LocalDate, to: LocalDate): List<DayRings>
+
+    /** The illness check behind the flag on [day]: each limb's change and the baseline nights there are. */
+    suspend fun illnessCheck(day: LocalDate): IllnessCheck
+
+    /** One workout's own load, zones and heart rate; null without a profile or resting HR. */
+    suspend fun workoutDetail(workout: Workout): WorkoutDetail?
 }

@@ -38,7 +38,7 @@ import app.strap.ui.theme.RidgeType
 import java.time.LocalDate
 import java.time.format.TextStyle
 
-/** Seven days, each a small recovery ring around its date; tapping selects the day. */
+/** Seven days, each a small recovery ring in its zone colour around its date; tapping selects the day. */
 @Composable
 fun WeekStrip(days: List<LocalDate>, recovery: Map<LocalDate, Double>, selected: LocalDate, onSelect: (LocalDate) -> Unit) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -49,7 +49,6 @@ fun WeekStrip(days: List<LocalDate>, recovery: Map<LocalDate, Double>, selected:
 @Composable
 private fun DayCell(day: LocalDate, recovery: Double?, selected: Boolean, onClick: () -> Unit) {
     val r = LocalRidgeColors.current
-    val arc = LocalMetricColors.current.recovery
     val bg by animateColorAsState(if (selected) r.surface3 else Color.Transparent, tween(200))
     val locale = LocalLocale.current.platformLocale
     val letter = day.dayOfWeek.getDisplayName(TextStyle.NARROW, locale)
@@ -72,7 +71,7 @@ private fun DayCell(day: LocalDate, recovery: Double?, selected: Boolean, onClic
                 val tl = Offset(center.x - rad, center.y - rad)
                 val sz = Size(2 * rad, 2 * rad)
                 drawArc(r.surface4, 0f, 360f, false, tl, sz, style = Stroke(3f * s))
-                recovery?.let { drawArc(arc, -90f, 360f * (it / 100).toFloat().coerceIn(0f, 1f), false, tl, sz, style = Stroke(3f * s, cap = StrokeCap.Round)) }
+                recovery?.let { drawArc(r.zone(it), -90f, 360f * (it / 100).toFloat().coerceIn(0f, 1f), false, tl, sz, style = Stroke(3f * s, cap = StrokeCap.Round)) }
             }
             Text("${day.dayOfMonth}", fontSize = 13.sp, style = RidgeType.body)
         }

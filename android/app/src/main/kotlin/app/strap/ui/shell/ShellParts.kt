@@ -16,19 +16,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDefaults
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -100,26 +94,6 @@ internal fun Refreshable(refreshing: Boolean, onRefresh: () -> Unit, content: @C
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-internal fun DayPicker(day: LocalDate, onDismiss: () -> Unit, onPick: (LocalDate) -> Unit) {
-    val today = LocalDate.now()
-    // The picker speaks UTC-midnight millis, which map 1:1 onto epoch days.
-    val state = rememberDatePickerState(
-        initialSelectedDateMillis = day.toEpochDay() * DAY_MS,
-        selectableDates = object : SelectableDates {
-            override fun isSelectableDate(utcTimeMillis: Long) = utcTimeMillis <= today.toEpochDay() * DAY_MS
-        },
-    )
-    DatePickerDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = { TextButton(onClick = { state.selectedDateMillis?.let { onPick(LocalDate.ofEpochDay(it / DAY_MS)) } ?: onDismiss() }) { Text("Show") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
-        colors = DatePickerDefaults.colors(containerColor = LocalRidgeColors.current.surface3),
-    ) { DatePicker(state, colors = DatePickerDefaults.colors(containerColor = LocalRidgeColors.current.surface3)) }
-}
-
-private const val DAY_MS = 86_400_000L
 internal val SHORT_DATE = DateTimeFormatter.ofPattern("EEE d MMM")
 
 /** Today / Yesterday / the weekday within the last week / a date. */

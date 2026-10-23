@@ -144,6 +144,8 @@ heart_rate_zones (Probable), maximum_heart_rate (Established), load_currency (Pr
 strain = clamp(21 × (load / P95)^0.75, 0, 21)        P95 = 95th pct of cardio_load>0 over the 90 d ending that day
 ACWR   = mean(last 7 cardio_load rows) / mean(last 28)   needs ≥ 28 rows and chronic > 0
 ```
+The app shows the 7-day mean against 0.8–1.3× the 28-day mean as "below range", "in range"
+or "a load spike" (Fitness, Today, a workout's load), never as a verdict.
 ACWR is **Contested** (training_load_acwr): descriptive "load spike" only, never a
 verdict; the 0.8–1.3/1.5 bands are soft heuristics.
 
@@ -239,7 +241,8 @@ bio_age = chrono + Σ Δyears         WITHHELD entirely if any term is absent
 ```
 FRIEND medians (male/female by decade 20…80): 46.5/36.6, 39.7/28.3, 35.3/25.7,
 29.2/22.9, 24.6/19.6, 20.6/17.2, 17.6/15.4. Regularity term deliberately excluded.
-Framed as a motivational estimate. Source: biological_age_estimate (Probable).
+Framed as a motivational estimate. The app shows it with a range: the VO₂max estimate's SEE
+(±5.1 ml/kg/min, §2.10) carried through the fitness term. Source: biological_age_estimate (Probable).
 
 ### 2.12 Charge 0–100, minute by minute (read-time, D33)
 

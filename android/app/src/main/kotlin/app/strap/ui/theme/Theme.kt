@@ -30,6 +30,10 @@ data class MetricColors(
     val heartTone: MetricTone,
     val stressTone: MetricTone,
     val stepsTone: MetricTone,
+    /** Charge, the body battery. */
+    val chargeTone: MetricTone,
+    /** Things with no metric of their own: summaries, settings, the journal's weight. */
+    val neutralTone: MetricTone,
     /** Gauge tracks, chart gridlines, empty bar tracks (`surface3`). */
     val track: Color,
 ) {
@@ -39,6 +43,7 @@ data class MetricColors(
     val heart get() = heartTone.accent
     val stress get() = stressTone.accent
     val steps get() = stepsTone.accent
+    val charge get() = chargeTone.accent
 }
 
 /** The neutrals and zone colours Material's scheme has no slot for. */
@@ -54,6 +59,11 @@ data class RidgeColors(
     val zoneYellow: Color,
     val zoneRed: Color,
 ) {
+    /** Status colours: better than usual, worth a look, worse. */
+    val good: Color get() = zoneGreen
+    val warn: Color get() = zoneYellow
+    val bad: Color get() = zoneRed
+
     /** Recovery zone: ≥ 67 green, 34–66 yellow, below red. */
     fun zone(recovery: Double): Color = when {
         recovery >= 67 -> zoneGreen
@@ -81,6 +91,8 @@ private val DarkMetrics = MetricColors(
     heartTone = MetricTone(Color(0xFFFF9E96), Color(0xFF502825), Color(0xFFFFD8D4)),
     stressTone = MetricTone(Color(0xFFF5AC69), Color(0xFF4B2E11), Color(0xFFFEDEC3)),
     stepsTone = MetricTone(Color(0xFF44D4E2), Color(0xFF003E44), Color(0xFFBFEFF4)),
+    chargeTone = MetricTone(Color(0xFFF4CD4B), Color(0xFF3F3410), Color(0xFFFFEFC2)),
+    neutralTone = MetricTone(Color(0xFFE6E8EA), Color(0xFF242729), Color(0xFFEDEFF0)),
     track = DarkRidge.surface3,
 )
 
@@ -91,6 +103,8 @@ private val LightMetrics = MetricColors(
     heartTone = MetricTone(Color(0xFFAB413E), Color(0xFFFFD8D4), Color(0xFF451816)),
     stressTone = MetricTone(Color(0xFFA05100), Color(0xFFFEDEC3), Color(0xFF401F00)),
     stepsTone = MetricTone(Color(0xFF007E8F), Color(0xFFBFEFF4), Color(0xFF003239)),
+    chargeTone = MetricTone(Color(0xFFA87400), Color(0xFFFFEFC2), Color(0xFF3A2A00)),
+    neutralTone = MetricTone(Color(0xFF151618), Color(0xFFE1E3E5), Color(0xFF101213)),
     track = LightRidge.surface3,
 )
 
@@ -137,6 +151,14 @@ object RidgeType {
     val setupTitle = TextStyle(fontSize = 36.sp, lineHeight = 44.sp, fontWeight = FontWeight.Normal)
     val bigNumber = TextStyle(fontSize = 48.sp, lineHeight = 52.sp, fontWeight = FontWeight.Normal)
     val cardNumber = TextStyle(fontSize = 36.sp, lineHeight = 40.sp, fontWeight = FontWeight.Normal)
+    /** The card language's three sizes: a card's headline value, a tile's value, a section's title. */
+    val cardValue = TextStyle(fontSize = 30.sp, lineHeight = 34.sp, fontWeight = FontWeight.Normal)
+    val tileValue = TextStyle(fontSize = 22.sp, lineHeight = 26.sp, fontWeight = FontWeight.Normal)
+    val sectionTitle = TextStyle(fontSize = 17.sp, lineHeight = 22.sp, fontWeight = FontWeight.Medium)
+    /** A card footer's figures and a part's score. */
+    val footValue = TextStyle(fontSize = 17.sp, lineHeight = 22.sp, fontWeight = FontWeight.Medium)
+    /** The name under a ring. */
+    val ringLabel = TextStyle(fontSize = 13.sp, lineHeight = 18.sp, fontWeight = FontWeight.Medium)
     val rowValue = TextStyle(fontSize = 22.sp, lineHeight = 26.sp, fontWeight = FontWeight.Normal)
     val sideValue = TextStyle(fontSize = 24.sp, lineHeight = 28.sp, fontWeight = FontWeight.Normal)
     val sheetTitle = TextStyle(fontSize = 24.sp, lineHeight = 30.sp, fontWeight = FontWeight.Medium)
@@ -147,7 +169,7 @@ object RidgeType {
     val paragraph = TextStyle(fontSize = 15.sp, lineHeight = 22.sp, fontWeight = FontWeight.Normal)
     val section = TextStyle(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.8.sp)
     val caption = TextStyle(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.Normal)
-    val change = TextStyle(fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Medium)
+    val change = TextStyle(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium)
     val unit = TextStyle(fontSize = 10.sp, lineHeight = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.6.sp)
 }
 
@@ -158,6 +180,35 @@ private val Type = Typography().let { t ->
         labelLarge = t.labelLarge.copy(fontWeight = FontWeight.Medium),
         labelMedium = t.labelMedium.copy(fontSize = 12.sp, fontWeight = FontWeight.Medium),
     )
+}
+
+// The night palette: the Sleep tab sits on it in both themes, as in Bevel's sleep screens.
+private val NightRidge = RidgeColors(
+    bg = Color(0xFF0D1830), surface1 = Color(0xFF111E3A), surface2 = Color(0xFF15233F), card = Color(0xFF1B2B52),
+    surface3 = Color(0xFF26386A), surface4 = Color(0xFF2F4478),
+    zoneGreen = DarkRidge.zoneGreen, zoneYellow = DarkRidge.zoneYellow, zoneRed = DarkRidge.zoneRed,
+)
+
+private val NightMetrics = DarkMetrics.copy(
+    sleepTone = MetricTone(Color(0xFFB9A4FF), Color(0xFF332D63), Color(0xFFE6DFFF)),
+    heartTone = MetricTone(Color(0xFFFF8FA3), Color(0xFF4A2236), Color(0xFFFFD8DF)),
+    track = NightRidge.surface3,
+)
+
+private val Night = Dark.copy(
+    background = NightRidge.bg, surface = NightRidge.bg, onBackground = Color(0xFFE8EDF8), onSurface = Color(0xFFE8EDF8),
+    onSurfaceVariant = Color(0xFF9AA8C6), surfaceVariant = NightRidge.surface3,
+    surfaceContainerLowest = NightRidge.bg, surfaceContainerLow = NightRidge.surface1, surfaceContainer = NightRidge.card,
+    surfaceContainerHigh = NightRidge.surface3, surfaceContainerHighest = NightRidge.surface4, outlineVariant = Color(0xFF2A3B66),
+)
+
+/** The night palette over [content] when [enabled] (the Sleep tab); otherwise the theme as it is. */
+@Composable
+fun NightTheme(enabled: Boolean, content: @Composable () -> Unit) {
+    if (!enabled) return content()
+    CompositionLocalProvider(LocalMetricColors provides NightMetrics, LocalRidgeColors provides NightRidge) {
+        MaterialTheme(colorScheme = Night, typography = Type, content = content)
+    }
 }
 
 /** Follows the system light/dark setting (owner's choice). */

@@ -7,8 +7,11 @@ import app.strap.ui.components.Point
 import app.strap.ui.components.Span
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import strap.science.Breathing
 import strap.science.Card
 import strap.science.DailyNumber
+import strap.science.Derived
+import strap.science.IllnessCheck
 import strap.science.TimedValue
 import strap.science.Workout
 import strap.science.shown
@@ -60,14 +63,31 @@ data class Factor(
     val needMin: Double?,
 )
 
+/** 7-day mean cardio load against the 28-day mean (spec/02 §2.5), and the 0.8–1.3× range around it. */
+class LoadRange(val acute: Double, val low: Double, val high: Double) {
+    val words get() = when {
+        acute < low -> "Below range"
+        acute > high -> "Load spike"
+        else -> "In range"
+    }
+}
+
+internal fun loadRange(load: Map<LocalDate, Double>, day: LocalDate): LoadRange? {
+    val rows = load.filterKeys { it <= day && it > day.minusDays(28) }
+    if (rows.size < 28) return null
+    val chronic = rows.values.average().takeIf { it > 0 } ?: return null
+    val acute = rows.filterKeys { it > day.minusDays(7) }.values.average()
+    return LoadRange(acute, 0.8 * chronic, 1.3 * chronic)
+}
+
 /** A day's raw stats for one signal (the strap's own values), and its usual up to the same clock time. */
 data class DayStats(val min: Double, val max: Double, val mean: Double, val maxAt: Long, val usual: Double?)
 
 /** One slice of a day's per-minute series: its lowest, highest and mean value. */
 data class Slice(val t: Long, val min: Double, val max: Double, val mean: Double)
 
-/** The day's per-minute heart rate and stress in [SLICE_MS] slices, and the sleep to shade. */
-data class DayCurves(val window: DayWindow, val hr: List<Slice>, val stress: List<Slice>, val sleep: List<Span>) {
+/** The day's per-minute heart rate and stress in [SLICE_MS] slices, steps summed up slice by slice, and the sleep to shade. */
+data class DayCurves(val window: DayWindow, val hr: List<Slice>, val stress: List<Slice>, val stepsSoFar: List<Point>, val sleep: List<Span>) {
     val dayStart: Long get() = window.start
 }
 
@@ -97,11 +117,25 @@ data class TodayData(
     val activeMin: Double?,
     val restingHr: Reading,
     val hrv: Reading,
+    /** The night's mean SpO₂ against the median of the 30 nights before. */
+    val spo2: Reading,
+    /** The strap's blood-oxygen drops an hour through the night (its own figure). */
+    val breathing: Card<Breathing>,
+    /** The night's mean skin temperature against the 14 nights before. */
+    val skinTemp: Reading,
+    /** The max HR the day's zones are cut by (Tanaka, from the profile); null without one. */
+    val hrmax: Int?,
     val heart: DayStats?,
     val stress: DayStats?,
     val stressNote: String?,
     val curves: DayCurves,
     val illness: String?,
+    /** The night the active [illness] flag was raised on (a flag stays active two days); null without one. */
+    val illnessNight: LocalDate?,
+    /** Last night's illness check: each limb against the 14 nights before; null if it could not be read. */
+    val illnessCheck: IllnessCheck?,
+    /** The 7-day load against its range (null under 28 days of load). */
+    val load: LoadRange?,
     val journal: List<JournalEntry>,
     val workouts: List<Workout>,
 ) {
@@ -128,6 +162,21 @@ private fun slices(points: List<TimedValue>, dayStart: Long): List<Slice> =
     points.groupBy { (it.at.toEpochMilli() - dayStart) / SLICE_MS }.toSortedMap()
         .map { (i, ps) -> ps.map { it.value }.let { v -> Slice(dayStart + i * SLICE_MS, v.min(), v.max(), v.average()) } }
 
+/** Steps from local midnight, summed up at the end of each [SLICE_MS] slice that has any. */
+private fun stepsSoFar(points: List<TimedValue>, dayStart: Long): List<Point> {
+    var total = 0.0
+    return points.groupBy { (it.at.toEpochMilli() - dayStart) / SLICE_MS }.toSortedMap()
+        .map { (i, ps) -> total += ps.sumOf { it.value }; Point(dayStart + (i + 1) * SLICE_MS, total) }
+}
+
+/** The day's value of a nightly metric against the median of the nights before it (five or more). */
+private fun nightly(rows: List<Derived>, day: LocalDate): Reading {
+    val today = rows.firstOrNull { it.day == day } ?: return Reading.Withheld("The strap recorded nothing for this night.")
+    val before = rows.filter { it.day < day }.map { it.value }.sorted()
+    val usual = before.takeIf { it.size >= 5 }?.let { if (it.size % 2 == 1) it[it.size / 2] else (it[it.size / 2 - 1] + it[it.size / 2]) / 2 }
+    return Reading.Value(today.value, usual)
+}
+
 private fun charge(c: strap.science.ChargeCard) = Charge(
     c.value, c.at.toEpochMilli(), c.atWake, c.high, c.low, c.recharged, c.activity, c.stress, c.living, c.threshold, c.personal,
     c.curve.map { Point(it.at.toEpochMilli(), it.value) },
@@ -142,8 +191,12 @@ suspend fun loadToday(api: Reader, day: LocalDate): TodayData = coroutineScope {
     val recoveryCall = async { api.daily("recovery_score", stripEnd.minusDays(13), stripEnd) }
     val journalCall = async { api.journal(day, day) }
     val workoutsCall = async { api.workouts(day, day) }
-    val seriesCall = async { api.daySeries(day, listOf("hr", "stress")) }
+    val seriesCall = async { api.daySeries(day, listOf("hr", "stress", "steps")) }
+    val spo2Call = async { api.daily("spo2_overnight", day.minusDays(30), day) }
+    val loadCall = async { api.daily("cardio_load", day.minusDays(27), day) }
+    val checkCall = async { api.illnessCheck(day) }
     val s = summaryCall.await()
+    val check = checkCall.await()
     val series = seriesCall.await()
     val window = DayWindow.of(series.start, series.end, series.timezone)
     val recovery = s.recovery.shown
@@ -172,14 +225,22 @@ suspend fun loadToday(api: Reader, day: LocalDate): TodayData = coroutineScope {
         activeMin = reading(s.activity.mvpaMin).valueOrNull,
         restingHr = reading(s.heart.resting),
         hrv = reading(s.heart.hrv),
+        spo2 = nightly(spo2Call.await(), day),
+        breathing = s.sleep.breathing,
+        hrmax = s.strain.shown?.hrmax?.takeIf { it > 0 },
+        skinTemp = check.let { ch -> ch.tempNight?.let { Reading.Value(it, ch.tempUsual) } ?: Reading.Withheld("The strap recorded no skin temperature this night.") },
         heart = stats(s.heart.today),
         stress = stats(s.stress),
         stressNote = (s.stress as? Card.Withheld)?.message,
         curves = DayCurves(
             window, slices(series.series["hr"].orEmpty(), window.start), slices(series.series["stress"].orEmpty(), window.start),
+            stepsSoFar(series.series["steps"].orEmpty(), window.start),
             series.sleep.map { Span(it.start.toEpochMilli(), it.end.toEpochMilli()) },
         ),
         illness = s.illness?.framing,
+        illnessNight = s.illness?.date,
+        illnessCheck = check,
+        load = loadRange(loadCall.await().associate { it.day to it.value }, day),
         journal = journalCall.await(),
         workouts = workoutsCall.await(),
     )

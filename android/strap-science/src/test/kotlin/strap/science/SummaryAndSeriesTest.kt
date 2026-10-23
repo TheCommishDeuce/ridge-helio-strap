@@ -44,6 +44,11 @@ class SummaryAndSeriesTest {
             "Possible early signal — consider lighter activity today. Breathing rate +2.4 bpm vs your 14-day baseline; skin temperature +0.35°C — sustained across two nights, the Smarr 2020 / Quer 2021 pattern. Not a diagnosis.",
             illnessFraming(2.4, 0.35, true),
         )
+        // A flag raised by skin temperature alone can carry a breathing rate under its baseline.
+        assertEquals(
+            "Possible early signal — consider lighter activity today. Breathing rate −0.2 bpm vs your 14-day baseline; skin temperature +1.51°C. Not a diagnosis.",
+            illnessFraming(-0.2, 1.51, false),
+        )
     }
 
     @Test

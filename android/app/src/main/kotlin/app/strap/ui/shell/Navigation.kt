@@ -4,20 +4,22 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.DirectionsRun
 import androidx.compose.material.icons.automirrored.rounded.DirectionsRun
 import androidx.compose.material.icons.filled.Bedtime
-import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.Biotech
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material.icons.outlined.Bedtime
-import androidx.compose.material.icons.outlined.EditNote
+import androidx.compose.material.icons.outlined.Biotech
 import androidx.compose.material.icons.outlined.Today
 import androidx.compose.material.icons.outlined.Watch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.vector.ImageVector
+import app.strap.ui.components.CalendarMetric
 import app.strap.ui.components.Info
 import app.strap.ui.detail.DetailMetric
 import java.time.LocalDate
@@ -25,14 +27,26 @@ import java.time.LocalDate
 enum class Tab(val label: String, val icon: ImageVector, val selectedIcon: ImageVector) {
     TODAY("Today", Icons.Outlined.Today, Icons.Filled.Today),
     SLEEP("Sleep", Icons.Outlined.Bedtime, Icons.Filled.Bedtime),
-    ACTIVITY("Activity", Icons.AutoMirrored.Outlined.DirectionsRun, Icons.AutoMirrored.Rounded.DirectionsRun),
-    JOURNAL("Journal", Icons.Outlined.EditNote, Icons.Filled.EditNote),
+    ACTIVITY("Fitness", Icons.AutoMirrored.Outlined.DirectionsRun, Icons.AutoMirrored.Rounded.DirectionsRun),
+    BIOLOGY("Biology", Icons.Outlined.Biotech, Icons.Filled.Biotech),
     STRAP("Strap", Icons.Outlined.Watch, Icons.Filled.Watch),
 }
 
 /** What covers the tabs; the tab under it stays highlighted in the navigation bar. */
 sealed interface Pushed {
     data object Recovery : Pushed
+
+    /** The day hour by hour, with pinned rings. */
+    data object Timeline : Pushed
+
+    /** Caffeine, alcohol and weight, opened from Today's top bar. */
+    data object Journal : Pushed
+
+    /** The day's strain: its ring, energy and heart-rate zones. */
+    data object Strain : Pushed
+
+    /** One workout, by its start (epoch ms). */
+    data class Workout(val startMs: Long) : Pushed
 
     data class Detail(val metric: DetailMetric) : Pushed
 
@@ -56,7 +70,14 @@ class Shell {
     val stack = mutableStateListOf<Pushed>()
     var day by mutableStateOf(LocalDate.now())
     var sheet by mutableStateOf<Info?>(null)
-    var picking by mutableStateOf(false)
+    /** The open calendar sheet and the ring it starts on; null when closed. */
+    var calendar by mutableStateOf<CalendarMetric?>(null)
+
+    /** Bumped on every journal entry made outside the journal, so the day's screens reload. */
+    var journalEdits by mutableIntStateOf(0)
+
+    /** The Fitness tab's training calendar is open. */
+    var trainingCalendar by mutableStateOf(false)
 
     val top: Pushed? get() = stack.lastOrNull()
 

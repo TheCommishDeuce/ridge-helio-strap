@@ -1,59 +1,86 @@
 package app.strap.ui.activity
 
+import android.content.Context
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.DirectionsRun
-import androidx.compose.material.icons.rounded.Air
+import androidx.compose.material.icons.automirrored.rounded.DirectionsWalk
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.MonitorHeart
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import app.strap.api.Reader
 import app.strap.api.ApiException
+import app.strap.api.Reader
 import app.strap.ui.Loading
 import app.strap.ui.components.Bar
+import app.strap.ui.components.BandGauge
 import app.strap.ui.components.CardHeader
+import app.strap.ui.components.CardValue
 import app.strap.ui.components.ConnectedButtons
 import app.strap.ui.components.DailyBars
-import app.strap.ui.components.GroupHeader
+import app.strap.ui.components.DailyChartSheet
 import app.strap.ui.components.Grouped
-import app.strap.ui.components.HeroGauge
-import app.strap.ui.components.HeroRow
 import app.strap.ui.components.IconCircle
-import app.strap.ui.components.InfoButton
 import app.strap.ui.components.Infos
 import app.strap.ui.components.ListRow
+import app.strap.ui.components.MiniBars
 import app.strap.ui.components.Note
 import app.strap.ui.components.RidgeCard
-import app.strap.ui.components.SideStat
+import app.strap.ui.components.SectionTitle
+import app.strap.ui.components.Sparkline
 import app.strap.ui.components.Subtle
-import app.strap.ui.components.changeNote
+import app.strap.ui.components.Tile
+import app.strap.ui.components.TileGrid
+import app.strap.ui.components.trendNote
 import app.strap.ui.components.clockOf
 import app.strap.ui.theme.LocalMetricColors
 import app.strap.ui.theme.LocalRidgeColors
+import app.strap.ui.theme.MetricColors
 import app.strap.ui.theme.RidgeType
+import app.strap.ui.today.loadRange
 import app.strap.ui.today.workoutLine
 import strap.science.Card
 import strap.science.DaySummary
-import strap.science.Pai
 import strap.science.Strain
 import strap.science.Workout
 import strap.science.shown
@@ -62,19 +89,55 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 
-private class ActivityData(val summary: DaySummary, val daily: Map<String, Map<LocalDate, Double>>, val workouts: List<Workout>)
+private class FitnessData(val summary: DaySummary, val daily: Map<String, Map<LocalDate, Double>>, val workouts: List<Workout>)
 
+/** A chart the Fitness tab can pin: a daily metric, how it is drawn and printed. */
+/** [higherBetter]: which way the metric's trend is good (null: neither, as load). */
+private class Chart(val label: String, val metric: String, val unit: String, val bars: Boolean, val tone: (MetricColors) -> Color, val format: (Double) -> String,
+    val higherBetter: Boolean?)
+
+private val CHARTS: Map<String, Chart> = linkedMapOf(
+    "active" to Chart("Active minutes", "mvpa_min", "min", true, { it.recovery }, { "${it.roundToInt()}" }, true),
+    "vo2" to Chart("VO₂max", "vo2max_estimate", "ml/kg/min", false, { it.recovery }, { "%.1f".format(it) }, true),
+    "rhr" to Chart("Resting HR", "rhr_daily", "bpm", false, { it.heart }, { "${it.roundToInt()}" }, false),
+    "hrv" to Chart("HRV", "hrv_sleep_avg", "ms", false, { it.sleep }, { "${it.roundToInt()}" }, true),
+    "load" to Chart("Daily cardio load", "cardio_load", "TRIMP", true, { it.strain }, { "${it.roundToInt()}" }, null),
+    "steps" to Chart("Steps", "steps_total", "steps", true, { it.steps }, { "%,d".format(it.roundToInt()) }, true),
+    "rr" to Chart("Breathing rate", "respiratory_rate_sleep", "rpm", false, { it.sleep }, { "%.1f".format(it) }, false),
+    "spo2" to Chart("SpO₂", "spo2_overnight", "%", false, { it.steps }, { "${it.roundToInt()}" }, true),
+)
+
+private val DEFAULT_PINS = listOf("active", "vo2", "rhr", "hrv", "load", "steps")
+
+private class PinStore(context: Context) {
+    private val prefs = context.getSharedPreferences("ui", Context.MODE_PRIVATE)
+
+    fun load(): List<String> = prefs.getString("fitness_pins", null)?.split(',')?.filter { it in CHARTS } ?: DEFAULT_PINS
+
+    fun save(pins: List<String>) = prefs.edit().putString("fitness_pins", pins.joinToString(",")).apply()
+}
+
+/**
+ * Fitness (Bevel's layout): the week with what you did each day, the day's note, the
+ * training load and the strap's PAI, the week's steps, charts you pin, and the workouts.
+ */
 @Composable
-fun ActivityScreen(api: Reader, refreshKey: Any?) {
-    var data by remember { mutableStateOf<ActivityData?>(null) }
+fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit) {
+    var data by remember { mutableStateOf<FitnessData?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
-    var days by rememberSaveable { mutableIntStateOf(7) }
     val today = LocalDate.now()
-    LaunchedEffect(refreshKey) {
+    var dayEpoch by rememberSaveable { mutableLongStateOf(today.toEpochDay()) }
+    val day = LocalDate.ofEpochDay(dayEpoch)
+    val context = LocalContext.current
+    val store = remember { PinStore(context) }
+    val pins = remember { mutableStateListOf<String>().apply { addAll(store.load()) } }
+    var editing by remember { mutableStateOf(false) }
+    var open by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(refreshKey, dayEpoch) {
         try {
-            data = ActivityData(
-                api.summary(today),
-                listOf("steps_total", "cardio_load", "mvpa_min").associateWith { m -> api.daily(m, today.minusDays(29), today).associate { it.day to it.value } },
+            data = FitnessData(
+                api.summary(day),
+                CHARTS.values.map { it.metric }.distinct().associateWith { m -> api.daily(m, today.minusDays(41), today).associate { it.day to it.value } },
                 api.workouts(today.minusDays(29), today),
             )
             error = null
@@ -85,147 +148,118 @@ fun ActivityScreen(api: Reader, refreshKey: Any?) {
     val d = data ?: return Loading(error)
     val c = LocalMetricColors.current
     val r = LocalRidgeColors.current
-    fun series(metric: String): Map<LocalDate, Double> = d.daily.getValue(metric)
-    val first = today.minusDays(days - 1L)
-    val strain = d.summary.strain.shown
-    val typical = strain?.typicalLoad
-    val mvpa = series("mvpa_min")
-    val weekActive = (0..6).mapNotNull { mvpa[today.minusDays(it.toLong())] }.takeIf { it.isNotEmpty() }?.sum()
-    LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    val zone = ZoneId.systemDefault()
+    val byDay = d.workouts.groupBy { it.start.atZone(zone).toLocalDate() }
+    val dayWorkouts = byDay[day].orEmpty()
+    val load = d.daily.getValue("cardio_load")
+    val range = loadRange(load, day)
+    LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item { WeekStrip(today, day, byDay.keys) { dayEpoch = it.toEpochDay() } }
         item {
-            val load = strain?.cardioLoad
-            val value = strain?.value
-            HeroRow(
-                left = {
-                    SideStat(load?.roundToInt()?.toString() ?: "—", "Load · TRIMP",
-                        changeNote(load?.let { l -> typical?.let { l - it } }, "vs typical", neutral = true), it)
-                },
-                right = {
-                    SideStat(weekActive?.roundToInt()?.toString() ?: "—", "Active min",
-                        Note("goal 150 / week", if ((weekActive ?: 0.0) >= 150) r.zoneGreen else MaterialTheme.colorScheme.onSurfaceVariant), it)
-                },
-            ) {
-                HeroGauge(value?.let { "%.1f".format(it) } ?: "—", "of 21", value?.let { (it / 21).toFloat() }, c.strain, "Strain", null)
+            val w = dayWorkouts.firstOrNull()
+            val rangeLine = range?.let { " Your 7-day load is ${it.acute.roundToInt()}, ${it.words.lowercase()} (${it.low.roundToInt()}–${it.high.roundToInt()})." } ?: ""
+            RidgeCard(spacing = 6.dp) {
+                CardHeader(if (w != null) "Workout done" else "Rest day", icon = if (w != null) Icons.AutoMirrored.Rounded.DirectionsRun else Icons.AutoMirrored.Rounded.DirectionsWalk, tone = c.strainTone)
+                Text((if (w != null) "A ${w.durationS / 60}-minute workout${w.avgHr?.let { " at an average of $it bpm" } ?: ""}." else "No workout recorded on this day.") + rangeLine,
+                    style = RidgeType.body, color = muted)
             }
         }
-        item { ConnectedButtons(listOf(7, 30), days, { if (it == 7) "Week" else "Month" }) { days = it } }
+        item { SectionTitle("Training load") }
         item {
-            val steps = series("steps_total")
-            val inRange = steps.filterKeys { it >= first }
-            RidgeCard {
-                CardHeader("Steps")
-                Text("%,d".format(inRange.values.sum().roundToInt()), style = RidgeType.bigNumber)
-                Subtle(
-                    (if (days == 7) "this week" else "last 30 days") +
-                        (inRange.values.takeIf { it.isNotEmpty() }?.average()?.let { " · %,d a day on average".format(it.roundToInt()) } ?: ""),
-                )
-                DailyBars(steps, first, today, c.steps, { "%,d steps".format(it.roundToInt()) }, highlightLast = true, height = 130.dp)
-            }
-        }
-        item {
-            val inRange = mvpa.filterKeys { it >= first }.values
-            RidgeCard {
-                CardHeader("Active minutes", info = Infos.active)
-                Row(verticalAlignment = Alignment.Bottom) {
-                    Text("${inRange.sum().roundToInt()}", style = RidgeType.cardNumber)
-                    Subtle(if (days == 7) "  of 150 min this week" else "  min in 30 days", Modifier.padding(bottom = 5.dp))
-                }
-                DailyBars(mvpa, first, today, c.recovery, { "${it.roundToInt()} min" }, highlightLast = true, height = 90.dp)
-            }
-        }
-        item {
-            val load = series("cardio_load")
-            RidgeCard {
-                CardHeader("Load", info = Infos.load)
-                Row(verticalAlignment = Alignment.Bottom) {
-                    Text(load[today]?.roundToInt()?.toString() ?: "—", style = RidgeType.cardNumber)
-                    Subtle("  TRIMP today", Modifier.padding(bottom = 5.dp))
-                }
-                DailyBars(load, first, today, c.strain, { "%.0f TRIMP".format(it) }, highlightLast = true, height = 90.dp)
-            }
-        }
-        item { PaiCard(d.summary.pai, today) }
-        item { ZonesCard(d.summary.strain) }
-        item { GroupHeader("Workouts", trailing = "${d.workouts.size} in 30 days") }
-        item { Workouts(d.workouts) }
-        item {
-            val v = d.summary.vo2max
-            RidgeCard(padding = 14.dp) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconCircle(Icons.Rounded.Air, c.strainTone.container, c.strainTone.onContainer)
-                    Column(Modifier.weight(1f).padding(start = 16.dp)) {
-                        Text("VO₂max", style = RidgeType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        when (v) {
-                            is Card.Shown -> Row(verticalAlignment = Alignment.Bottom) {
-                                Text("%.1f".format(v.value.value), style = RidgeType.rowValue)
-                                Subtle(" ml/kg/min", Modifier.padding(bottom = 2.dp), RidgeType.caption)
-                            }
-                            is Card.Withheld -> Subtle(v.message)
-                        }
+            val pai = d.summary.pai.shown
+            TileGrid(listOf(
+                { m ->
+                    Tile("Cardio load", range?.acute?.roundToInt()?.toString() ?: "—", m, "a day",
+                        range?.let { Note(it.words, if (it.words == "In range") r.zoneGreen else if (it.words == "Load spike") r.zoneRed else muted) } ?: Note("needs 28 days", muted)) {
+                        range?.let { BandGauge(it.acute, maxOf(it.high * 1.5, it.acute * 1.15), it.low, it.high, c.strain, r.zoneGreen.copy(alpha = 0.45f)) }
                     }
-                    InfoButton(Infos.vo2)
-                }
+                },
+                { m ->
+                    Tile("PAI", pai?.value?.toString() ?: "—", m, "7 days", pai?.let { Note(if (it.value >= it.goal) "goal ${it.goal} met" else "goal ${it.goal}", if (it.value >= it.goal) r.zoneGreen else muted) },
+                        strap = true) {
+                        pai?.let { BandGauge(it.value.toDouble(), maxOf(200.0, it.value * 1.1), it.goal.toDouble(), maxOf(200.0, it.value * 1.1), c.recovery, r.zoneGreen.copy(alpha = 0.45f)) }
+                    }
+                },
+            ))
+        }
+        item {
+            val steps = d.daily.getValue("steps_total")
+            val week = (0..6).mapNotNull { steps[day.minusDays(it.toLong())] }
+            RidgeCard(spacing = 12.dp, onClick = { open = "steps" }) {
+                CardHeader("Steps this week", chevron = true, icon = Icons.AutoMirrored.Rounded.DirectionsWalk, tone = c.stepsTone)
+                CardValue("%,d".format(week.sum().roundToInt()), "steps", week.takeIf { it.isNotEmpty() }?.let { Note("%,d a day".format(it.average().roundToInt()), muted) })
+                DailyBars(steps, day.minusDays(6), day, c.steps, { "%,d steps".format(it.roundToInt()) }, highlightLast = true, height = 90.dp)
             }
         }
+        item { SectionTitle("Pinned charts", "Edit", { editing = true }) }
+        item {
+            TileGrid(pins.mapNotNull { k -> CHARTS[k]?.let { k to it } }.map { (k, chart) ->
+                { m: Modifier ->
+                    val series = d.daily.getValue(chart.metric)
+                    val last30 = (29 downTo 0).map { series[day.minusDays(it.toLong())] }
+                    val now = series[day]
+                    Tile(chart.label, now?.let(chart.format) ?: "—", m, chart.unit, trendNote(last30.filterNotNull(), chart.higherBetter), onClick = { open = k }) {
+                        if (chart.bars) MiniBars(last30, chart.tone(c)) else Sparkline(last30.filterNotNull(), chart.tone(c))
+                    }
+                }
+            })
+        }
+        item { SectionTitle(day.format(DateTimeFormatter.ofPattern("EEEE d MMM"))) }
+        item {
+            if (dayWorkouts.isEmpty()) RidgeCard { Subtle("No workouts recorded by the strap on this day.") }
+            else WorkoutRows(dayWorkouts, onWorkout)
+        }
+    }
+    if (editing) PinSheet(pins) { editing = false; store.save(pins) }
+    open?.let { k ->
+        val chart = CHARTS.getValue(k)
+        DailyChartSheet(chart.label, chart.unit, d.daily.getValue(chart.metric), day, chart.tone(c), chart.format) { open = null }
     }
 }
 
-/** The strap's own PAI: the 7-day total against 100, today's points, and the week's days. */
+/** The week ending today, a day per cell, a run icon on the days with a workout. */
 @Composable
-private fun PaiCard(card: Card<Pai>, today: LocalDate) {
+private fun WeekStrip(today: LocalDate, selected: LocalDate, active: Set<LocalDate>, onSelect: (LocalDate) -> Unit) {
     val c = LocalMetricColors.current
     val r = LocalRidgeColors.current
-    RidgeCard {
-        CardHeader("PAI", "the strap's", info = Infos.pai)
-        val p = when (card) {
-            is Card.Withheld -> return@RidgeCard Subtle(card.message)
-            is Card.Shown -> card.value
-        }
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text("${p.value}", style = RidgeType.cardNumber, color = if (p.value >= p.goal) r.zoneGreen else Color.Unspecified)
-            Subtle("  over 7 days · goal ${p.goal} · +${p.today} today", Modifier.padding(bottom = 5.dp))
-        }
-        DailyBars(p.week.mapValues { it.value.toDouble() }, today.minusDays(6), today, c.heart, { "${it.roundToInt()} PAI" }, highlightLast = true, height = 90.dp)
-    }
-}
-
-@Composable
-private fun ZonesCard(card: Card<Strain>) {
-    val c = LocalMetricColors.current
-    val s = card.shown
-    RidgeCard {
-        CardHeader("Heart-rate zones today", info = Infos.strain(s?.hrmax?.takeIf { it > 0 }, s?.rhr?.takeIf { it > 0 }))
-        val zones = s?.zoneMinutes
-        if (zones == null) {
-            Subtle((card as? Card.Withheld)?.message ?: "Not computed yet.")
-            return@RidgeCard
-        }
-        val bounds = listOf("50–60%", "60–70%", "70–80%", "80–90%", "90%+")
-        val max = zones.max().coerceAtLeast(1)
-        bounds.forEachIndexed { i, b ->
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.width(64.dp)) {
-                    Text("Zone ${i + 1}", style = RidgeType.caption.copy(fontWeight = RidgeType.label.fontWeight))
-                    Text(b, style = RidgeType.change, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Bar(zones[i] / max.toFloat(), c.heart.copy(alpha = 0.45f + 0.137f * i), Modifier.weight(1f), height = 8.dp)
-                Text("${zones[i]} min", style = RidgeType.label, textAlign = TextAlign.End, modifier = Modifier.width(64.dp))
+    Row(Modifier.fillMaxWidth()) {
+        (6 downTo 0).map { today.minusDays(it.toLong()) }.forEach { d ->
+            val on = d == selected
+            Column(
+                Modifier.weight(1f).clip(RoundedCornerShape(14.dp)).background(if (on) r.card else Color.Transparent).clickable { onSelect(d) }.padding(vertical = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
+                Text(d.format(DateTimeFormatter.ofPattern("EEE")), style = RidgeType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("${d.dayOfMonth}", style = RidgeType.label)
+                val did = d in active
+                Icon(if (did) Icons.AutoMirrored.Rounded.DirectionsRun else Icons.AutoMirrored.Rounded.DirectionsWalk, null,
+                    tint = if (did) c.strain else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f), modifier = Modifier.size(16.dp))
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun Workouts(workouts: List<Workout>) {
-    val tone = LocalMetricColors.current.heartTone
-    if (workouts.isEmpty()) {
-        RidgeCard { Subtle("No workouts recorded by the strap in the last 30 days.") }
-        return
-    }
-    val fmt = DateTimeFormatter.ofPattern("EEE d MMM")
-    Grouped(workouts.take(8)) { w, shape ->
-        val day = w.start.atZone(ZoneId.systemDefault()).format(fmt)
-        ListRow(shape, "$day · ${clockOf(w.start.toEpochMilli())}", workoutLine(w),
-            leading = { IconCircle(Icons.AutoMirrored.Rounded.DirectionsRun, tone.container, tone.onContainer) })
+private fun PinSheet(pins: MutableList<String>, onDismiss: () -> Unit) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = LocalRidgeColors.current.surface1, shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)) {
+        Column(Modifier.padding(horizontal = 20.dp).navigationBarsPadding().padding(bottom = 12.dp)) {
+            Text("Pinned charts", style = RidgeType.sheetTitle, modifier = Modifier.padding(bottom = 8.dp))
+            (pins + CHARTS.keys.filter { it !in pins }).forEach { key ->
+                val pinned = key in pins
+                val i = pins.indexOf(key)
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(pinned, { on -> if (on) pins += key else if (pins.size > 1) pins -= key })
+                    Text(CHARTS.getValue(key).label, style = RidgeType.rowTitle, modifier = Modifier.weight(1f))
+                    if (pinned) {
+                        IconButton(onClick = { if (i > 0) pins.add(i - 1, pins.removeAt(i)) }, enabled = i > 0) { Icon(Icons.Rounded.KeyboardArrowUp, "Move up") }
+                        IconButton(onClick = { if (i < pins.lastIndex) pins.add(i + 1, pins.removeAt(i)) }, enabled = i < pins.lastIndex) { Icon(Icons.Rounded.KeyboardArrowDown, "Move down") }
+                    }
+                }
+            }
+            TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) { Text("Done") }
+        }
     }
 }

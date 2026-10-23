@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -19,10 +20,12 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.dp
 import app.strap.sync.SyncState
+import app.strap.ui.components.CalendarMetric
 import app.strap.ui.components.Infos
 import app.strap.ui.describe
 import app.strap.ui.isRunning
@@ -34,6 +37,10 @@ import java.time.LocalDate
 /** The top bar's title: the pushed screen's, else the tab's (on Today, the day's). */
 private fun Shell.title(): String = when (val top = top) {
     Pushed.Recovery -> "Recovery"
+    Pushed.Timeline -> dayTitle(day)
+    Pushed.Journal -> "Journal"
+    Pushed.Strain -> "Strain"
+    is Pushed.Workout -> "Workout"
     is Pushed.Detail -> top.metric.title
     Pushed.Settings -> "Settings"
     Pushed.Diagnostics -> "Diagnostics"
@@ -52,6 +59,8 @@ private fun Shell.subtitle(sync: SyncState, lastSync: Instant?): String? {
     val synced = lastSync?.let { "synced " + clock(it) }
     return when {
         sync.isRunning -> describe(sync)
+        top == Pushed.Timeline -> "Timeline · " + day.format(SHORT_DATE)
+        top == Pushed.Strain -> day.format(SHORT_DATE)
         top == Pushed.Recovery || top is Pushed.Detail -> if (top is Pushed.Detail && day == LocalDate.now()) null else day.format(SHORT_DATE)
         top != null -> null
         tab == Tab.TODAY -> day.format(SHORT_DATE) + (synced?.let { " · $it" } ?: "")
@@ -83,17 +92,21 @@ fun TopBar(shell: Shell, sync: SyncState, lastSync: Instant?, onSync: () -> Unit
                 val muted = MaterialTheme.colorScheme.onSurfaceVariant
                 when {
                     top == Pushed.Recovery -> IconButton(onClick = { shell.sheet = Infos.recovery }) { Icon(Icons.Outlined.Info, "About recovery", tint = muted) }
+                    top == Pushed.Journal -> IconButton(onClick = { shell.sheet = Infos.journal }) { Icon(Icons.Outlined.Info, "About the journal", tint = muted) }
                     top is Pushed.Detail -> IconButton(onClick = { shell.sheet = if (top.metric.isSteps) Infos.detailSteps else Infos.detail }) {
                         Icon(Icons.Outlined.Info, "Reading the chart", tint = muted)
                     }
                     top == null -> {
-                        if (shell.tab == Tab.TODAY) IconButton(onClick = { shell.picking = true }) { Icon(Icons.Outlined.CalendarMonth, "Pick a day", tint = muted) }
-                        if (shell.tab == Tab.JOURNAL) IconButton(onClick = { shell.sheet = Infos.journal }) { Icon(Icons.Outlined.Info, "About the journal", tint = muted) }
+                        if (shell.tab == Tab.ACTIVITY) IconButton(onClick = { shell.trainingCalendar = true }) { Icon(Icons.Outlined.CalendarMonth, "Training calendar", tint = muted) }
+                        if (shell.tab == Tab.TODAY || shell.tab == Tab.SLEEP) IconButton(onClick = {
+                            shell.calendar = if (shell.tab == Tab.SLEEP) CalendarMetric.SLEEP else CalendarMetric.RECOVERY
+                        }) { Icon(Icons.Outlined.CalendarMonth, "Calendar", tint = muted) }
+                        if (shell.tab == Tab.TODAY) IconButton(onClick = { shell.push(Pushed.Journal) }) { Icon(Icons.Outlined.EditNote, "Journal", tint = muted) }
                         IconButton(onClick = { shell.push(Pushed.Settings) }) { Icon(Icons.Outlined.Settings, "Settings", tint = muted) }
                     }
                 }
             },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background, scrolledContainerColor = MaterialTheme.colorScheme.background),
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent, scrolledContainerColor = Color.Transparent),
         )
         SyncBar(syncProgress(sync))
     }

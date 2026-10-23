@@ -10,14 +10,21 @@ import strap.science.Bucket
 import strap.science.BucketSeries
 import strap.science.DaySeries
 import strap.science.DaySummary
+import strap.science.DayRings
 import strap.science.Derived
+import strap.science.IllnessCheck
 import strap.science.Science
 import strap.science.Workout
+import strap.science.WorkoutDetail
 import strap.science.bucketSeries
+import strap.science.dayRings
+import strap.science.illnessCheck
+import strap.science.workoutDetail
 import strap.science.daySeries
 import strap.science.daySummary
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 
 /** The screens' reads worked out on the phone (D34 S3), from its own store and `strap-science`. Needs no network. */
 class LocalReader(private val science: PhoneScience, private val store: LocalStore, private val owner: Owner) : Reader {
@@ -36,6 +43,15 @@ class LocalReader(private val science: PhoneScience, private val store: LocalSto
 
     override suspend fun journal(from: LocalDate, to: LocalDate): List<JournalEntry> = over(from, to) { s ->
         owner.journal(s.zones.bounds(from).first, s.zones.bounds(to).second)
+    }
+
+    override suspend fun rings(from: LocalDate, to: LocalDate): List<DayRings> = over(from, to) { s -> s.dayRings(from, to) }
+
+    override suspend fun illnessCheck(day: LocalDate): IllnessCheck = on(day) { s -> s.illnessCheck(day) }
+
+    override suspend fun workoutDetail(workout: Workout): WorkoutDetail? {
+        val day = workout.start.atZone(ZoneId.systemDefault()).toLocalDate()
+        return on(day) { s -> s.workoutDetail(workout.start, workout.durationS) }
     }
 
     /** Over the science that shows [day]. */

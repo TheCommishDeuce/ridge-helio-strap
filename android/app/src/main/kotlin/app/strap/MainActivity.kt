@@ -5,6 +5,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
+import app.strap.ui.shell.Shell
+import app.strap.ui.theme.MetricTone
+import app.strap.ui.theme.MetricColors
+import app.strap.ui.components.tinted
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -39,6 +45,12 @@ import app.strap.ui.components.LocalSnackbar
 import app.strap.ui.detail.DetailMetric
 import app.strap.ui.detail.MetricDetailScreen
 import app.strap.ui.isRunning
+import app.strap.ui.activity.StrainScreen
+import app.strap.ui.activity.TrainingCalendarSheet
+import app.strap.ui.activity.WorkoutScreen
+import app.strap.ui.biology.BiologyScreen
+import app.strap.ui.components.CalendarSheet
+import app.strap.ui.journal.JournalLogger
 import app.strap.ui.journal.JournalScreen
 import app.strap.ui.settings.BackgroundScreen
 import app.strap.ui.settings.ProfileScreen
@@ -47,7 +59,6 @@ import app.strap.ui.setup.ServerStep
 import app.strap.ui.setup.SetupFlow
 import app.strap.ui.setup.StrapStep
 import app.strap.ui.shell.BottomBar
-import app.strap.ui.shell.DayPicker
 import app.strap.ui.shell.FullScreen
 import app.strap.ui.shell.LiveSteps
 import app.strap.ui.shell.Pushed
@@ -61,8 +72,10 @@ import app.strap.ui.shell.rememberToday
 import app.strap.ui.sleep.SleepScreen
 import app.strap.ui.strap.StrapScreen
 import app.strap.ui.theme.LocalMetricColors
+import app.strap.ui.theme.NightTheme
 import app.strap.ui.theme.StrapTheme
 import app.strap.ui.today.RecoveryContent
+import app.strap.ui.today.TimelineScreen
 import app.strap.ui.today.TodayContent
 import app.strap.ui.today.TodayNav
 import kotlinx.coroutines.launch
@@ -106,7 +119,7 @@ private fun AppShell(app: StrapApp) {
     SyncOnOpen(app)
     LiveSteps(app, shell)
     val live by app.syncRunner.live.collectAsState()
-    val today by rememberToday(api, shell.day, sync, version)
+    val today by rememberToday(api, shell.day, sync, version + shell.journalEdits)
 
     when (top) {
         Pushed.ChangeStrap -> return FullScreen { StrapStep(app, onCancel = shell::pop) { shell.pop() } }
@@ -118,54 +131,75 @@ private fun AppShell(app: StrapApp) {
         recovery = { shell.push(Pushed.Recovery) },
         sleep = { shell.select(Tab.SLEEP) },
         activity = { shell.select(Tab.ACTIVITY) },
-        journal = { shell.select(Tab.JOURNAL) },
+        journal = { shell.push(Pushed.Journal) },
         heart = { shell.push(Pushed.Detail(DetailMetric("hr", "Heart rate", "bpm", colors.heartTone, 3 * 60_000L))) },
         stress = { shell.push(Pushed.Detail(DetailMetric("stress", "Stress", "", colors.stressTone, 11 * 60_000L))) },
         steps = { shell.push(Pushed.Detail(DetailMetric("steps", "Steps", "steps", colors.stepsTone, 60 * 60_000L))) },
+        timeline = { shell.push(Pushed.Timeline) },
+        strain = { shell.push(Pushed.Strain) },
         selectDay = { shell.day = it },
     )
     val shown = today.data?.takeIf { it.day == shell.day }
+    // Journal entries made outside the journal: write, reload the day, say so; a weight re-derives.
+    val logger = JournalLogger { kind, amount, name, at, done ->
+        scope.launch {
+            app.owner.add(kind, amount, name, at)
+            shell.journalEdits++
+            showSnack(done, null, null)
+            if (kind == "weight") app.science.update(at)
+        }
+    }
 
     CompositionLocalProvider(LocalInfo provides { shell.sheet = it }, LocalSnackbar provides showSnack) {
-        Scaffold(
-            containerColor = MaterialTheme.colorScheme.background,
-            snackbarHost = {
-                // Above the extended FAB on the tabs that have one.
-                val fab = top == null && (shell.tab == Tab.JOURNAL || shell.tab == Tab.STRAP)
-                SnackbarHost(snackbar, Modifier.padding(bottom = if (fab) 80.dp else 0.dp)) { data ->
-                    Snackbar(data, shape = RoundedCornerShape(8.dp), modifier = Modifier.padding(horizontal = 16.dp),
-                        actionColor = MaterialTheme.colorScheme.inversePrimary)
-                }
-            },
-            topBar = { TopBar(shell, sync, lastSync) { SyncService.start(app) } },
-            bottomBar = { BottomBar(shell) },
-        ) { padding ->
-            Box(Modifier.padding(padding).fillMaxSize()) {
-                when {
-                    top == Pushed.Settings -> SettingsScreen(
-                        app,
-                        onChangeStrap = { shell.push(Pushed.ChangeStrap) },
-                        onChangeServer = { shell.push(Pushed.ChangeServer) },
-                        onDiagnostics = { shell.push(Pushed.Diagnostics) },
-                        onBackground = { shell.push(Pushed.Background) },
-                        onProfile = { shell.push(Pushed.Profile) },
-                    )
-                    top == Pushed.Profile -> ProfileScreen(app.owner) { scope.launch { app.science.update(null) } }
-                    top == Pushed.Diagnostics -> DiagnosticsScreen(app)
-                    top == Pushed.Background -> BackgroundScreen(app)
-                    top is Pushed.Detail -> MetricDetailScreen(api, top.metric, shell.day)
-                    top == Pushed.Recovery -> shown?.let {
-                        RecoveryContent(it, { d -> shell.day = d }) {
-                            shell.push(Pushed.Detail(DetailMetric("hrv_sdnn", "HRV (SDNN)", "ms", colors.recoveryTone, 8 * 3_600_000L)))
-                        }
-                    } ?: Loading(today.error)
-                    else -> Refreshable(sync.isRunning, onRefresh = { SyncService.start(app) }) {
-                        when (shell.tab) {
-                            Tab.TODAY -> shown?.let { TodayContent(it, nav, liveSteps = live?.steps) } ?: Loading(today.error)
-                            Tab.SLEEP -> SleepScreen(api, (sync is SyncState.Finished) to version)
-                            Tab.ACTIVITY -> ActivityScreen(api, (sync is SyncState.Finished) to version)
-                            Tab.JOURNAL -> JournalScreen(api, app.owner) { at -> app.science.update(at) }
-                            Tab.STRAP -> StrapScreen(app, sync)
+        NightTheme(enabled = top == null && shell.tab == Tab.SLEEP) {
+            // Each screen's tone fades in from the very top, behind the status and top bars (Bevel's screens).
+            val tone = screenTone(shell, colors)
+            Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).let { if (tone != null) it.tinted(tone) else it })
+            Scaffold(
+                containerColor = Color.Transparent,
+                contentColor = MaterialTheme.colorScheme.onBackground,
+                snackbarHost = {
+                    // Above the extended FAB on the tabs that have one.
+                    val fab = top == null && shell.tab == Tab.STRAP
+                    SnackbarHost(snackbar, Modifier.padding(bottom = if (fab) 80.dp else 0.dp)) { data ->
+                        Snackbar(data, shape = RoundedCornerShape(8.dp), modifier = Modifier.padding(horizontal = 16.dp),
+                            actionColor = MaterialTheme.colorScheme.inversePrimary)
+                    }
+                },
+                topBar = { TopBar(shell, sync, lastSync) { SyncService.start(app) } },
+                bottomBar = { BottomBar(shell) },
+            ) { padding ->
+                Box(Modifier.padding(padding).fillMaxSize()) {
+                    when {
+                        top == Pushed.Settings -> SettingsScreen(
+                            app,
+                            onChangeStrap = { shell.push(Pushed.ChangeStrap) },
+                            onChangeServer = { shell.push(Pushed.ChangeServer) },
+                            onDiagnostics = { shell.push(Pushed.Diagnostics) },
+                            onBackground = { shell.push(Pushed.Background) },
+                            onProfile = { shell.push(Pushed.Profile) },
+                        )
+                        top == Pushed.Profile -> ProfileScreen(app.owner) { scope.launch { app.science.update(null) } }
+                        top == Pushed.Diagnostics -> DiagnosticsScreen(app)
+                        top == Pushed.Background -> BackgroundScreen(app)
+                        top is Pushed.Detail -> MetricDetailScreen(api, top.metric, shell.day)
+                        top == Pushed.Strain -> StrainScreen(api, shell.day) { w -> shell.push(Pushed.Workout(w.start.toEpochMilli())) }
+                        top is Pushed.Workout -> WorkoutScreen(api, java.time.Instant.ofEpochMilli(top.startMs))
+                        top == Pushed.Journal -> JournalScreen(api, app.owner) { at -> app.science.update(at) }
+                        top == Pushed.Timeline -> shown?.let { TimelineScreen(it, nav, logger) } ?: Loading(today.error)
+                        top == Pushed.Recovery -> shown?.let {
+                            RecoveryContent(api, it, { d -> shell.day = d }) {
+                                shell.push(Pushed.Detail(DetailMetric("hrv_sdnn", "HRV (SDNN)", "ms", colors.recoveryTone, 8 * 3_600_000L)))
+                            }
+                        } ?: Loading(today.error)
+                        else -> Refreshable(sync.isRunning, onRefresh = { SyncService.start(app) }) {
+                            when (shell.tab) {
+                                Tab.TODAY -> shown?.let { TodayContent(it, nav, logger, liveSteps = live?.steps) } ?: Loading(today.error)
+                                Tab.SLEEP -> SleepScreen(api, shell.day, { shell.day = it }, (sync is SyncState.Finished) to version)
+                                Tab.ACTIVITY -> ActivityScreen(api, (sync is SyncState.Finished) to version) { w -> shell.push(Pushed.Workout(w.start.toEpochMilli())) }
+                                Tab.BIOLOGY -> BiologyScreen(api, app.owner, (sync is SyncState.Finished) to version) { shell.select(Tab.SLEEP) }
+                                Tab.STRAP -> StrapScreen(app, sync)
+                            }
                         }
                     }
                 }
@@ -173,5 +207,26 @@ private fun AppShell(app: StrapApp) {
         }
     }
     shell.sheet?.let { InfoSheet(it) { shell.sheet = null } }
-    if (shell.picking) DayPicker(shell.day, onDismiss = { shell.picking = false }) { shell.day = it; shell.picking = false }
+    if (shell.trainingCalendar) TrainingCalendarSheet(api, onDismiss = { shell.trainingCalendar = false }) { w ->
+        shell.trainingCalendar = false
+        shell.push(Pushed.Workout(w.start.toEpochMilli()))
+    }
+    shell.calendar?.let { metric -> CalendarSheet(api, shell.day, metric, onDismiss = { shell.calendar = null }) { shell.day = it; shell.calendar = null } }
+}
+
+/** The tone a screen's top fades from: its metric's, or none (the Sleep tab has the night palette). */
+private fun screenTone(shell: Shell, colors: MetricColors): MetricTone? = when (val top = shell.top) {
+    Pushed.Recovery -> colors.recoveryTone
+    Pushed.Strain, is Pushed.Workout -> colors.strainTone
+    is Pushed.Detail -> top.metric.tone
+    Pushed.Journal -> colors.chargeTone
+    Pushed.Timeline -> colors.neutralTone
+    null -> when (shell.tab) {
+        Tab.TODAY -> colors.recoveryTone
+        Tab.SLEEP -> null
+        Tab.ACTIVITY -> colors.strainTone
+        Tab.BIOLOGY -> colors.recoveryTone
+        Tab.STRAP -> colors.neutralTone
+    }
+    else -> null
 }

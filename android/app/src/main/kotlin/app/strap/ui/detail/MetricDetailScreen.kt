@@ -8,6 +8,10 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
+import app.strap.ui.components.Tile
+import app.strap.ui.components.cardSurface
+import app.strap.ui.components.tinted
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -95,7 +99,8 @@ fun MetricDetailScreen(api: Reader, metric: DetailMetric, day: LocalDate) {
             error = e.message
         }
     }
-    Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 8.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)) {
         ConnectedButtons(Range.entries, range, { it.label }) { range = it }
         val l = loaded
         if (l == null) {
@@ -107,7 +112,7 @@ fun MetricDetailScreen(api: Reader, metric: DetailMetric, day: LocalDate) {
         val (headline, stats) = describe(metric, l, day)
         HeadlineBlock(scrubbed ?: headline, metric.unit)
         Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(LocalRidgeColors.current.card).padding(horizontal = 16.dp, vertical = 20.dp),
+            Modifier.fillMaxWidth().cardSurface(RoundedCornerShape(20.dp)).padding(horizontal = 16.dp, vertical = 18.dp),
         ) {
             val fmtDay = DateTimeFormatter.ofPattern("EEE d MMM")
             when (l) {
@@ -128,14 +133,8 @@ fun MetricDetailScreen(api: Reader, metric: DetailMetric, day: LocalDate) {
                     onScrub = { d -> scrubbed = d?.let { Headline(it.format(fmtDay), l.days[it]?.let { v -> "%,d".format(v.roundToInt()) } ?: "—", "") } })
             }
         }
-        Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            stats.forEach { s ->
-                Column(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(24.dp)).background(LocalRidgeColors.current.card).padding(horizontal = 14.dp, vertical = 12.dp)) {
-                    Text(s.label, style = RidgeType.label, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(s.value, style = RidgeType.rowValue)
-                    if (s.note != null) NoteLine(s.note)
-                }
-            }
+        Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            stats.forEach { s -> Tile(s.label, s.value, Modifier.weight(1f).fillMaxHeight(), status = s.note) }
         }
     }
 }
@@ -149,7 +148,7 @@ private fun HeadlineBlock(h: Headline, unit: String) {
             if (unit.isNotEmpty()) Text(" $unit", style = RidgeType.rowValue.copy(fontWeight = RidgeType.label.fontWeight),
                 color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 8.dp))
         }
-        Text(h.line.ifEmpty { " " }, style = RidgeType.body.copy(fontSize = RidgeType.cardTitle.fontSize), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(h.line.ifEmpty { " " }, style = RidgeType.paragraph, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

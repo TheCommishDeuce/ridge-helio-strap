@@ -89,7 +89,7 @@ internal fun Science.vo2max(day: LocalDate) {
 
 // --- Cardio load ---------------------------------------------------------------------------
 
-private val EDWARDS_ZONE_LO = doubleArrayOf(0.5, 0.6, 0.7, 0.8, 0.9)
+internal val EDWARDS_ZONE_LO = doubleArrayOf(0.5, 0.6, 0.7, 0.8, 0.9)
 
 /** The newest nightly resting HR within 30 days up to [day]. */
 internal fun Science.measuredRhr(day: LocalDate): Double? =

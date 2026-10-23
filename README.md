@@ -11,28 +11,33 @@ up once a night, so a new phone can start from your whole history.
 `strap` is the codename you will see in the code, the server and the package names.
 
 <p>
-  <img src="docs/screenshots/demo-today.png" width="19%" alt="Today: week strip, strain, recovery and sleep gauges, recovery parts against your usual">
-  <img src="docs/screenshots/demo-recovery.png" width="19%" alt="Recovery: the score, Charge and the weighted parts">
-  <img src="docs/screenshots/demo-heart-rate.png" width="19%" alt="Heart rate: day, week and month">
-  <img src="docs/screenshots/demo-sleep.png" width="19%" alt="Sleep: time asleep against your need, stages, sleep health">
-  <img src="docs/screenshots/demo-activity.png" width="19%" alt="Activity: strain, load, active minutes and weekly steps">
+  <img src="docs/screenshots/demo-today.png" width="19%" alt="Today: week strip, strain, recovery and sleep rings, last night's vitals against your usual">
+  <img src="docs/screenshots/demo-recovery.png" width="19%" alt="Recovery: the score, HRV and resting heart rate, the weighted parts">
+  <img src="docs/screenshots/demo-sleep.png" width="19%" alt="Sleep: the strap's score, time in bed and asleep, the night in words, sleep health">
+  <img src="docs/screenshots/demo-fitness.png" width="19%" alt="Fitness: the day's note, training load against its range, PAI, weekly steps">
+  <img src="docs/screenshots/demo-biology.png" width="19%" alt="Biology: biological age, its range and the biomarkers that move it">
 </p>
 
 <sub>Screenshots show synthetic demo data (`tools/demo-data`), not a real person's.</sub>
 
 ## What you get
 
-- **Today**: strain, recovery and sleep gauges, each part of recovery against your own
-  usual, and the day's moments (waking, caffeine, stress peak, workouts). Stress and heart
-  rate cards draw the whole day and compare it with your usual for the same hours; steps
-  show where you usually are by now. A week strip and a date picker step back through past
+- **Today**: strain, recovery and the strap's sleep score as rings, the day in words, and
+  last night's HRV, resting heart rate, breathing rate, SpO₂, time asleep and skin
+  temperature against your own usual. Heart rate, stress and steps cards draw the whole day
+  (coloured by heart-rate zone, stress level, steps adding up) and how it split; steps show
+  where you usually are by now. A week strip and a calendar of rings step back through past
   days; heart rate, stress and steps open per-minute charts with the peaks kept.
+- **Timeline**: the day hour by hour behind Today's moments, with rings you pin and a quick
+  log (coffee, tea, a drink, your weight) at any hour.
 - **Charge**: a body battery from 0 to 100, minute by minute. Sleep fills it; activity,
   stress and the waking day drain it, and the Recovery screen shows what did which.
-- **Sleep, Activity, Journal**: nights and their stages, workouts and daily activity, and
-  a journal for caffeine, alcohol and weight. The strap's own PAI (Activity) and its
-  nightly breathing disturbances (Sleep) are shown as the strap's figures, and its HRV
-  (SDNN) through the day has its own chart.
+- **Sleep, Fitness, Biology, Journal**: any of the last seven nights with its stages, sleep
+  health and vitals through the night; training load against its range, pinned charts, a
+  training calendar and each workout's strain, zones and load; biological age with the
+  biomarkers that move it; and a journal for caffeine, alcohol and weight. The strap's own
+  PAI (Fitness) and its nightly breathing disturbances (Sleep) are shown as the strap's
+  figures, and its HRV (SDNN) through the day has its own chart.
 - **Strap**: battery, the strap's own alarms (read, add, edit, delete, each in a timezone
   you pick, so a 07:00 alarm rings at 07:00 there), and its heart-rate, stress, SpO₂, sleep
   and workout-detection settings (read-only for now).

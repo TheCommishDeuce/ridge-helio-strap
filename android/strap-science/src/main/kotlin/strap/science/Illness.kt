@@ -42,10 +42,10 @@ internal object Illness {
     }
 }
 
-private fun firstNight(day: LocalDate): LocalDate = day.minusDays((Illness.BASELINE_NIGHTS + 1).toLong())
+internal fun firstNight(day: LocalDate): LocalDate = day.minusDays((Illness.BASELINE_NIGHTS + 1).toLong())
 
 /** Mean night skin temperature (> 25 °C) per wake date, main sessions only. */
-private fun Science.tempNights(day: LocalDate): Map<LocalDate, Double> {
+internal fun Science.tempNights(day: LocalDate): Map<LocalDate, Double> {
     val from = zones.bounds(firstNight(day)).first
     val until = zones.bounds(day).second
     val sums = LinkedHashMap<LocalDate, DoubleArray>()

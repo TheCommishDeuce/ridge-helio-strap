@@ -234,10 +234,13 @@ private fun Science.vo2maxCard(day: LocalDate): Card<DailyNumber> {
 
 private fun fixed(x: Double, digits: Int): String = BigDecimal(x).setScale(digits, RoundingMode.HALF_EVEN).toPlainString()
 
+/** "+0.3" or "−0.2": a limb's change keeps its own sign (a limb under its baseline used to print "+-0.2"). */
+private fun signedFixed(x: Double, digits: Int): String = fixed(x, digits).let { if (it.startsWith("-")) "−" + it.drop(1) else "+$it" }
+
 internal fun illnessFraming(rrDelta: Double?, tempDelta: Double?, sustained: Boolean): String {
     val parts = listOfNotNull(
-        rrDelta?.let { "breathing rate +${fixed(it, 1)} bpm vs your 14-day baseline" },
-        tempDelta?.let { "skin temperature +${fixed(it, 2)}°C" },
+        rrDelta?.let { "breathing rate ${signedFixed(it, 1)} bpm vs your 14-day baseline" },
+        tempDelta?.let { "skin temperature ${signedFixed(it, 2)}°C" },
     )
     val joined = parts.joinToString("; ")
     val suffix = if (sustained) " — sustained across two nights, the Smarr 2020 / Quer 2021 pattern" else ""

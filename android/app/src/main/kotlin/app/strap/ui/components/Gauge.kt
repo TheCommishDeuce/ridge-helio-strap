@@ -35,12 +35,14 @@ import app.strap.ui.theme.RidgeType
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-/** A coloured one-liner under a number: a change ("▲ 8 vs week") or a target note. */
+/** A coloured one-liner under a number: a change ("+8 vs week") or a target note. */
 data class Note(val text: String, val color: Color)
 
 /**
- * "▲ 8 vs week": green when the change is good, red when bad, muted under half a unit (or
- * when [neutral] — a change that is neither). [lowerBetter] for resting HR, breathing, stress.
+ * "+8 vs week", "−2 vs usual", "±0 vs usual" (the prototype's signs): green when the change is
+ * good or too small to matter (under [meaningful]), yellow when it goes the worse way — worth a
+ * look, never an alarm — and muted for a change that is neither ([neutral]: stress, heart rate
+ * through the day). [lowerBetter] for resting HR, breathing, skin temperature.
  */
 @Composable
 fun changeNote(
@@ -50,24 +52,26 @@ fun changeNote(
     lowerBetter: Boolean = false,
     neutral: Boolean = false,
     magnitude: ((Double) -> String)? = null,
+    /** Below this size a change is "about usual". */
+    meaningful: Double = 0.5 / Math.pow(10.0, digits.toDouble()),
 ): Note? {
     if (delta == null || delta.isNaN()) return null
     val r = LocalRidgeColors.current
-    val small = abs(delta) < 0.5 / Math.pow(10.0, digits.toDouble())
+    val small = abs(delta) < meaningful
     val good = if (lowerBetter) delta < 0 else delta > 0
     val color = when {
-        small || neutral -> MaterialTheme.colorScheme.onSurfaceVariant
-        good -> r.zoneGreen
-        else -> r.zoneRed
+        neutral -> MaterialTheme.colorScheme.onSurfaceVariant
+        small || good -> r.good
+        else -> r.warn
     }
     val size = magnitude?.invoke(abs(delta)) ?: if (digits == 0) "${abs(delta).roundToInt()}" else "%.${digits}f".format(abs(delta))
-    val arrow = if (size.trim('0', '.', ',').isEmpty()) "±" else if (delta < 0) "▼ " else "▲ "
-    return Note("$arrow$size $suffix", color)
+    val sign = if (size.trim('0', '.', ',').isEmpty()) "±" else if (delta < 0) "−" else "+"
+    return Note("$sign$size $suffix", color)
 }
 
 /**
- * The 270° gauge: starts at −135° from 12 o'clock, runs clockwise; the track resumes 9°
- * after the value's end. [fraction] null = withheld — an empty track and "—", never a zero.
+ * The ring: a full circle of track, the value running clockwise from 12 o'clock with round
+ * ends (Bevel's rings). [fraction] null = withheld — an empty track and "—", never a zero.
  */
 @Composable
 fun Gauge(value: String, unit: String?, fraction: Float?, color: Color, size: Dp, valueSize: TextUnit, stroke: Float = 7f) {
@@ -82,21 +86,18 @@ fun Gauge(value: String, unit: String?, fraction: Float?, color: Color, size: Dp
             val topLeft = Offset(center.x - r, center.y - r)
             val arc = Size(2 * r, 2 * r)
             val style = Stroke(w, cap = StrokeCap.Round)
-            val start = 135f // −135° from 12 o'clock, in Compose's 3-o'clock-based degrees
-            val sweep = if (fraction == null) 0f else 270f * progress.value
-            val trackStart = if (sweep > 0.5f) start + sweep + 9f else start
-            val trackSweep = start + 270f - trackStart
-            if (trackSweep > 0f) drawArc(track, trackStart, trackSweep, false, topLeft, arc, style = style)
-            if (sweep > 0.5f) drawArc(color, start, sweep, false, topLeft, arc, style = style)
+            val sweep = if (fraction == null) 0f else 360f * progress.value
+            drawArc(track, 0f, 360f, false, topLeft, arc, style = Stroke(w))
+            if (sweep > 0.5f) drawArc(color, -90f, sweep, false, topLeft, arc, style = style)
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(value, fontSize = valueSize, lineHeight = valueSize, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = RidgeType.body.fontWeight))
-            unit?.let { Text(it.uppercase(), style = RidgeType.unit, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center) }
+            unit?.let { Text(it, style = RidgeType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center) }
         }
     }
 }
 
-/** Gauge + label (12/500 uppercase) + change line; the whole block is the tap target. */
+/** Ring + label (13/500, muted) + change line; the whole block is the tap target. */
 @Composable
 fun GaugeBlock(
     value: String,
@@ -117,7 +118,7 @@ fun GaugeBlock(
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Gauge(value, unit, fraction, color, size, valueSize, stroke)
-        Text(label.uppercase(), style = RidgeType.section)
+        Text(label, style = RidgeType.ringLabel, color = MaterialTheme.colorScheme.onSurfaceVariant)
         NoteLine(note)
     }
 }
