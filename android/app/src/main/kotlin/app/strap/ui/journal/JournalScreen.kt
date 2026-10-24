@@ -102,12 +102,12 @@ fun JournalScreen(api: Reader, owner: Owner, onChanged: suspend (Instant) -> Uni
             item(key = "$day-items") {
                 RidgeCard(spacing = 0.dp, padding = 8.dp) {
                     items.forEach { e ->
-                        val tone = journalTone(e.kind)
+                        val tone = journalTone(e.kind, e.name)
                         Row(Modifier.fillMaxWidth().padding(start = 8.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                             IconCircle(journalIcon(e.kind, e.name), tone.container, tone.accent, size = 36.dp, iconSize = 18.dp)
                             Column(Modifier.weight(1f).padding(start = 12.dp)) {
                                 Text(journalHeadline(e), style = RidgeType.rowTitle)
-                                Subtle(listOfNotNull(journalName(e), clockOf(e.ts.toEpochMilli())).joinToString(" · "), style = RidgeType.body)
+                                Subtle(if (e.kind == "status") "for the day" else listOfNotNull(journalName(e), clockOf(e.ts.toEpochMilli())).joinToString(" · "), style = RidgeType.body)
                             }
                             IconButton(onClick = { delete(e) }) { Icon(Icons.Outlined.Delete, "Delete", tint = muted) }
                         }

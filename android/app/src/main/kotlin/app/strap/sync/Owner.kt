@@ -17,8 +17,8 @@ import java.util.UUID
 
 /**
  * What the owner tells Ridge rather than the strap: the profile and the journal (weights,
- * caffeine, alcohol), plus the timezone the days are cut in (D31). The phone owns them (D34 S3):
- * edits land here first and reach the server through [push], its backup.
+ * caffeine, alcohol, a day's activity status), plus the timezone the days are cut in (D31). The
+ * phone owns them (D34 S3): edits land here first and reach the server through [push], its backup.
  *
  * Before D34 the server held them, so [seed] copies the server's once; until then the phone has
  * none. A phone set up without a server starts empty and seeds nothing.
@@ -114,6 +114,27 @@ class Owner(private val store: LocalStore, private val server: () -> BackupServe
         if (row.serverId == null) store.removeJournal(id) else store.putJournal(row.copy(deleted = true, pushed = false))
     }
 
+    /** Marks [day] with [status] in place of any it had: one entry at the day's middle; an active day has none. */
+    fun setStatus(day: LocalDate, status: DayStatus) {
+        val (from, until) = daysIn().bounds(day)
+        store.batch {
+            store.journalRows("deleted = 0 AND kind = 'status' AND ts >= ? AND ts < ?", from.toEpochMilli().toString(), until.toEpochMilli().toString())
+                .forEach { delete(it.id) }
+            status.key?.let { add("status", 1.0, it, from.plus(java.time.Duration.between(from, until).dividedBy(2))) }
+        }
+    }
+
+    /** The marked days from [from] through [to]; a day not in it is active. */
+    fun statuses(from: LocalDate, to: LocalDate): Map<LocalDate, DayStatus> {
+        val zones = daysIn()
+        return store.journalRows("deleted = 0 AND kind = 'status' AND ts >= ? AND ts < ?",
+            zones.bounds(from).first.toEpochMilli().toString(), zones.bounds(to).second.toEpochMilli().toString())
+            .associate { zones.dateOf(it.ts) to DayStatus.of(it.name) }
+    }
+
+    /** The zones the days are cut in; the phone's own before there are any. */
+    private fun daysIn(): Zones = zones() ?: Zones(java.time.ZoneId.systemDefault().id)
+
     fun weights(): List<WeightEntry> = store.journalRows("deleted = 0 AND kind = 'weight'").map { WeightEntry(it.ts, it.amount.toFloat()) }
 
     // ── the zones ──────────────────────────────────────────────────────────
@@ -177,11 +198,27 @@ class Owner(private val store: LocalStore, private val server: () -> BackupServe
         private const val BASE_ZONE = "owner_base_zone"
         private const val ZONES = "owner_zone_changes"
         private const val SEED_DAYS = 400L
-        val UNITS = mapOf("caffeine" to "mg", "alcohol" to "drinks", "weight" to "kg")
+        val UNITS = mapOf("caffeine" to "mg", "alcohol" to "drinks", "weight" to "kg", "status" to "day")
     }
 }
 
-/** One journal entry: caffeine (mg), alcohol (drinks) or a weight (kg), with an optional name ("espresso"). */
+/**
+ * A day's activity status (Bevel's): active unless marked otherwise. Kept in the journal as a
+ * "status" entry named by [key]; the server backs it up like the rest.
+ */
+enum class DayStatus(val key: String?, val label: String, val sub: String) {
+    ACTIVE(null, "Active", "Staying engaged and healthy"),
+    SICK("sick", "Sick", "Resting from illness"),
+    INJURED("injured", "Injured", "Recovering from an injury"),
+    BREAK("break", "On a break", "Taking time off from training"),
+    ;
+
+    companion object {
+        fun of(key: String?): DayStatus = entries.firstOrNull { it.key == key } ?: ACTIVE
+    }
+}
+
+/** One journal entry: caffeine (mg), alcohol (drinks), a weight (kg) or a day's status, with an optional name ("espresso", "sick"). */
 data class JournalEntry(val id: String, val kind: String, val ts: Instant, val amount: Double, val unit: String, val name: String?)
 
 // The server's shapes (`GET /v1/profile`), read once by [Owner.seed] and for the stored profile.

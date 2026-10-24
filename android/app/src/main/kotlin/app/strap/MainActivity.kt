@@ -141,14 +141,23 @@ private fun AppShell(app: StrapApp) {
     )
     val shown = today.data?.takeIf { it.day == shell.day }
     // Journal entries made outside the journal: write, reload the day, say so; a weight re-derives.
-    val logger = JournalLogger { kind, amount, name, at, done ->
-        scope.launch {
-            app.owner.add(kind, amount, name, at)
-            shell.journalEdits++
-            showSnack(done, null, null)
-            if (kind == "weight") app.science.update(at)
-        }
-    }
+    val logger = JournalLogger(
+        add = { kind, amount, name, at, done ->
+            scope.launch {
+                app.owner.add(kind, amount, name, at)
+                shell.journalEdits++
+                showSnack(done, null, null)
+                if (kind == "weight") app.science.update(at)
+            }
+        },
+        setStatus = { day, status ->
+            scope.launch {
+                app.owner.setStatus(day, status)
+                shell.journalEdits++
+                showSnack(day.format(java.time.format.DateTimeFormatter.ofPattern("d MMM")) + " marked " + status.label.lowercase(), null, null)
+            }
+        },
+    )
 
     CompositionLocalProvider(LocalInfo provides { shell.sheet = it }, LocalSnackbar provides showSnack) {
         NightTheme(enabled = top == null && shell.tab == Tab.SLEEP) {

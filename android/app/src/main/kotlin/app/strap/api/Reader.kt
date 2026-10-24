@@ -1,5 +1,6 @@
 package app.strap.api
 
+import app.strap.sync.DayStatus
 import app.strap.sync.JournalEntry
 import strap.science.Bucket
 import strap.science.BucketSeries
@@ -31,6 +32,9 @@ interface Reader {
 
     /** The journal from [from] through [to], newest first. */
     suspend fun journal(from: LocalDate, to: LocalDate): List<JournalEntry>
+
+    /** The days marked sick, injured or on a break, [from] through [to]; a day not in it is active. */
+    suspend fun statuses(from: LocalDate, to: LocalDate): Map<LocalDate, DayStatus>
 
     /** Each day's recovery, strain, the strap's sleep score and mean stress, [from] through [to] (the calendar). */
     suspend fun rings(from: LocalDate, to: LocalDate): List<DayRings>

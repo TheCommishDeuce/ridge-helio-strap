@@ -1,6 +1,7 @@
 package app.strap.ui.today
 
 import app.strap.api.Reader
+import app.strap.sync.DayStatus
 import app.strap.sync.JournalEntry
 import app.strap.ui.components.DayWindow
 import app.strap.ui.components.Point
@@ -86,8 +87,8 @@ data class DayStats(val min: Double, val max: Double, val mean: Double, val maxA
 /** One slice of a day's per-minute series: its lowest, highest and mean value. */
 data class Slice(val t: Long, val min: Double, val max: Double, val mean: Double)
 
-/** The day's per-minute heart rate and stress in [SLICE_MS] slices, steps summed up slice by slice, and the sleep to shade. */
-data class DayCurves(val window: DayWindow, val hr: List<Slice>, val stress: List<Slice>, val stepsSoFar: List<Point>, val sleep: List<Span>) {
+/** The day's per-minute heart rate and stress in [SLICE_MS] slices, the steps taken in each slice, and the sleep to shade. */
+data class DayCurves(val window: DayWindow, val hr: List<Slice>, val stress: List<Slice>, val steps: List<Point>, val sleep: List<Span>) {
     val dayStart: Long get() = window.start
 }
 
@@ -138,6 +139,8 @@ data class TodayData(
     val load: LoadRange?,
     val journal: List<JournalEntry>,
     val workouts: List<Workout>,
+    /** Active unless the day was marked sick, injured or on a break. */
+    val status: DayStatus,
 ) {
     /** The seven strip days, oldest first. */
     val stripDays: List<LocalDate> get() = (6 downTo 0).map { stripEnd.minusDays(it.toLong()) }
@@ -162,12 +165,10 @@ private fun slices(points: List<TimedValue>, dayStart: Long): List<Slice> =
     points.groupBy { (it.at.toEpochMilli() - dayStart) / SLICE_MS }.toSortedMap()
         .map { (i, ps) -> ps.map { it.value }.let { v -> Slice(dayStart + i * SLICE_MS, v.min(), v.max(), v.average()) } }
 
-/** Steps from local midnight, summed up at the end of each [SLICE_MS] slice that has any. */
-private fun stepsSoFar(points: List<TimedValue>, dayStart: Long): List<Point> {
-    var total = 0.0
-    return points.groupBy { (it.at.toEpochMilli() - dayStart) / SLICE_MS }.toSortedMap()
-        .map { (i, ps) -> total += ps.sumOf { it.value }; Point(dayStart + (i + 1) * SLICE_MS, total) }
-}
+/** The steps in each [SLICE_MS] slice from local midnight that has any, at the slice's start. */
+private fun stepsBySlice(points: List<TimedValue>, dayStart: Long): List<Point> =
+    points.groupBy { (it.at.toEpochMilli() - dayStart) / SLICE_MS }.toSortedMap()
+        .map { (i, ps) -> Point(dayStart + i * SLICE_MS, ps.sumOf { it.value }) }
 
 /** The day's value of a nightly metric against the median of the nights before it (five or more). */
 private fun nightly(rows: List<Derived>, day: LocalDate): Reading {
@@ -195,6 +196,7 @@ suspend fun loadToday(api: Reader, day: LocalDate): TodayData = coroutineScope {
     val spo2Call = async { api.daily("spo2_overnight", day.minusDays(30), day) }
     val loadCall = async { api.daily("cardio_load", day.minusDays(27), day) }
     val checkCall = async { api.illnessCheck(day) }
+    val statusCall = async { api.statuses(day, day) }
     val s = summaryCall.await()
     val check = checkCall.await()
     val series = seriesCall.await()
@@ -234,14 +236,16 @@ suspend fun loadToday(api: Reader, day: LocalDate): TodayData = coroutineScope {
         stressNote = (s.stress as? Card.Withheld)?.message,
         curves = DayCurves(
             window, slices(series.series["hr"].orEmpty(), window.start), slices(series.series["stress"].orEmpty(), window.start),
-            stepsSoFar(series.series["steps"].orEmpty(), window.start),
+            stepsBySlice(series.series["steps"].orEmpty(), window.start),
             series.sleep.map { Span(it.start.toEpochMilli(), it.end.toEpochMilli()) },
         ),
         illness = s.illness?.framing,
         illnessNight = s.illness?.date,
         illnessCheck = check,
         load = loadRange(loadCall.await().associate { it.day to it.value }, day),
-        journal = journalCall.await(),
+        // The status has its own chip; the day's moments are the rest.
+        journal = journalCall.await().filter { it.kind != "status" },
         workouts = workoutsCall.await(),
+        status = statusCall.await()[day] ?: DayStatus.ACTIVE,
     )
 }

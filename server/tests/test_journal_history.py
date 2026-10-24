@@ -38,6 +38,18 @@ def test_caffeine_and_alcohol_round_trip_and_delete(seeded) -> None:
         assert not journal.delete(conn, _seed.OWNER, a["id"])
 
 
+def test_a_status_round_trips_and_only_names_a_status(seeded) -> None:
+    ts = datetime(2026, 3, 6, 12, 0, tzinfo=UTC)
+    with psycopg.connect(seeded) as conn:
+        s = journal.add(conn, _seed.OWNER, journal.JournalIn(kind="status", ts=ts, amount=1, name="sick"))
+        listed = journal.entries(conn, _seed.OWNER, datetime(2026, 3, 6, tzinfo=UTC), datetime(2026, 3, 7, tzinfo=UTC))
+        assert [(e["kind"], e["name"], e["unit"]) for e in listed] == [("status", "sick", "day")]
+        assert journal.delete(conn, _seed.OWNER, s["id"])
+    for name in (None, "active", "tired"):
+        with pytest.raises(ValidationError):
+            journal.JournalIn(kind="status", ts=ts, amount=1, name=name)
+
+
 def test_a_weight_is_stored_with_its_time_as_its_id(seeded) -> None:
     ts = datetime(2026, 3, 4, 6, 0, tzinfo=UTC)
     with psycopg.connect(seeded) as conn:

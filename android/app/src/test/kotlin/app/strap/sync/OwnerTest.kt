@@ -150,6 +150,23 @@ class OwnerTest : PhoneTest() {
     }
 
     @Test
+    fun `a day keeps one status, in its own zone, and active clears it`() {
+        val phone = Phone(null)
+        phone.owner.restore(JSONObject().put("timezone", "Asia/Tbilisi"))
+        val day = LocalDate.parse("2026-09-20")
+        phone.owner.setStatus(day, DayStatus.SICK)
+        phone.owner.setStatus(day, DayStatus.INJURED)
+        phone.owner.setStatus(day.plusDays(1), DayStatus.BREAK)
+        assertEquals(mapOf(day to DayStatus.INJURED, day.plusDays(1) to DayStatus.BREAK), phone.owner.statuses(day.minusDays(3), day.plusDays(3)))
+        assertEquals(mapOf(day to DayStatus.INJURED), phone.owner.statuses(day, day))
+        val row = phone.store.journalRows("kind = 'status' AND name = 'injured'").single()
+        assertEquals("day", row.unit)
+        assertEquals(phone.owner.zones()!!.bounds(day).first.plusSeconds(12 * 3600), row.ts)
+        phone.owner.setStatus(day, DayStatus.ACTIVE)
+        assertEquals(mapOf(day.plusDays(1) to DayStatus.BREAK), phone.owner.statuses(day, day.plusDays(1)))
+    }
+
+    @Test
     fun `restore takes the profile, journal and zones from a backup`() {
         val phone = Phone(null)
         phone.owner.restore(JSONObject()

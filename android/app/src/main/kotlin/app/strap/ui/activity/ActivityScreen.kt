@@ -78,6 +78,9 @@ import app.strap.ui.theme.LocalRidgeColors
 import app.strap.ui.theme.MetricColors
 import app.strap.ui.theme.RidgeType
 import app.strap.ui.today.loadRange
+import app.strap.sync.DayStatus
+import app.strap.ui.components.icon
+import app.strap.ui.components.tone
 import app.strap.ui.today.workoutLine
 import strap.science.Card
 import strap.science.DaySummary
@@ -89,7 +92,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 
-private class FitnessData(val summary: DaySummary, val daily: Map<String, Map<LocalDate, Double>>, val workouts: List<Workout>)
+private class FitnessData(val summary: DaySummary, val daily: Map<String, Map<LocalDate, Double>>, val workouts: List<Workout>, val statuses: Map<LocalDate, DayStatus>)
 
 /** A chart the Fitness tab can pin: a daily metric, how it is drawn and printed. */
 /** [higherBetter]: which way the metric's trend is good (null: neither, as load). */
@@ -139,6 +142,7 @@ fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit) 
                 api.summary(day),
                 CHARTS.values.map { it.metric }.distinct().associateWith { m -> api.daily(m, today.minusDays(41), today).associate { it.day to it.value } },
                 api.workouts(today.minusDays(29), today),
+                api.statuses(today.minusDays(6), today),
             )
             error = null
         } catch (e: ApiException) {
@@ -155,12 +159,15 @@ fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit) 
     val load = d.daily.getValue("cardio_load")
     val range = loadRange(load, day)
     LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { WeekStrip(today, day, byDay.keys) { dayEpoch = it.toEpochDay() } }
+        item { WeekStrip(today, day, byDay.keys, d.statuses) { dayEpoch = it.toEpochDay() } }
         item {
             val w = dayWorkouts.firstOrNull()
             val rangeLine = range?.let { " Your 7-day load is ${it.acute.roundToInt()}, ${it.words.lowercase()} (${it.low.roundToInt()}–${it.high.roundToInt()})." } ?: ""
             RidgeCard(spacing = 6.dp) {
-                CardHeader(if (w != null) "Workout done" else "Rest day", icon = if (w != null) Icons.AutoMirrored.Rounded.DirectionsRun else Icons.AutoMirrored.Rounded.DirectionsWalk, tone = c.strainTone)
+                val status = d.statuses[day]?.takeIf { it != DayStatus.ACTIVE }
+                CardHeader(if (w != null) "Workout done" else status?.label ?: "Rest day",
+                    icon = if (w != null) Icons.AutoMirrored.Rounded.DirectionsRun else status?.icon ?: Icons.AutoMirrored.Rounded.DirectionsWalk,
+                    tone = if (w == null && status != null) status.tone() else c.strainTone)
                 Text((if (w != null) "A ${w.durationS / 60}-minute workout${w.avgHr?.let { " at an average of $it bpm" } ?: ""}." else "No workout recorded on this day.") + rangeLine,
                     style = RidgeType.body, color = muted)
             }
@@ -218,10 +225,9 @@ fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit) 
     }
 }
 
-/** The week ending today, a day per cell, a run icon on the days with a workout. */
+/** The week ending today, a day per cell, a run icon on the days with a workout and its own on a marked day. */
 @Composable
-private fun WeekStrip(today: LocalDate, selected: LocalDate, active: Set<LocalDate>, onSelect: (LocalDate) -> Unit) {
-    val c = LocalMetricColors.current
+private fun WeekStrip(today: LocalDate, selected: LocalDate, active: Set<LocalDate>, statuses: Map<LocalDate, DayStatus>, onSelect: (LocalDate) -> Unit) {
     val r = LocalRidgeColors.current
     Row(Modifier.fillMaxWidth()) {
         (6 downTo 0).map { today.minusDays(it.toLong()) }.forEach { d ->
@@ -232,9 +238,7 @@ private fun WeekStrip(today: LocalDate, selected: LocalDate, active: Set<LocalDa
             ) {
                 Text(d.format(DateTimeFormatter.ofPattern("EEE")), style = RidgeType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("${d.dayOfMonth}", style = RidgeType.label)
-                val did = d in active
-                Icon(if (did) Icons.AutoMirrored.Rounded.DirectionsRun else Icons.AutoMirrored.Rounded.DirectionsWalk, null,
-                    tint = if (did) c.strain else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f), modifier = Modifier.size(16.dp))
+                DayMark(statuses[d], d in active, 0.6f, 16.dp)
             }
         }
     }

@@ -37,7 +37,11 @@ import app.strap.ui.theme.LocalMetricColors
 import app.strap.ui.theme.LocalRidgeColors
 import app.strap.ui.theme.MetricTone
 import app.strap.ui.theme.RidgeType
+import app.strap.sync.DayStatus
+import app.strap.ui.components.icon
+import app.strap.ui.components.tone
 import java.time.Instant
+import java.time.LocalDate
 
 /** One quick-log button: what it logs and what the snackbar says. */
 internal data class Quick(val label: String, val amount: String, val kind: String, val value: Double, val name: String?, val logged: String)
@@ -52,6 +56,7 @@ internal val QUICK = listOf(
 /** The journal's icon for an entry. */
 internal fun journalIcon(kind: String, name: String?): ImageVector = when (kind) {
     "weight" -> Icons.Rounded.MonitorWeight
+    "status" -> DayStatus.of(name).icon
     "alcohol" -> Icons.Rounded.WineBar
     else -> when (name) {
         "espresso" -> Icons.Rounded.CoffeeMaker
@@ -60,22 +65,27 @@ internal fun journalIcon(kind: String, name: String?): ImageVector = when (kind)
     }
 }
 
-/** The journal's colours: caffeine amber (Charge's), alcohol rose (heart's), weight blue (strain's). */
+/** The journal's colours: caffeine amber (Charge's), alcohol rose (heart's), weight blue (strain's), a status its own. */
 @Composable
-internal fun journalTone(kind: String): MetricTone {
+internal fun journalTone(kind: String, name: String? = null): MetricTone {
     val c = LocalMetricColors.current
     return when (kind) {
         "weight" -> c.strainTone
         "alcohol" -> c.heartTone
+        "status" -> DayStatus.of(name).tone()
         else -> c.chargeTone
     }
 }
 
 /**
  * Adds a journal entry from anywhere: [add] writes it (kind, amount, name, when, what the
- * snackbar says). Built once in the shell, which owns the journal and re-derives after a weight.
+ * snackbar says); [setStatus] marks a day's activity status. Built once in the shell, which owns
+ * the journal and re-derives after a weight.
  */
-class JournalLogger(val add: (kind: String, amount: Double, name: String?, at: Instant, done: String) -> Unit)
+class JournalLogger(
+    val add: (kind: String, amount: Double, name: String?, at: Instant, done: String) -> Unit,
+    val setStatus: (day: LocalDate, status: DayStatus) -> Unit,
+)
 
 /** The quick-log chips (coffee, espresso, tea, a drink, weight), each in the journal's colours. */
 @OptIn(ExperimentalLayoutApi::class)

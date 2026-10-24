@@ -16,6 +16,7 @@ def seeded(db, test_dsn):
     with psycopg.connect(test_dsn) as conn, conn.cursor() as cur:
         _seed.seed(cur)
         cur.execute("INSERT INTO manual_entry (user_id, kind, ts, amount, unit, name) VALUES (%s, 'caffeine', now(), 95, 'mg', 'coffee')", (_seed.OWNER,))
+        cur.execute("INSERT INTO manual_entry (user_id, kind, ts, amount, unit, name) VALUES (%s, 'status', now(), 1, 'day', 'sick')", (_seed.OWNER,))
     return test_dsn
 
 
@@ -24,7 +25,7 @@ def test_the_records_hold_everything_but_the_samples(seeded) -> None:
         out = backup.records(conn.cursor(), _seed.OWNER, "UTC")
     assert out["profile"]["dob"] == "1990-01-01" and len(out["weights"]) == 1
     assert len(out["sleep"]) == 8 and out["sleep"][0]["source"] == "strap_ble" and out["sleep"][0]["stages"]
-    assert len(out["workouts"]) == 1 and [j["kind"] for j in out["journal"]] == ["caffeine"]
+    assert len(out["workouts"]) == 1 and sorted(j["kind"] for j in out["journal"]) == ["caffeine", "status"]
     assert out["samples"] == len(_seed.samples())
 
 

@@ -12,6 +12,8 @@ from uuid import UUID
 
 from psycopg import Cursor
 
+from strap_server import journal
+
 SAMPLE_PAGE = 20_000
 
 
@@ -43,7 +45,7 @@ def profile(cur: Cursor, user_id: UUID, default_timezone: str) -> dict:
 def records(cur: Cursor, user_id: UUID, default_timezone: str) -> dict:
     out = profile(cur, user_id, default_timezone)
     cur.execute(
-        "SELECT id::text, kind, ts, amount, unit, name FROM manual_entry WHERE user_id = %s AND kind IN ('caffeine', 'alcohol') ORDER BY ts",
+        f"SELECT id::text, kind, ts, amount, unit, name FROM manual_entry WHERE user_id = %s AND kind IN {journal.MANUAL_KINDS} ORDER BY ts",
         (user_id,),
     )
     out["journal"] = [{"id": i, "kind": k, "ts": _ms(ts), "amount": a, "unit": u, "name": n} for i, k, ts, a, u, n in cur.fetchall()]

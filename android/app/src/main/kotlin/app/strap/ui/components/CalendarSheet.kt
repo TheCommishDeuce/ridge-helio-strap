@@ -48,6 +48,7 @@ import app.strap.api.Reader
 import app.strap.ui.theme.LocalMetricColors
 import app.strap.ui.theme.LocalRidgeColors
 import app.strap.ui.theme.RidgeType
+import app.strap.sync.DayStatus
 import strap.science.DayRings
 import java.time.LocalDate
 import java.time.YearMonth
@@ -70,8 +71,8 @@ fun MiniRing(fraction: Float?, color: Color, size: Dp, stroke: Dp = 3.5.dp) {
 }
 
 /**
- * The calendar (Bevel's): a month of days, each with its ring for the chosen metric; pick a day
- * to show it. Days after today and days with nothing recorded are greyed and cannot be picked.
+ * The calendar (Bevel's): a month of days, each with its ring for the chosen metric and the icon
+ * of a day marked sick, injured or on a break; pick a day to show it. Days after today and days with nothing recorded are greyed and cannot be picked.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,6 +81,7 @@ fun CalendarSheet(api: Reader, day: LocalDate, initial: CalendarMetric, onDismis
     var month by remember { mutableStateOf(YearMonth.from(day)) }
     var metric by remember { mutableStateOf(initial) }
     var rings by remember { mutableStateOf<Map<LocalDate, DayRings>>(emptyMap()) }
+    var statuses by remember { mutableStateOf<Map<LocalDate, DayStatus>>(emptyMap()) }
     LaunchedEffect(month) {
         val last = minOf(month.atEndOfMonth(), today)
         rings = try {
@@ -87,6 +89,7 @@ fun CalendarSheet(api: Reader, day: LocalDate, initial: CalendarMetric, onDismis
         } catch (_: ApiException) {
             emptyMap()
         }
+        statuses = try { api.statuses(month.atDay(1), month.atEndOfMonth()) } catch (_: ApiException) { emptyMap() }
     }
     val c = LocalMetricColors.current
     val r = LocalRidgeColors.current
@@ -132,6 +135,8 @@ fun CalendarSheet(api: Reader, day: LocalDate, initial: CalendarMetric, onDismis
                                             d == today -> c.strain
                                             else -> MaterialTheme.colorScheme.onSurface
                                         })
+                                    // Every cell keeps the icon's room, so the rows line up.
+                                    Box(Modifier.size(12.dp)) { statuses[d]?.let { Icon(it.icon, it.label, tint = it.color(), modifier = Modifier.size(12.dp)) } }
                                 }
                             }
                         }

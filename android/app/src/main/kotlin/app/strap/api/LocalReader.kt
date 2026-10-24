@@ -1,6 +1,7 @@
 package app.strap.api
 
 import app.strap.store.LocalStore
+import app.strap.sync.DayStatus
 import app.strap.sync.JournalEntry
 import app.strap.sync.Owner
 import app.strap.sync.PhoneScience
@@ -44,6 +45,8 @@ class LocalReader(private val science: PhoneScience, private val store: LocalSto
     override suspend fun journal(from: LocalDate, to: LocalDate): List<JournalEntry> = over(from, to) { s ->
         owner.journal(s.zones.bounds(from).first, s.zones.bounds(to).second)
     }
+
+    override suspend fun statuses(from: LocalDate, to: LocalDate): Map<LocalDate, DayStatus> = off { owner.statuses(from, to) }
 
     override suspend fun rings(from: LocalDate, to: LocalDate): List<DayRings> = over(from, to) { s -> s.dayRings(from, to) }
 

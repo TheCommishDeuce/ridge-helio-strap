@@ -52,6 +52,9 @@ import app.strap.ui.components.Moment
 import app.strap.ui.components.Note
 import app.strap.ui.components.RidgeCard
 import app.strap.ui.components.SectionTitle
+import app.strap.ui.components.StatusChip
+import app.strap.ui.components.StatusSheet
+import app.strap.sync.DayStatus
 import app.strap.ui.components.Subtle
 import app.strap.ui.components.Tile
 import app.strap.ui.components.TileGrid
@@ -98,10 +101,12 @@ class TodayNav(
 fun TodayContent(data: TodayData, nav: TodayNav, logger: JournalLogger, modifier: Modifier = Modifier, liveSteps: Long? = null) {
     var hiddenIllness by rememberSaveable { mutableStateOf<String?>(null) }
     var weighing by remember { mutableStateOf(false) }
+    var picking by remember { mutableStateOf(false) }
     // Today logs at the moment; a past day at its noon.
     fun at(): Instant = if (data.day == LocalDate.now()) Instant.now() else data.day.atTime(12, 0).atZone(data.curves.window.zone).toInstant()
     LazyColumn(modifier, contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { WeekStrip(data.stripDays, data.recoveryByDay, data.day, nav.selectDay) }
+        item { StatusChip(data.status, { picking = true }) }
         data.illness?.takeIf { it != hiddenIllness }?.let { text -> item { IllnessBanner(text, data.illnessNight, data.day, data.illnessCheck) { hiddenIllness = text } } }
         item { GaugesCard(data, nav) }
         item { SectionTitle("Last night", trailing = { Subtle("vs your usual", style = RidgeType.caption) }) }
@@ -118,6 +123,10 @@ fun TodayContent(data: TodayData, nav: TodayNav, logger: JournalLogger, modifier
             }
             if (moments.isEmpty()) RidgeCard { Subtle("Nothing recorded for this day yet."); quick() } else Timeline(moments, quick)
         }
+    }
+    if (picking) StatusSheet(data.day, data.status, onDismiss = { picking = false }) { s ->
+        picking = false
+        if (s != data.status) logger.setStatus(data.day, s)
     }
     if (weighing) WeightDialog(onDismiss = { weighing = false }) { kg -> weighing = false; logger.add("weight", kg, null, at(), "Weight saved") }
 }
@@ -167,7 +176,8 @@ private fun daySentence(data: TodayData): String? {
     )
     val week = data.recoveryWeekTo(data.day)?.let { "Your week averages ${it.roundToInt()}% recovery." }
     val load = data.load?.let { "Your 7-day load is ${it.acute.roundToInt()}, ${it.words.lowercase()} (${it.low.roundToInt()}–${it.high.roundToInt()})." }
-    return listOfNotNull(parts.takeIf { it.isNotEmpty() }?.joinToString("; ")?.plus("."), week, load).joinToString(" ").takeIf { it.isNotEmpty() }
+    val status = data.status.takeIf { it != DayStatus.ACTIVE }?.let { "You marked the day as ${it.label.lowercase()}." }
+    return listOfNotNull(parts.takeIf { it.isNotEmpty() }?.joinToString("; ")?.plus("."), week, load, status).joinToString(" ").takeIf { it.isNotEmpty() }
 }
 
 /** Last night's vitals as tiles, each against your usual; the parts of recovery open its screen. */
@@ -291,14 +301,15 @@ internal fun lastNightCheck(night: LocalDate?, day: LocalDate, check: IllnessChe
     return "Last night: ${parts.joinToString(", ")} against the 14 nights before; no new signal."
 }
 
-/** "Caffeine · 95 mg" */
+/** "Caffeine · 95 mg"; a status "Marked sick". */
 internal fun journalHeadline(e: JournalEntry): String {
+    if (e.kind == "status") return "Marked " + app.strap.sync.DayStatus.of(e.name).label.lowercase()
     val amount = e.amount.let { if (it % 1.0 == 0.0) it.toInt().toString() else "%.1f".format(it) }
     val unit = e.unit.let { if (it == "drink" || it == "drinks" || it == "standard") "standard" else it }
     return "${e.kind.replaceFirstChar { it.uppercase() }} · $amount $unit"
 }
 
-internal fun journalName(e: JournalEntry): String? = e.name?.takeIf { it.isNotEmpty() }?.replaceFirstChar { it.uppercase() }
+internal fun journalName(e: JournalEntry): String? = e.name?.takeIf { it.isNotEmpty() && e.kind != "status" }?.replaceFirstChar { it.uppercase() }
 
 @Composable
 internal fun moments(data: TodayData, nav: TodayNav): List<Moment> {

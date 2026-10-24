@@ -71,6 +71,10 @@ import app.strap.ui.theme.LocalMetricColors
 import app.strap.ui.theme.LocalRidgeColors
 import app.strap.ui.theme.RidgeType
 import app.strap.ui.today.loadRange
+import app.strap.sync.DayStatus
+import app.strap.ui.components.color
+import app.strap.ui.components.icon
+import androidx.compose.ui.unit.Dp
 import app.strap.ui.today.workoutLine
 import strap.science.DaySummary
 import strap.science.Workout
@@ -294,6 +298,17 @@ fun WorkoutScreen(api: Reader, start: Instant) {
     }
 }
 
+/** What a day shows in Fitness (the prototype's): its status when marked, else a run on a workout day, else a faded walk. */
+@Composable
+internal fun DayMark(status: DayStatus?, workout: Boolean, faded: Float, size: Dp) {
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    when {
+        status != null && status != DayStatus.ACTIVE -> Icon(status.icon, status.label, tint = status.color(), modifier = Modifier.size(size))
+        workout -> Icon(Icons.AutoMirrored.Rounded.DirectionsRun, null, tint = LocalMetricColors.current.strain, modifier = Modifier.size(size))
+        else -> Icon(Icons.AutoMirrored.Rounded.DirectionsWalk, null, tint = muted.copy(alpha = faded), modifier = Modifier.size(size))
+    }
+}
+
 /** The training calendar: a month with what you did each day, its total, and its workouts (each opens its detail). */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -301,8 +316,10 @@ fun TrainingCalendarSheet(api: Reader, onDismiss: () -> Unit, onWorkout: (Workou
     val today = LocalDate.now()
     var month by remember { mutableStateOf(YearMonth.from(today)) }
     var workouts by remember { mutableStateOf<List<Workout>>(emptyList()) }
+    var statuses by remember { mutableStateOf<Map<LocalDate, DayStatus>>(emptyMap()) }
     LaunchedEffect(month) {
         workouts = try { api.workouts(month.atDay(1), minOf(month.atEndOfMonth(), today)) } catch (_: ApiException) { emptyList() }
+        statuses = try { api.statuses(month.atDay(1), month.atEndOfMonth()) } catch (_: ApiException) { emptyMap() }
     }
     val c = LocalMetricColors.current
     val r = LocalRidgeColors.current
@@ -332,10 +349,7 @@ fun TrainingCalendarSheet(api: Reader, onDismiss: () -> Unit, onWorkout: (Workou
                             week.forEach { d ->
                                 Column(Modifier.weight(1f).padding(vertical = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                     if (d != null) {
-                                        val did = byDay[d] != null
-                                        val past = d <= today
-                                        Icon(if (did) Icons.AutoMirrored.Rounded.DirectionsRun else Icons.AutoMirrored.Rounded.DirectionsWalk, null,
-                                            tint = if (did) c.strain else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (past) 0.45f else 0.15f), modifier = Modifier.size(20.dp))
+                                        DayMark(statuses[d], byDay[d] != null, if (d <= today) 0.45f else 0.15f, 20.dp)
                                         Text("${d.dayOfMonth}", style = RidgeType.caption, color = if (d == today) c.strain else MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }

@@ -1,7 +1,8 @@
-"""The journal: caffeine, alcohol and weight logged by the owner.
+"""The journal: caffeine, alcohol and weight logged by the owner, and a day's activity status.
 
 Caffeine and alcohol go to `manual_entry` (kinds the correlation and cut-off analytics read);
-weight goes to `weight_log`. The phone owns the journal (D34); the server keeps its copy.
+so does a status (sick, injured, on a break: one entry at the day's noon, its name the status;
+an active day has none); weight goes to `weight_log`. The phone owns the journal (D34); the server keeps its copy.
 """
 
 from __future__ import annotations
@@ -14,20 +15,25 @@ from psycopg import Connection
 from pydantic import BaseModel, Field, model_validator
 
 # Units are fixed per kind so entries stay comparable.
-UNITS = {"caffeine": "mg", "alcohol": "drinks", "weight": "kg"}
+UNITS = {"caffeine": "mg", "alcohol": "drinks", "weight": "kg", "status": "day"}
+STATUSES = ("sick", "injured", "break")
+# The kinds kept in manual_entry, as the queries below list them.
+MANUAL_KINDS = "('caffeine', 'alcohol', 'status')"
 
 
 class JournalIn(BaseModel):
-    kind: Literal["caffeine", "alcohol", "weight"]
+    kind: Literal["caffeine", "alcohol", "weight", "status"]
     ts: datetime  # when it happened (ISO 8601 with offset)
     amount: float = Field(gt=0)
     name: str | None = Field(default=None, max_length=80)
 
     @model_validator(mode="after")
     def plausible(self) -> JournalIn:
-        limits = {"caffeine": 2000, "alcohol": 30, "weight": 400}
+        limits = {"caffeine": 2000, "alcohol": 30, "weight": 400, "status": 1}
         if self.amount > limits[self.kind] or (self.kind == "weight" and self.amount < 20):
             raise ValueError(f"implausible {self.kind} amount")
+        if self.kind == "status" and self.name not in STATUSES:
+            raise ValueError(f"a status is one of {', '.join(STATUSES)}")
         if self.ts.tzinfo is None:
             raise ValueError("ts needs a UTC offset")
         return self
@@ -72,7 +78,7 @@ def entries(conn: Connection, user_id: UUID, first: datetime, last: datetime) ->
     """Every journal entry in [first, last), newest first, one shape for all kinds."""
     rows = conn.execute(
         "SELECT id::text, kind, ts, amount, unit, name FROM manual_entry WHERE user_id = %(u)s AND ts >= %(a)s AND ts < %(b)s "
-        "AND kind IN ('caffeine', 'alcohol') "
+        f"AND kind IN {MANUAL_KINDS} "
         "UNION ALL SELECT 'weight:' || (extract(epoch FROM ts) * 1000)::bigint, 'weight', ts, kg, 'kg', NULL FROM weight_log "
         "WHERE user_id = %(u)s AND ts >= %(a)s AND ts < %(b)s ORDER BY 3 DESC",
         {"u": user_id, "a": first, "b": last},
@@ -86,6 +92,6 @@ def delete(conn: Connection, user_id: UUID, entry_id: str) -> bool:
         cur = conn.execute("DELETE FROM weight_log WHERE user_id = %s AND ts = to_timestamp(%s / 1000.0)", (user_id, ms))
     else:
         cur = conn.execute(
-            "DELETE FROM manual_entry WHERE user_id = %s AND id::text = %s AND kind IN ('caffeine', 'alcohol')", (user_id, entry_id)
+            f"DELETE FROM manual_entry WHERE user_id = %s AND id::text = %s AND kind IN {MANUAL_KINDS}", (user_id, entry_id)
         )
     return cur.rowcount > 0
