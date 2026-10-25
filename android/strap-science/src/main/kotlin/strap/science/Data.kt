@@ -25,6 +25,8 @@ public data class SleepSession(
     val wakeMin: Int? = null,
     val stages: List<Stage> = emptyList(),
     val source: String = "strap_ble",
+    /** Light-sleep minutes Ridge added for an hour a clock change took from the strap ([ClockGapFill]). */
+    val estimatedMin: Int = 0,
 ) {
     public val isMain: Boolean get() = kind == MAIN
 

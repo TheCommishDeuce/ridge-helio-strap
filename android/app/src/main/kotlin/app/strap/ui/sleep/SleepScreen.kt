@@ -185,6 +185,7 @@ fun SleepScreen(api: Reader, day: LocalDate, onSelectDay: (LocalDate) -> Unit, r
                     Hypnogram(main.stages.map { Triple(it.startMs, it.endMs, it.code) })
                     CardFoot(listOf("REM" to main.remMin, "Light" to main.lightMin, "Deep" to main.deepMin, "Awake" to main.awakeMin)
                         .map { (k, v) -> k to (v?.let { duration(it.toDouble()) } ?: "—") })
+                    if (main.estimatedMin > 0) Subtle("Includes ${if (main.estimatedMin == 60) "an hour" else duration(main.estimatedMin.toDouble())} of light sleep the strap lost to the clock change, estimated from your heart rate.")
                 }
             }
         }

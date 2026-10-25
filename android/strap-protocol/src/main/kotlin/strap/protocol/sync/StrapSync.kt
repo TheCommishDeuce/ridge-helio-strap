@@ -84,7 +84,7 @@ public class StrapSync(
         val r = session.fetch(code, since, maxRounds, timeout)
         stats += r
         when (code) {
-            FetchType.SLEEP -> SleepParser.parse(r.raw).forEach { sleep[it.sessionStart] = it }
+            FetchType.SLEEP -> SleepParser.parse(r.raw, session.zone).forEach { sleep[it.sessionStart] = it }
             FetchType.WORKOUTS -> WorkoutParser.parseStream(r.raw).forEach { workouts[it.start] = it }
             else -> samples += r.samples
         }

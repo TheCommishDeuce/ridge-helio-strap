@@ -157,7 +157,7 @@ private fun Science.lastDay(day: LocalDate, metric: String): LocalDate? = store.
 private fun Science.sleepCard(day: LocalDate): SleepCard {
     val (start, end) = dayBounds(day)
     val nights = data.sleepSessions(start, end).filter { it.end >= start && it.end < end }.map { s ->
-        Night(s.start, s.end, s.kind, s.remMin, s.lightMin, s.deepMin, s.wakeMin, s.stages, s.score?.takeIf { it != 0 })
+        Night(s.start, s.end, s.kind, s.remMin, s.lightMin, s.deepMin, s.wakeMin, s.stages, s.score?.takeIf { it != 0 }, s.estimatedMin)
     }
     val score = store.get(day, "sleep_health_score_4dim")
     val debt = store.get(day, "sleep_debt_min")

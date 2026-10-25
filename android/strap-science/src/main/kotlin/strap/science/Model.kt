@@ -101,6 +101,8 @@ public data class Night(
     val awakeMin: Int?,
     val stages: List<Stage>,
     val deviceScore: Int?,
+    /** Of [lightMin], the minutes Ridge added for an hour a clock change took (0 for most nights). */
+    val estimatedMin: Int = 0,
 ) {
     val isMain: Boolean get() = kind == SleepSession.MAIN
 }

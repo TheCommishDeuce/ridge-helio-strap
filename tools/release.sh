@@ -18,6 +18,8 @@ tag="v$version"
 whats_new="docs/releases/$version.md"
 [ -f "$whats_new" ] && grep -q "^## What's new" "$whats_new" || {
     echo "Write $whats_new first: a \"## What's new\" section (see docs/releases/0.3.0.md), then commit it." >&2; exit 1; }
+# A release may have a name: a "# <name>" first line, which also goes into the title.
+release_name=$(sed -nE '1s/^# (.+)$/\1/p' "$whats_new")
 git ls-files --error-unmatch "$whats_new" >/dev/null 2>&1 || { echo "Commit $whats_new first." >&2; exit 1; }
 [ -z "$(git status --porcelain --untracked-files=no)" ] || { echo "Commit or stash your changes first." >&2; exit 1; }
 [ -f "$HOME/.android/ridge-release.jks" ] || { echo "Release key missing: ~/.android/ridge-release.jks (D24)." >&2; exit 1; }
@@ -52,5 +54,5 @@ works every number out itself; a server is optional and keeps its backup (see de
 EOF
 
 gh release create "$tag" "$out/$name" "$out/$name.sha256" -R "$public" --draft \
-    --title "Ridge $version" --notes-file "$notes"
+    --title "Ridge $version${release_name:+ — $release_name}" --notes-file "$notes"
 echo "Draft $tag created on $public. Review it and press Publish on GitHub."

@@ -11,7 +11,9 @@ import java.time.LocalDate
  * Ported from the server's `derive/` (itself ported verbatim from healthee@049c9ad) and held
  * to its golden fixture, so the rounding and the order of operations are the server's.
  */
-public class Science(public val data: RawData, public val store: DerivedStore) {
+public class Science(data: RawData, public val store: DerivedStore) {
+    /** The raw data, with nights a clock change cut short filled in ([ClockGapFill]). */
+    public val data: RawData = ClockGapFill(data)
     public val zones: Zones get() = data.zones
 
     internal fun upsert(day: LocalDate, metric: String, value: Double, flags: JsonObject = JsonObject(emptyMap())) {

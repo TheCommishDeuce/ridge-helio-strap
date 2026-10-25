@@ -52,7 +52,8 @@ import kotlin.time.Duration.Companion.seconds
  */
 public class StrapSession private constructor(
     private val link: StrapLink,
-    private val zone: ZoneId,
+    /** The zone history rounds are asked in, and the strap's wall clock is read in. */
+    public val zone: ZoneId,
     private val now: () -> Instant,
     private val log: (String) -> Unit,
     sessionKey: ByteArray,

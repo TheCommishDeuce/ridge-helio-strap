@@ -377,7 +377,15 @@ from the old system, not something the byte format proves.
 | 0x155 | 5×≤49 | nap stages, all naps on one timeline (skip `{0,0}`) |
 | 0x24a/c/e, 0x250 | 2 each | night REM / light / deep / awake minutes |
 
-- All stage minutes are offsets from **midnight − 24 h** (`base = midnightSec − 86400`).
+- All stage minutes are offsets from **midnight − 24 h** on the strap's **wall clock**: the
+  local midnight before the record's own, plus minutes of local time. Measured across the
+  autumn clock change (2026-10-25, Amsterdam): a night that ran from before the change to after
+  it was counted on the wall clock, one unbroken run an hour shorter than the time that passed.
+  The strap kept only one pass of the repeated hour, and its REM/light/deep/awake totals cover
+  the wall-clock span too. Ridge reads the minutes as local times in the phone's zone (when
+  the record's midnight is a midnight there, else the record's fixed offset) and leaves the
+  repeated hour as a gap in the stages. The spring change needs nothing extra: the skipped
+  hour never appears on the strap's clock.
 - Stage types: `4` light · `5` deep · `8` REM · `7` awake · `0x80` gap marker (skip).
 - **Validation:** both sec in [1.6e9, 2.0e9] and markers `1,1`, else **skip the slot and
   continue** (don't break — valid sessions follow empty ones).
