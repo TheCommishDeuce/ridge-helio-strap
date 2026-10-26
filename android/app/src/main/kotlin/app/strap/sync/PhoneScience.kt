@@ -94,8 +94,8 @@ class PhoneScience(private val store: LocalStore, private val server: () -> Back
             // A phone that grew up beside its server copies the server's raw history once.
             backfill?.invoke()?.let { log("history not copied yet: $it") }
             val era = era(zones) ?: return@withContext "no data yet"
-            // The profile, the weights and the zones reach every day: any change re-derives the era.
-            val inputs = owner.fingerprint().hashCode().toString()
+            // The profile, the weights, the zones and the derive rules reach every day: any change re-derives the era.
+            val inputs = "${owner.fingerprint()}|$RULES".hashCode().toString()
             val pending = store.underivedFrom()
             val from = when {
                 whole || store.metaValue(INPUTS) != inputs || store.derivedThrough() == null -> era
@@ -126,6 +126,8 @@ class PhoneScience(private val store: LocalStore, private val server: () -> Back
         /** The old app synced until the day after this phone's first sync (P7). */
         const val ERA_MARGIN_DAYS = 2L
         private const val INPUTS = "science_inputs"
+        /** Bump when a derive pass's rule changes, so stored rows are worked out again (D37: the load split). */
+        private const val RULES = "D37"
         private const val DERIVED_AT = "science_derived_at"
 
         /** Every metric the derive passes write (spec/02). */

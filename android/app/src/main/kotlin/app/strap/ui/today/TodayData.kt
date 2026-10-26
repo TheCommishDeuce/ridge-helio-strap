@@ -31,11 +31,12 @@ val Reading.valueOrNull: Double? get() = (this as? Reading.Value)?.value
 val Reading.usual: Double? get() = (this as? Reading.Value)?.usual
 
 /**
- * Charge (D33): the body battery now, or at the day's end for a past day. Sleep refilled
+ * Energy (D35): the body battery now, or at the day's end for a past day. Sleep refilled
  * [recharged]; [activity], [stress] and everyday [living] drained it. [threshold] is the
  * stress level that starts to drain it, [personal] when learned from your calm readings.
+ * [estimated]: the strap was off overnight and the day restarted from your usual wake value.
  */
-data class Charge(
+data class Energy(
     val value: Int,
     val at: Long,
     val atWake: Int?,
@@ -47,6 +48,7 @@ data class Charge(
     val living: Double,
     val threshold: Int,
     val personal: Boolean,
+    val estimated: Boolean,
     val curve: List<Point>,
 )
 
@@ -101,9 +103,9 @@ data class Night(val start: Long, val end: Long, val deviceScore: Int?)
 data class TodayData(
     val day: LocalDate,
     val recovery: Reading,
-    val charge: Charge?,
-    /** Why there is no [charge], when there is none. */
-    val chargeNote: String?,
+    val energy: Energy?,
+    /** Why there is no [energy], when there is none. */
+    val energyNote: String?,
     val factors: List<Factor>,
     /** recovery_score for the two weeks ending on [stripEnd] — the week strip and "vs week". */
     val recoveryByDay: Map<LocalDate, Double>,
@@ -178,8 +180,8 @@ private fun nightly(rows: List<Derived>, day: LocalDate): Reading {
     return Reading.Value(today.value, usual)
 }
 
-private fun charge(c: strap.science.ChargeCard) = Charge(
-    c.value, c.at.toEpochMilli(), c.atWake, c.high, c.low, c.recharged, c.activity, c.stress, c.living, c.threshold, c.personal,
+private fun energy(c: strap.science.EnergyCard) = Energy(
+    c.value, c.at.toEpochMilli(), c.atWake, c.high, c.low, c.recharged, c.activity, c.stress, c.living, c.threshold, c.personal, c.estimated,
     c.curve.map { Point(it.at.toEpochMilli(), it.value) },
 )
 
@@ -208,8 +210,8 @@ suspend fun loadToday(api: Reader, day: LocalDate): TodayData = coroutineScope {
             is Card.Withheld -> Reading.Withheld(r.message)
             is Card.Shown -> Reading.Value(r.value.value.toDouble())
         },
-        charge = s.charge.shown?.let(::charge),
-        chargeNote = (s.charge as? Card.Withheld)?.message,
+        energy = s.energy.shown?.let(::energy),
+        energyNote = (s.energy as? Card.Withheld)?.message,
         factors = recovery?.factors.orEmpty().map { f ->
             Factor(f.key, f.value, f.baseline, f.z, f.sub, f.weight, f.needMin)
         },

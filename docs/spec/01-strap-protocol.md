@@ -135,7 +135,7 @@ chars 0004/0005 works and stays).
 | `0017*` | User info | set only (`01`) |
 | `0018*` | Vibration patterns | |
 | `0019*` | Workout | live workout events (status `11`, app open `20`); no settings |
-| `001a*` | Find device | |
+| `001a*` ✓ | Find device | `03` → `04 01 01`, buzzes until `06`; then the strap sends `07` (D40, after OpenStrap's check on fw 3.25.0.3). Tapping the strap doesn't stop it; Zepp's `05 01` doesn't buzz |
 | `001d` | Heart rate | realtime HR `04`→`05`, sleep events `06`; no settings |
 | `0029` | Battery | request `03` → `04` |
 | `0043` | Device info | request `01` → `02` |

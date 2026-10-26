@@ -45,6 +45,7 @@ class StrapApp : Application() {
         zones.record() // a backstop for a change the broadcast missed (D31)
         background.scheduleBackup(vault.loadServer() != null)
         restore // wires the one-time backfill of the server's history into the science
+        app.strap.ui.widget.WidgetUpdater.watch(this)
     }
     val syncRunner: SyncRunner by lazy { SyncRunner(this, store, vault, alarms) }
 

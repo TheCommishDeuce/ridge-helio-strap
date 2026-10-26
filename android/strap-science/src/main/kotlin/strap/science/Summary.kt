@@ -146,6 +146,7 @@ private fun Science.strainCard(day: LocalDate): Card<Strain> {
     val hist = history(day, "cardio_load", BASELINE_DAYS)
     return Card.Shown(Strain(
         strainFromLoad(row.value, p95?.takeIf { it != 0.0 }), 21.0, round(row.value, 1),
+        row.flags.num("workout_load"), row.flags.num("everyday_load"),
         if (hist.size >= BASELINE_MIN_POINTS) round(Robust.median(hist), 1) else null, row.flags,
         (row.flags["zone_min"] as? JsonArray)?.map { it.jsonPrimitive.intOrNull ?: 0 },
         row.flags.int("hrmax"), row.flags.int("rhr"),
@@ -264,7 +265,7 @@ public fun Science.daySummary(day: LocalDate, now: Instant): DaySummary {
     return DaySummary(
         day, zones.zoneOf(day), start, end, until,
         recoveryCard(day),
-        chargeCard(day, now),
+        energyCard(day, now),
         strainCard(day),
         sleepCard(day),
         Activity(

@@ -30,8 +30,8 @@ data class MetricColors(
     val heartTone: MetricTone,
     val stressTone: MetricTone,
     val stepsTone: MetricTone,
-    /** Charge, the body battery. */
-    val chargeTone: MetricTone,
+    /** Energy, the body battery. */
+    val energyTone: MetricTone,
     /** Things with no metric of their own: summaries, settings, the journal's weight. */
     val neutralTone: MetricTone,
     /** Gauge tracks, chart gridlines, empty bar tracks (`surface3`). */
@@ -43,7 +43,7 @@ data class MetricColors(
     val heart get() = heartTone.accent
     val stress get() = stressTone.accent
     val steps get() = stepsTone.accent
-    val charge get() = chargeTone.accent
+    val energy get() = energyTone.accent
 }
 
 /** The neutrals and zone colours Material's scheme has no slot for. */
@@ -72,38 +72,38 @@ data class RidgeColors(
     }
 }
 
-private val DarkRidge = RidgeColors(
+internal val DarkRidge = RidgeColors(
     bg = Color(0xFF020203), surface1 = Color(0xFF060709), surface2 = Color(0xFF0A0B0D), card = Color(0xFF0C0F11),
     surface3 = Color(0xFF1D2022), surface4 = Color(0xFF2C2E31),
     zoneGreen = Color(0xFF5EDB81), zoneYellow = Color(0xFFF4CD4B), zoneRed = Color(0xFFFC5855),
 )
 
-private val LightRidge = RidgeColors(
+internal val LightRidge = RidgeColors(
     bg = Color(0xFFF6F7F8), surface1 = Color(0xFFEFF0F2), surface2 = Color(0xFFEAEBED), card = Color(0xFFFDFDFE),
     surface3 = Color(0xFFE1E3E5), surface4 = Color(0xFFD7D9DC),
     zoneGreen = Color(0xFF008D3C), zoneYellow = Color(0xFFB88000), zoneRed = Color(0xFFD02B31),
 )
 
-private val DarkMetrics = MetricColors(
+internal val DarkMetrics = MetricColors(
     recoveryTone = MetricTone(Color(0xFF7AD59C), Color(0xFF183E27), Color(0xFFCBEFD6)),
     strainTone = MetricTone(Color(0xFF88C1FF), Color(0xFF1F3654), Color(0xFFCFE7FF)),
     sleepTone = MetricTone(Color(0xFFC3AEFF), Color(0xFF382F51), Color(0xFFE6DFFF)),
     heartTone = MetricTone(Color(0xFFFF9E96), Color(0xFF502825), Color(0xFFFFD8D4)),
     stressTone = MetricTone(Color(0xFFF5AC69), Color(0xFF4B2E11), Color(0xFFFEDEC3)),
     stepsTone = MetricTone(Color(0xFF44D4E2), Color(0xFF003E44), Color(0xFFBFEFF4)),
-    chargeTone = MetricTone(Color(0xFFF4CD4B), Color(0xFF3F3410), Color(0xFFFFEFC2)),
+    energyTone = MetricTone(Color(0xFFF4CD4B), Color(0xFF3F3410), Color(0xFFFFEFC2)),
     neutralTone = MetricTone(Color(0xFFE6E8EA), Color(0xFF242729), Color(0xFFEDEFF0)),
     track = DarkRidge.surface3,
 )
 
-private val LightMetrics = MetricColors(
+internal val LightMetrics = MetricColors(
     recoveryTone = MetricTone(Color(0xFF007F43), Color(0xFFCBEFD6), Color(0xFF003319)),
     strainTone = MetricTone(Color(0xFF2769B7), Color(0xFFCFE7FF), Color(0xFF0E294A)),
     sleepTone = MetricTone(Color(0xFF7055B0), Color(0xFFE6DFFF), Color(0xFF2C2047)),
     heartTone = MetricTone(Color(0xFFAB413E), Color(0xFFFFD8D4), Color(0xFF451816)),
     stressTone = MetricTone(Color(0xFFA05100), Color(0xFFFEDEC3), Color(0xFF401F00)),
     stepsTone = MetricTone(Color(0xFF007E8F), Color(0xFFBFEFF4), Color(0xFF003239)),
-    chargeTone = MetricTone(Color(0xFFA87400), Color(0xFFFFEFC2), Color(0xFF3A2A00)),
+    energyTone = MetricTone(Color(0xFFA87400), Color(0xFFFFEFC2), Color(0xFF3A2A00)),
     neutralTone = MetricTone(Color(0xFF151618), Color(0xFFE1E3E5), Color(0xFF101213)),
     track = LightRidge.surface3,
 )

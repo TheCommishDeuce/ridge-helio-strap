@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Ridge</string>
+    <string name="widget_today">Today</string>
+    <string name="widget_today_description">Recovery, Energy, last night and steps</string>
+    <string name="widget_steps">Steps</string>
+    <string name="widget_steps_description">Steps as of the last sync, and your week</string>
 </resources>

@@ -65,7 +65,7 @@ internal fun journalIcon(kind: String, name: String?): ImageVector = when (kind)
     }
 }
 
-/** The journal's colours: caffeine amber (Charge's), alcohol rose (heart's), weight blue (strain's), a status its own. */
+/** The journal's colours: caffeine amber (Energy's), alcohol rose (heart's), weight blue (strain's), a status its own. */
 @Composable
 internal fun journalTone(kind: String, name: String? = null): MetricTone {
     val c = LocalMetricColors.current
@@ -73,7 +73,7 @@ internal fun journalTone(kind: String, name: String? = null): MetricTone {
         "weight" -> c.strainTone
         "alcohol" -> c.heartTone
         "status" -> DayStatus.of(name).tone()
-        else -> c.chargeTone
+        else -> c.energyTone
     }
 }
 

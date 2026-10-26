@@ -53,11 +53,12 @@ class SummaryAndSeriesTest {
 
     @Test
     fun `the cards carry the derived numbers`() {
-        val out = seeded().daySummary(last, now).toJson()
+        val science = seeded()
+        val out = science.daySummary(last, now).toJson()
         assertEquals(roundInt(golden(last, "recovery_score")).toDouble(), out.o("recovery").n("value"))
         assertEquals("evidence_weighted_personal_baseline", out.o("recovery").o("flags").getValue("method").jsonPrimitive.content)
         assertEquals(roundInt(golden(last, "steps_total")).toDouble(), out.o("steps").o("steps").n("value"))
-        assertEquals(round(golden(last, "cardio_load"), 1), out.o("strain").n("cardio_load"))
+        assertEquals(round(science.store.get(last, "cardio_load")!!.value, 1), out.o("strain").n("cardio_load"))
         assertTrue(out.o("strain").n("value") in 0.0..21.0 && out.o("strain").n("value") > 0)
         assertEquals(golden(last, "sleep_health_score_4dim"), out.o("sleep").o("health").n("dimensions"))
         val session = out.o("sleep").getValue("sessions").jsonArray[0].jsonObject
@@ -72,7 +73,7 @@ class SummaryAndSeriesTest {
     @Test
     fun `a day without data is withheld by name, never null`() {
         val out = seeded().daySummary(LocalDate.of(2026, 6, 1), now).toJson()
-        for (card in listOf(out.o("recovery"), out.o("strain"), out.o("steps").o("steps"), out.o("heart").o("resting"), out.o("heart").o("today"), out.o("vo2max"), out.o("charge"), out.o("pai"), out.o("sleep").o("breathing"))) {
+        for (card in listOf(out.o("recovery"), out.o("strain"), out.o("steps").o("steps"), out.o("heart").o("resting"), out.o("heart").o("today"), out.o("vo2max"), out.o("energy"), out.o("pai"), out.o("sleep").o("breathing"))) {
             val w = card.o("withheld")
             assertTrue(w.getValue("reason").jsonPrimitive.content.isNotBlank() && w.getValue("message").jsonPrimitive.content.isNotBlank(), "$card")
         }
@@ -111,10 +112,10 @@ class SummaryAndSeriesTest {
     }
 
     @Test
-    fun `charge runs over the day`() {
+    fun `energy runs over the day`() {
         val out = seeded().daySummary(last, now).toJson()
         assertTrue("readiness" !in out.o("recovery"))
-        val c = out.o("charge")
+        val c = out.o("energy")
         assertTrue(c.n("low") <= c.n("value") && c.n("value") <= c.n("high") && c.n("high") <= 100 && c.n("low") >= 0)
         assertTrue(c.n("at_wake") >= c.n("value"))
         assertTrue(c.n("recharged") > 0 && c.o("drained").n("activity") > 0)

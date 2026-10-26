@@ -26,15 +26,15 @@ private fun DayStats.toJson(): JsonObject = json(
 
 private operator fun JsonObject.plus(other: JsonObject): JsonObject = JsonObject(LinkedHashMap<String, JsonElement>(this).apply { putAll(other) })
 
-internal fun ChargeCard.toJson(): JsonObject = json(
+internal fun EnergyCard.toJson(): JsonObject = json(
     "value" to value, "at" to at.ms(), "at_wake" to atWake, "high" to high, "low" to low, "recharged" to recharged,
     "drained" to json("activity" to activity, "stress" to stress, "living" to living),
-    "threshold" to json("stress" to threshold, "personal" to personal),
+    "threshold" to json("stress" to threshold, "personal" to personal), "estimated" to estimated,
     "curve" to curve.map { listOf(it.at.ms(), it.value) },
-    "note_ids" to listOf("charge_body_battery"),
+    "note_ids" to listOf("energy_body_battery"),
 )
 
-internal fun Card<ChargeCard>.toJson(): JsonObject = toJson { it.toJson() }
+internal fun Card<EnergyCard>.toJson(): JsonObject = toJson { it.toJson() }
 
 private fun SleepCard.toJson(): JsonObject = json(
     "sessions" to nights.map { s ->
@@ -65,7 +65,7 @@ internal fun DaySummary.toJson(): JsonObject {
     return json(
         "date" to date.toString(), "timezone" to timezone, "start" to start.ms(), "end" to end.ms(),
         "recovery" to recovery.toJson { json("value" to it.value, "flags" to it.flags) },
-        "charge" to charge.toJson(),
+        "energy" to energy.toJson(),
         "strain" to strain.toJson {
             json("value" to it.value, "max" to it.max, "cardio_load" to it.cardioLoad, "typical_load" to it.typicalLoad, "flags" to it.flags)
         },

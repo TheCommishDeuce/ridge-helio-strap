@@ -91,7 +91,7 @@ fun JournalScreen(api: Reader, owner: Owner, onChanged: suspend (Instant) -> Uni
     LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
             RidgeCard(spacing = 12.dp) {
-                CardHeader("Quick log", "logged now", icon = Icons.Rounded.Coffee, tone = c.chargeTone)
+                CardHeader("Quick log", "logged now", icon = Icons.Rounded.Coffee, tone = c.energyTone)
                 QuickLogRow(onPick = { q -> add(q.kind, q.value, q.name, done = q.logged) }, onWeight = { weightDialog = true })
             }
         }

@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.rounded.AutoAwesome
 import app.strap.ui.components.InsightCard
+import strap.science.SleepHeadline
 import app.strap.ui.components.MiniRing
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -170,7 +171,12 @@ fun SleepScreen(api: Reader, day: LocalDate, onSelectDay: (LocalDate) -> Unit, r
             ))
         }
         main?.let { n ->
-            item { InsightCard(Icons.Rounded.AutoAwesome, c.sleepTone, day.format(DateTimeFormatter.ofPattern("d MMMM")) + " sleep summary", nightSummary(n, tst, need, s.debt.shown)) }
+            val asleep = tst ?: listOfNotNull(n.deepMin, n.lightMin, n.remMin).takeIf { it.size == 3 }?.sum()?.toDouble()
+            val headline = asleep?.let { SleepHeadline.of(n, it) }
+            item {
+                InsightCard(Icons.Rounded.AutoAwesome, c.sleepTone, headline?.kind?.title ?: (day.format(DateTimeFormatter.ofPattern("d MMMM")) + " sleep summary"),
+                    listOfNotNull(headline?.let(::why), nightSummary(n, tst, need, s.debt.shown)).joinToString(" "))
+            }
         }
         item { HealthTiles(s.health, s.regularity) }
         item {
@@ -241,12 +247,19 @@ private fun nightSummary(night: Night, tst: Double?, need: Double?, debt: SleepD
     debt?.let { add(if (it.minutes > 0) "Over ${it.windowNights} nights you are ${hm(it.minutes)} short." else "You carry no sleep debt over ${it.windowNights} nights.") }
 }.joinToString(" ")
 
-/** The strap's score in words, so the big number reads without a scale. */
-private fun scoreWord(score: Int) = when {
-    score >= 85 -> "Excellent"
-    score >= 70 -> "Good"
-    score >= 55 -> "Fair"
-    else -> "Poor"
+/** The strap's score in words, so the big number reads without a scale (Zepp's bands, D38). */
+private fun scoreWord(score: Int) = SleepHeadline.scoreWord(score)
+
+/** What earned the headline, when it's more than the score: the short sleep, the waking, the light stages. */
+private fun why(h: SleepHeadline.Headline): String? {
+    val woke = "Awake for ${h.wasoMin} min after falling asleep" + if (h.wakeups == 1) ", once." else ", over ${h.wakeups} wake-ups."
+    return when (h.kind) {
+        SleepHeadline.Kind.SHORT -> "Under 6 hours asleep."
+        SleepHeadline.Kind.BROKEN -> woke
+        SleepHeadline.Kind.SHORT_BROKEN -> "Under 6 hours asleep. $woke"
+        SleepHeadline.Kind.LIGHT -> h.deepRemShare?.let { "Deep and REM were ${(it * 100).roundToInt()} % of your sleep; most adults spend 40–50 % there, though the strap's staging is its least certain number." }
+        else -> null
+    }
 }
 
 /** The seven nights ending on [end], each a ring of the strap's score with its date inside; tap to show it. */

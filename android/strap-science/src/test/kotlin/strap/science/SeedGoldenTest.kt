@@ -28,8 +28,9 @@ class SeedGoldenTest {
         assertEquals(golden.keys.sortedBy { it.toString() }, actual.keys.sortedBy { it.toString() }, "metric set differs")
         val mismatches = golden.mapNotNull { (key, row) ->
             val got = actual.getValue(key)
-            Golden.diff(row["value"], toJson(got.value))?.let { "$key value $it" }
-                ?: Golden.diff(row["flags"], got.flags)?.let { "$key flags $it" }
+            val load = key.second == Golden.LOAD_METRIC
+            (if (load) null else Golden.diff(row["value"], toJson(got.value)))?.let { "$key value $it" }
+                ?: Golden.diff(row["flags"], if (load) Golden.loadFlags(got.flags) else got.flags)?.let { "$key flags $it" }
         }
         assertTrue(mismatches.isEmpty(), "derived rows differ from the golden fixture:\n" + mismatches.take(12).joinToString("\n"))
         assertEquals(172, golden.size)

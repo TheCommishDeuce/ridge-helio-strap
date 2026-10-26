@@ -61,6 +61,9 @@ public data class Strain(
     val value: Double?,
     val max: Double,
     val cardioLoad: Double,
+    /** The load's two parts (D37): workout minutes, and everyday movement outside them; null on rows from before the split. */
+    val workoutLoad: Double?,
+    val everydayLoad: Double?,
     val typicalLoad: Double?,
     val flags: JsonObject,
     val zoneMinutes: List<Int>?,
@@ -69,11 +72,13 @@ public data class Strain(
 )
 
 /**
- * Charge (D33) now, or at a past day's end ([at]): sleep [recharged] it; [activity], [stress]
+ * Energy (D35) now, or at a past day's end ([at]): sleep [recharged] it; [activity], [stress]
  * and everyday [living] drained it. [threshold] is the stress that starts to drain it,
- * [personal] when learned from the owner's calm readings. [curve] is every ten minutes.
+ * [personal] when learned from the owner's calm readings. [estimated]: the strap was off
+ * overnight, so the day restarted from the usual wake value ([atWake]). [curve] is every ten
+ * minutes, with no points where the strap was off too long.
  */
-public data class ChargeCard(
+public data class EnergyCard(
     val value: Int,
     val at: Instant,
     val atWake: Int?,
@@ -85,6 +90,7 @@ public data class ChargeCard(
     val living: Double,
     val threshold: Int,
     val personal: Boolean,
+    val estimated: Boolean,
     val curve: List<TimedValue>,
 )
 
@@ -185,7 +191,7 @@ public data class DaySummary(
     val end: Instant,
     val until: LocalTime?,
     val recovery: Card<Recovery>,
-    val charge: Card<ChargeCard>,
+    val energy: Card<EnergyCard>,
     val strain: Card<Strain>,
     val sleep: SleepCard,
     val activity: Activity,

@@ -44,7 +44,7 @@ val LocalSnackbar = staticCompositionLocalOf<(String, String?, (() -> Unit)?) ->
 /** The app's existing explanatory copy, moved off the screens into sheets (verbatim). */
 object Infos {
     val today = Info("Today", listOf(
-        "Charge is your body battery: sleep fills it; activity, stress and the waking day drain it.",
+        "Energy is your body battery: sleep fills it; movement, stress and the waking day drain it.",
         "Strain is today's load on your own scale: 21 is your hardest day of the last 90.",
         "Sleep is the strap's own 0–100 score. Ridge computes no composite sleep score of its own.",
     ))
@@ -65,11 +65,13 @@ object Infos {
         "The recovery score is an evidence-weighted estimate, not a validated formula, so it is always shown with its parts.",
         "Parts are compared with your own last 42 days. The weights reflect how strong the evidence is for each marker; no study fits them (recovery_readiness).",
     ))
-    fun charge(threshold: Int?, personal: Boolean) = Info(
-        "Charge",
+    fun energy(threshold: Int?, personal: Boolean) = Info(
+        "Energy",
         listOf(
-            "A body battery from 0 to 100, worked out minute by minute. Sleep fills it, more in deep sleep and with a calm heart and a good HRV night. Activity drains it by its load (the same TRIMP as strain), stress drains it once it stays over your threshold for three minutes, and every waking minute drains a little.",
-            "It starts two days back, so two nights wash out its starting guess. No study validates a body-battery formula: the constants are design choices, written down in the science spec, and the model follows OpenStrap's.",
+            "A body battery from 0 to 100, worked out minute by minute. Sleep fills it, more in deep sleep and with a calm heart and a good HRV night. Moving drains it by its load (the same TRIMP as strain); a raised heart rate while you sit still is not activity. Stress drains it once it stays over your threshold for three minutes, except during a workout and the 20 minutes after, when the strap's stress reading reflects the exercise.",
+            "An ordinary waking minute drains a little, less the lower it already is; a calm, still minute holds it. On a night the illness check flags high, sleep refills half as much and the next day drains half as much again.",
+            "With the strap off it drifts down slowly and, after 6.4 hours or over your usual sleep, stops: the chart shows a gap. After a night off, the morning starts from your usual wake value.",
+            "No study validates a body-battery formula: the constants are design choices, written down in the science spec, and the model follows OpenStrap's.",
         ),
         listOfNotNull(threshold?.let { "Stress threshold" to "$it" + if (personal) " (from your calm readings)" else " (default)" }),
     )

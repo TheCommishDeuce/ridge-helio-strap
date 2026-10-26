@@ -24,7 +24,7 @@ what the phone sends, so a new phone can restore it.
 4. **Derive.** The phone works out every day from the earliest one the sync touched
    ([`strap-science`](../android/strap-science), [spec/02](spec/02-science.md)), in one
    transaction; a changed profile or weight re-derives the whole history.
-5. **Read.** The screens read the phone's own numbers. Charge, the day's "usual" values and
+5. **Read.** The screens read the phone's own numbers. Energy, the day's "usual" values and
    the charts are worked out when shown.
 6. **Back up.** Once a night, while the phone charges on Wi-Fi (or Settings → Back up now),
    everything not yet sent goes to the server: samples first, sleep, workouts and counters,
@@ -44,7 +44,7 @@ when Today leaves the screen.
   fetch-round state machines, and every decoder. Its tests run the whole protocol against
   a fake strap built from the spec, plus byte vectors read from real hardware.
 - `android/strap-science`: pure Kotlin on the JVM. Every derived number: the per-night and
-  per-day passes, the illness flag, Charge, the day summary, the chart series. It reads raw
+  per-day passes, the illness flag, Energy, the day summary, the chart series. It reads raw
   data through an interface and writes a derived store, never SQL. It was ported from the
   former server's science and is held to its golden outputs: the seed fixture (172 values)
   and six weeks of the demo person with a trip, a DST change and the strap's own summaries

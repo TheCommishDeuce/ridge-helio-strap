@@ -30,20 +30,23 @@ class DemoGoldenTest {
         assertEquals(golden.keys.sortedBy { it.toString() }, actual.keys.sortedBy { it.toString() }, "metric set differs")
         val mismatches = golden.mapNotNull { (key, row) ->
             val got = actual.getValue(key)
-            Golden.diff(row["value"], toJson(got.value))?.let { "$key value $it" } ?: Golden.diff(row["flags"], got.flags)?.let { "$key flags $it" }
+            val load = key.second == Golden.LOAD_METRIC
+            (if (load) null else Golden.diff(row["value"], toJson(got.value)))?.let { "$key value $it" }
+                ?: Golden.diff(row["flags"], if (load) Golden.loadFlags(got.flags) else got.flags)?.let { "$key flags $it" }
         }
         assertTrue(mismatches.isEmpty(), "${mismatches.size} rows differ:\n" + mismatches.take(12).joinToString("\n"))
     }
 
     @Test
-    fun `every day's summary matches, Charge and the usual-by-now included`() {
+    fun `every day's summary matches, the usual-by-now included`() {
         val golden = Golden.read("demo/expected_summary.json.gz").jsonObject
         val science = Science(data, store)
         val mismatches = golden.mapNotNull { (day, expected) ->
-            val actual = science.daySummary(LocalDate.parse(day), now).toJson()
+            // Energy (D35) replaced the server's Charge, so the server has no figure to hold it to.
+            val actual = Golden.summaryBeforeLoadSplit(JsonObject(science.daySummary(LocalDate.parse(day), now).toJson() - "energy"))
             tiesAgree(expected.jsonObject, actual, "heart", "hr")?.let { return@mapNotNull "$day $it" }
             tiesAgree(expected.jsonObject, actual, "stress", "stress")?.let { return@mapNotNull "$day $it" }
-            Compare.diff(withoutExtremeTimes(expected.jsonObject), withoutExtremeTimes(actual))
+            Compare.diff(withoutExtremeTimes(Golden.summaryBeforeLoadSplit(JsonObject(expected.jsonObject - "charge"))), withoutExtremeTimes(actual))
                 .filterNot { Compare.serverNotYetMessage(it.path, it.expected) }.firstOrNull()?.let { "$day $it" }
         }
         assertTrue(golden.size > 40)

@@ -25,7 +25,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Bedtime
+import androidx.compose.material.icons.rounded.DirectionsWalk
 import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.FitnessCenter
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -64,14 +67,17 @@ import app.strap.ui.theme.LocalRidgeColors
 import app.strap.ui.theme.MetricColors
 import app.strap.ui.theme.RidgeType
 import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import strap.science.BioAge
+import strap.science.BioAge.Term
 import strap.science.Card
+import strap.science.shown
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 /** A biomarker under the age: a daily series and how to print it. */
 private class Marker(val label: String, val unit: String, val values: List<Double>, val tone: (MetricColors) -> Color, val format: String,
@@ -82,38 +88,36 @@ private class Marker(val label: String, val unit: String, val values: List<Doubl
 
 private class BiologyData(
     val day: LocalDate,
-    /** Biological age per day over the last month, oldest first. */
+    /** Biological age as of today and each of the twelve weeks before, oldest first. */
     val history: List<Pair<LocalDate, BioAge.Estimate>>,
-    val vo2max: Double?,
-    val rhrWeek: Double?,
     val withheld: String?,
     val markers: List<Marker>,
-    val sex: String?,
+    /** Steps, opened from its habit row (not listed with the other biomarkers). */
+    val steps: Marker,
 )
 
-private fun ageOn(dob: LocalDate, day: LocalDate) = ChronoUnit.DAYS.between(dob, day) / 365.2425
+/** Weeks of estimates the trend line shows. */
+private const val TREND_WEEKS = 12L
 
 private suspend fun load(api: Reader, owner: Owner, today: LocalDate): BiologyData {
     val profile = owner.profile()
-    val daily = listOf("vo2max_estimate", "hrv_sleep_avg", "rhr_daily", "respiratory_rate_sleep", "spo2_overnight")
-        .associateWith { m -> api.daily(m, today.minusDays(59), today).associate { it.day to it.value } }
-    val tst = api.daily("sleep_health_score_4dim", today.minusDays(59), today)
-        .mapNotNull { r -> r.flags["tst_min"]?.jsonPrimitive?.doubleOrNull?.let { r.day to it / 60 } }.toMap()
-    val vo2 = daily.getValue("vo2max_estimate")
-    val dob = profile?.dob
-    // Each day's estimate: the VO₂max of that day (or the latest before it) and the 14 nights ending on it (seven or more).
-    fun estimate(d: LocalDate): BioAge.Estimate? {
-        dob ?: return null
-        val v = vo2.filterKeys { it <= d }.maxByOrNull { it.key }?.value ?: return null
-        val nights = (0..13).mapNotNull { tst[d.minusDays(it.toLong())] }.takeIf { it.size >= 7 } ?: return null
-        return BioAge.estimate(ageOn(dob, d), profile.sex, v, nights.average())
-    }
-    val history = (29 downTo 0).map { today.minusDays(it.toLong()) }.mapNotNull { d -> estimate(d)?.let { d to it } }
-    val withheld = when {
-        dob == null -> "Biological age needs your date of birth in Settings → Profile."
-        history.isEmpty() -> (api.summary(today).vo2max as? Card.Withheld)?.message ?: "Biological age needs seven nights and a VO₂max first."
-        else -> null
-    }
+    val from = today.minusDays(BioAge.WINDOW_DAYS + 7 * TREND_WEEKS)
+    val daily = listOf("vo2max_estimate", "hrv_sleep_avg", "rhr_daily", "respiratory_rate_sleep", "spo2_overnight", "steps_total")
+        .associateWith { m -> api.daily(m, from, today).associate { it.day to it.value } }
+    // A step day counts when the strap saw 10 h of the waking day.
+    val worn = api.daily("cardio_load", from, today)
+        .filter { (it.flags["hr_minutes"]?.jsonPrimitive?.intOrNull ?: 0) >= BioAge.WORN_MINUTES }.mapTo(HashSet()) { it.day }
+    val wornSteps = daily.getValue("steps_total").filterKeys { it in worn }
+    val nights = api.daily("sleep_health_score_4dim", from, today).mapNotNull { r ->
+        r.flags["tst_min"]?.jsonPrimitive?.doubleOrNull?.let { r.day to BioAge.NightRow(it, r.flags["sri"]?.jsonPrimitive?.doubleOrNull) }
+    }.toMap()
+    val zone = ZoneId.systemDefault()
+    val strength = api.workouts(from, today).filter { it.sport in BioAge.STRENGTH_SPORTS }
+        .groupBy { it.start.atZone(zone).toLocalDate() }.mapValues { (_, ws) -> ws.sumOf { it.durationS } / 60.0 }
+    fun asOf(d: LocalDate) = BioAge.asOf(d, profile?.dob, profile?.sex, daily.getValue("rhr_daily"), wornSteps, nights, strength)
+    val now = asOf(today)
+    val history = (TREND_WEEKS downTo 0).map { today.minusWeeks(it) }.mapNotNull { d -> asOf(d).shown?.let { d to it } }
+        .takeIf { now is Card.Shown }.orEmpty()
     fun series(m: String) = daily.getValue(m).filterKeys { it > today.minusDays(30) }.toSortedMap().values.toList()
     fun rows(m: String) = daily.getValue(m)
     val weights = owner.weights().sortedBy { it.ts }.map { it.kg.toDouble() }
@@ -125,15 +129,35 @@ private suspend fun load(api: Reader, owner: Owner, today: LocalDate): BiologyDa
         Marker("Breathing rate", "rpm", series("respiratory_rate_sleep"), { it.sleep }, "%.1f", false, rows("respiratory_rate_sleep")),
         Marker("SpO₂", "%", series("spo2_overnight"), { it.steps }, "%.0f", true, rows("spo2_overnight")),
     ).filter { it.values.isNotEmpty() }
-    val rhrWeek = daily.getValue("rhr_daily").filterKeys { it > today.minusDays(7) }.values.sorted().let { if (it.isEmpty()) null else it[it.size / 2] }
-    return BiologyData(today, history, vo2.filterKeys { it <= today }.maxByOrNull { it.key }?.value, rhrWeek, withheld, markers, profile?.sex)
+    val steps = Marker("Steps", "steps", series("steps_total"), { it.steps }, "%,.0f", true, rows("steps_total"))
+    return BiologyData(today, history, (now as? Card.Withheld)?.message, markers, steps)
 }
 
-private fun yearsWord(x: Double) = "%.1f years %s".format(abs(x), if (x < 0) "younger" else "older")
+private fun yearWord(n: Double) = if (n == 1.0) "year" else "years"
+
+/** A habit's pull on the shown age, in words: whole years, halves near zero. */
+private fun pull(shown: Double): String {
+    val a = abs(shown)
+    if (a < 0.25) return "barely moves it"
+    val n = if (a < 0.75) 0.5 else a.roundToInt().toDouble()
+    val amount = if (n == 0.5) "half a year" else "about ${n.toInt()} ${yearWord(n)}"
+    return if (shown > 0) "adds $amount" else "takes off $amount"
+}
+
+/** "About 2 years younger than 35", or "about your age". */
+private fun versus(e: BioAge.Estimate): String {
+    val d = (e.age - e.chronological).roundToInt()
+    val age = e.chronological.toInt()
+    return when {
+        d == 0 -> "About your age, $age"
+        d < 0 -> "About ${-d} ${yearWord(-d.toDouble())} younger than $age"
+        else -> "About $d ${yearWord(d.toDouble())} older than $age"
+    }
+}
 
 /**
- * Biology: biological age (spec/02 §2.11) with its trend and range, the two age biomarkers
- * that move it with their inputs, and the other biomarkers' recent course.
+ * Biology: biological age (spec/02 §2.11, D36) as a range with its weekly trend, the habits
+ * that move it with their figures and targets, and the other biomarkers' recent course.
  */
 @Composable
 fun BiologyScreen(api: Reader, owner: Owner, refreshKey: Any?, onSleep: () -> Unit) {
@@ -160,50 +184,71 @@ fun BiologyScreen(api: Reader, owner: Owner, refreshKey: Any?, onSleep: () -> Un
             item { RidgeCard { Subtle(d.withheld ?: "Not computed yet.") } }
             return@LazyColumn
         }
-        val younger = now.age < now.chronological
+        val younger = now.age - now.chronological < 0.5
         val tone = if (younger) r.zoneGreen else r.zoneYellow
+        val asOf = d.history.last().first.format(DateTimeFormatter.ofPattern("d MMM"))
         item {
             RidgeCard(spacing = 6.dp) {
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Subtle("Biological age · as of ${d.history.last().first.format(DateTimeFormatter.ofPattern("d MMM"))}", style = RidgeType.caption)
-                    Text("%.1f".format(now.age), fontSize = 52.sp, lineHeight = 58.sp, style = RidgeType.body)
-                    Text("${yearsWord(now.age - now.chronological)} than ${now.chronological.toInt()}", style = RidgeType.label, color = tone,
+                    Subtle("Biological age · as of $asOf" + if (now.early) " · early estimate" else "", style = RidgeType.caption)
+                    Text("${now.low.roundToInt()}–${now.high.roundToInt()}", fontSize = 52.sp, lineHeight = 58.sp, style = RidgeType.body)
+                    Text(versus(now), style = RidgeType.label, color = tone,
                         modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(tone.copy(alpha = 0.16f)).padding(horizontal = 12.dp, vertical = 4.dp))
-                    d.history.firstOrNull { it.first == d.history.last().first.minusDays(7) }?.let { (_, week) ->
-                        val change = now.age - week.age
-                        Subtle("%s%.1f since last week".format(if (change >= 0) "+" else "−", abs(change)), Modifier.padding(top = 4.dp), RidgeType.caption)
-                    }
+                    Subtle(
+                        if (now.early) "From the weeks there are so far; it firms up over six months of wear."
+                        else "From your last six months, against the typical person your age and sex.",
+                        Modifier.padding(top = 6.dp), RidgeType.caption,
+                    )
                 }
-                AgeLine(d.history.map { it.second.age }, now.chronological, tone)
-                Row(Modifier.fillMaxWidth()) {
-                    Subtle(d.history.first().first.format(DateTimeFormatter.ofPattern("d MMM")), Modifier.weight(1f), RidgeType.caption)
-                    Subtle(d.history.last().first.format(DateTimeFormatter.ofPattern("d MMM")), style = RidgeType.caption)
-                }
-            }
-        }
-        item {
-            val v = d.vo2max
-            RidgeCard {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Confidence", style = RidgeType.rowTitle, modifier = Modifier.weight(1f))
-                    if (v != null) {
-                        // The VO₂max estimate's own error (±1 SEE) carried through to the age.
-                        val low = BioAge.estimate(now.chronological, d.sex, v + BioAge.VO2MAX_SEE, now.sleepHours).age
-                        val high = BioAge.estimate(now.chronological, d.sex, v - BioAge.VO2MAX_SEE, now.sleepHours).age
-                        Text("%.1f – %.1f".format(low, high), style = RidgeType.label)
+                if (d.history.size >= 2) {
+                    AgeLine(d.history.map { it.second.age }, now.chronological, tone)
+                    Row(Modifier.fillMaxWidth()) {
+                        Subtle(d.history.first().first.format(DateTimeFormatter.ofPattern("d MMM")), Modifier.weight(1f), RidgeType.caption)
+                        Subtle(asOf, style = RidgeType.caption)
                     }
                 }
             }
         }
-        item { SectionTitle("Age biomarkers") }
+        item { SectionTitle("What moves it") }
         item {
+            val i = now.inputs
+            fun open(metric: String) = { chart = d.markers.firstOrNull { it.daily != null && it.label == metric } }
+            val rows = listOfNotNull(
+                now.part(Term.RESTING_HR)?.let { p ->
+                    Habit(Icons.Rounded.FavoriteBorder, c.heartTone, "Resting heart rate", p.shown, "Nightly low, median" to "${i.sleepingRhr.roundToInt()} bpm", null,
+                        open("Resting HR baseline"))
+                },
+                now.part(Term.STEPS)?.let { p ->
+                    Habit(Icons.Rounded.DirectionsWalk, c.stepsTone, "Steps", p.shown, "A day, on days worn 10 h" to "%,d".format(i.steps.roundToInt()),
+                        "Aim for" to "8,000–10,000", { chart = d.steps })
+                },
+                now.part(Term.REGULARITY)?.let { p ->
+                    Habit(Icons.Rounded.Schedule, c.sleepTone, "Sleep regularity", p.shown, "Weekly SRI, average" to "${i.sri.roundToInt()}", null, onSleep)
+                },
+                now.part(Term.SHORT_SLEEP)?.let { p ->
+                    Habit(Icons.Rounded.Bedtime, c.sleepTone, "Time asleep", p.shown, "A night, average" to hm(i.asleepMin), "Aim for" to "at least 6h 30m", onSleep)
+                },
+                now.part(Term.STRENGTH)?.let { p ->
+                    Habit(Icons.Rounded.FitnessCenter, c.strainTone, "Strength training", p.shown, "Strength and core workouts" to "${i.strengthMinPerWeek.roundToInt()} min a week",
+                        "Aim for" to "40 min a week", null)
+                },
+            )
             RidgeCard(spacing = 4.dp) {
-                Biomarker(Icons.Rounded.FavoriteBorder, c.recoveryTone, "Fitness", now.fitnessYears, r,
-                    listOfNotNull(d.vo2max?.let { "VO₂max" to "%.1f ml/kg/min".format(it) }, d.rhrWeek?.let { "Resting HR, 7-day median" to "%.1f bpm".format(it) })) {
-                    chart = d.markers.firstOrNull { it.label == "VO₂max" }
+                rows.forEachIndexed { k, h ->
+                    if (k > 0) Box(Modifier.fillMaxWidth().padding(vertical = 6.dp).height(1.dp).background(r.surface3))
+                    Biomarker(h, r)
                 }
-                Box(Modifier.fillMaxWidth().padding(vertical = 6.dp).height(1.dp).background(r.surface3))
-                Biomarker(Icons.Rounded.Bedtime, c.sleepTone, "Sleep", now.sleepYears, r, listOf("Time asleep, 14 nights" to hm(now.sleepHours * 60)), onSleep)
+                if (now.fitnessCapped) Subtle("Resting heart rate and steps together move it by 3 years at most.", Modifier.padding(top = 6.dp), RidgeType.caption)
+            }
+        }
+        item {
+            RidgeCard {
+                Subtle(
+                    "Each habit is scored against the typical person your age and sex, by how much it moves the risk of dying in large studies, " +
+                        "turned into years and shrunk by 40 %, because those studies didn't allow for each other. Strength only ever takes years off and " +
+                        "short sleep only ever adds them. It's an estimate for insight, not a medical measurement, so it is shown as a range in whole years.",
+                    style = RidgeType.caption,
+                )
             }
         }
         if (d.markers.isNotEmpty()) {
@@ -232,22 +277,30 @@ fun BiologyScreen(api: Reader, owner: Owner, refreshKey: Any?, onSleep: () -> Un
     }
 }
 
+/** One habit behind the age: what it adds or takes off, the figure it was worked from, and a target where there is one. */
+private class Habit(
+    val icon: ImageVector, val tone: MetricTone, val title: String, val shown: Double,
+    val figure: Pair<String, String>, val target: Pair<String, String>?, val onOpen: (() -> Unit)?,
+)
+
 /**
- * An age biomarker as the prototype draws it: icon chip, name, the years it moves your age (in
- * colour), a chevron; under it, each input with its value. The whole block opens [onOpen].
+ * A habit as the prototype draws an age biomarker: icon chip, name, the years it moves your age
+ * (in colour), a chevron when it opens something; under it, its figure and target.
  */
 @Composable
-private fun Biomarker(icon: ImageVector, tone: MetricTone, title: String, years: Double, r: RidgeColors, rows: List<Pair<String, String>>, onOpen: () -> Unit) {
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable(onClick = onOpen).padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+private fun Biomarker(h: Habit, r: RidgeColors) {
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).let { m -> h.onOpen?.let { m.clickable(onClick = it) } ?: m }.padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconCircle(icon, tone.container, tone.accent, size = 36.dp, iconSize = 18.dp)
+            IconCircle(h.icon, h.tone.container, h.tone.accent, size = 36.dp, iconSize = 18.dp)
             Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                Text(title, style = RidgeType.rowTitle)
-                Text(yearsWord(years), style = RidgeType.body, color = if (years < 0) r.good else r.warn)
+                Text(h.title, style = RidgeType.rowTitle)
+                Text(pull(h.shown).replaceFirstChar { it.uppercase() }, style = RidgeType.body,
+                    color = when { abs(h.shown) < 0.25 -> MaterialTheme.colorScheme.onSurfaceVariant; h.shown < 0 -> r.good; else -> r.warn })
             }
-            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (h.onOpen != null) Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        rows.forEach { (k, v) ->
+        listOfNotNull(h.figure, h.target).forEach { (k, v) ->
             Row(Modifier.fillMaxWidth().padding(start = 48.dp)) {
                 Text(k, style = RidgeType.body, modifier = Modifier.weight(1f))
                 Text(v, style = RidgeType.label)
@@ -256,7 +309,7 @@ private fun Biomarker(icon: ImageVector, tone: MetricTone, title: String, years:
     }
 }
 
-/** Biological age over the month, the chronological age as a dashed line. */
+/** Biological age over the weeks, the chronological age as a dashed line. */
 @Composable
 private fun AgeLine(ages: List<Double>, chronological: Double, color: Color) {
     val dash = MaterialTheme.colorScheme.onSurfaceVariant

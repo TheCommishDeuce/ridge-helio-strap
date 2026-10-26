@@ -151,7 +151,7 @@ fun StrainScreen(api: Reader, day: LocalDate, onWorkout: (Workout) -> Unit) {
         item {
             TileGrid(listOf(
                 { m -> Tile("Active time", active?.let { duration(it) } ?: "—", m) },
-                { m -> Tile("Total energy", energy?.let { "%,d".format(it.roundToInt()) } ?: "—", m, "kcal") },
+                { m -> Tile("Calories", energy?.let { "%,d".format(it.roundToInt()) } ?: "—", m, "kcal") },
             ))
         }
         item {
@@ -159,8 +159,22 @@ fun StrainScreen(api: Reader, day: LocalDate, onWorkout: (Workout) -> Unit) {
             val title = when { value == null -> "Strain"; value >= 18 -> "Hard day"; value >= 14 -> "Solid day"; else -> "Light day" }
             val text = buildList {
                 strain?.let { add((if (day == LocalDate.now()) "Today's" else "The day's") + " cardio load is ${it.cardioLoad.roundToInt()}" + (it.typicalLoad?.let { t -> ", against a typical ${t.roundToInt()}." } ?: ".")) }
-                if (w != null) add("Most of it came from a ${w.durationS / 60}-minute workout${w.avgHr?.let { " at an average of $it bpm" } ?: ""}.")
-                else add("No workout: it comes from walking and the waking day.")
+                val fromWorkouts = strain?.workoutLoad
+                val everyday = strain?.everydayLoad
+                when {
+                    // Rows from before the split (D37) carry no parts.
+                    fromWorkouts == null || everyday == null ->
+                        if (w != null) add("Most of it came from a ${w.durationS / 60}-minute workout${w.avgHr?.let { " at an average of $it bpm" } ?: ""}.")
+                    w == null && strain.cardioLoad.roundToInt() == 0 ->
+                        add("No workout and no brisk movement" + (if (day == LocalDate.now()) " yet." else ".") + " Sitting with a raised heart rate adds nothing.")
+                    w == null -> add("No workout: it all comes from walking and other movement. Sitting with a raised heart rate adds nothing.")
+                    else -> {
+                        val workout = "${fromWorkouts.roundToInt()} from " + if (workouts.size > 1) "${workouts.size} workouts"
+                            else "the ${w.durationS / 60}-minute workout${w.avgHr?.let { " at an average of $it bpm" } ?: ""}"
+                        add(if (fromWorkouts >= everyday) "Most of it, $workout; ${everyday.roundToInt()} from everyday movement."
+                            else "$workout, ${everyday.roundToInt()} from everyday movement.".replaceFirstChar { it.uppercase() })
+                    }
+                }
             }.joinToString(" ")
             InsightCard(Icons.Rounded.AutoAwesome, c.strainTone, title, text)
         }
@@ -251,7 +265,7 @@ fun WorkoutScreen(api: Reader, start: Instant) {
                     }
                 }
                 CardFoot(listOf("Duration" to duration(w.durationS / 60.0), "Avg HR" to (w.avgHr?.let { "$it bpm" } ?: "—"), "Max HR" to (w.maxHr?.let { "$it bpm" } ?: "—")))
-                CardFoot(listOf("Energy" to (w.calories?.let { "$it kcal" } ?: "—"), "Distance" to (w.distanceM?.let { "%.1f km".format(it / 1000) } ?: "—"),
+                CardFoot(listOf("Calories" to (w.calories?.let { "$it kcal" } ?: "—"), "Distance" to (w.distanceM?.let { "%.1f km".format(it / 1000) } ?: "—"),
                     "Load" to (d?.let { "+${it.trimp.roundToInt()}" } ?: "—")))
             }
         }

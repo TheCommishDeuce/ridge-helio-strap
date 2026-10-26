@@ -1,5 +1,9 @@
 package app.strap.ui.strap
 
+import app.strap.ui.theme.LocalMetricColors
+import app.strap.ui.components.IconCircle
+import androidx.compose.material.icons.rounded.Vibration
+import androidx.compose.runtime.collectAsState
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -59,6 +63,8 @@ import android.util.Log
 import app.strap.StrapApp
 import app.strap.store.LocalStore
 import app.strap.sync.SyncState
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import app.strap.ui.components.GroupHeader
 import app.strap.ui.components.Grouped
 import app.strap.ui.components.HeroGauge
@@ -102,6 +108,8 @@ fun StrapScreen(app: StrapApp, sync: SyncState) {
     var alarms by remember { mutableStateOf<List<StrapAlarm>?>(null) }
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
+    /** The opening read is waiting for a sync (or live steps) to let go of the strap. */
+    var waiting by remember { mutableStateOf(false) }
     var settings by remember { mutableStateOf<List<ConfigGroup?>?>(null) } // health, workout
     var editing by remember { mutableStateOf<Pair<StrapAlarm, Boolean>?>(null) } // alarm, isNew
     val clock by runner.clock.collectAsStateWithLifecycle()
@@ -112,7 +120,10 @@ fun StrapScreen(app: StrapApp, sync: SyncState) {
         scope.launch {
             busy = true
             message = null
-            val job = runner.strapJob { s ->
+            // Opening the page: wait for a sync that holds the strap rather than give up (D40 follow-up).
+            waiting = change == null && runner.state.value.let { it is SyncState.Connecting || it is SyncState.Running }
+            val job = runner.strapJob(if (change == null) OPEN_WAIT else Duration.ZERO) { s ->
+                waiting = false
                 val strapClock = runner.clock.value ?: return@strapJob Triple(false, null, null) // measured before every job
                 // Settings on the opening read only; an alarm change re-reads the alarms alone.
                 val read = if (change == null) SETTING_GROUPS.map { s.readConfig(it) } else null
@@ -138,6 +149,7 @@ fun StrapScreen(app: StrapApp, sync: SyncState) {
                 else -> null
             }
             busy = false
+            waiting = false
         }
     }
     LaunchedEffect(Unit) { apply(null) }
@@ -151,8 +163,10 @@ fun StrapScreen(app: StrapApp, sync: SyncState) {
     Box(Modifier.fillMaxSize()) {
         LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 104.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             item { Hero(battery, list, last) }
+            item { FindStrap(app) }
             if (busy) item { LinearProgressIndicator(Modifier.fillMaxWidth().clip(RoundedCornerShape(2.dp))) }
             item { GroupHeader("Alarms", info = Infos.alarms) }
+            if (waiting) item { Subtle("Reading the alarms once the sync finishes…", Modifier.padding(horizontal = 4.dp)) }
             message?.let { item { Text(it, style = RidgeType.body, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(horizontal = 4.dp)) } }
             if (list != null) {
                 if (list.isEmpty()) item { RidgeCard { Subtle("No alarms on the strap.") } }
@@ -215,6 +229,35 @@ private fun Hero(battery: LocalStore.Battery?, alarms: List<StrapAlarm>?, last: 
         HeroGauge(battery?.let { "${it.percent}%" } ?: "—", "charge", battery?.let { it.percent / 100f },
             if (low) MaterialTheme.colorScheme.error else r.zoneGreen, "Battery",
             Note(battery?.let { "read " + readAt(it.at) } ?: "not read yet", muted))
+    }
+}
+
+/** Find strap (D40): buzzes the strap until Stop, for at most a minute. */
+@Composable
+private fun FindStrap(app: StrapApp) {
+    val finding by app.syncRunner.finding.collectAsState()
+    var connecting by remember { mutableStateOf(false) }
+    var note by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+    val tone = LocalMetricColors.current.neutralTone
+    RidgeCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconCircle(Icons.Rounded.Vibration, tone.container, tone.onContainer)
+            Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                Text("Find strap", style = RidgeType.rowTitle)
+                Subtle(note ?: when {
+                    finding -> "Buzzing. Stop once you've found it."
+                    connecting -> "Connecting to the strap…"
+                    else -> "Buzzes the strap for up to a minute."
+                })
+            }
+            if (finding) TextButton(onClick = app.syncRunner::stopFind) { Text("Stop") }
+            else TextButton(enabled = !connecting, onClick = {
+                connecting = true
+                note = null
+                scope.launch { note = app.syncRunner.findStrap(); connecting = false }
+            }) { Text("Find") }
+        }
     }
 }
 
@@ -386,3 +429,6 @@ private fun daysLabel(days: Set<DayOfWeek>): String = when {
     days == setOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY) -> "Weekends"
     else -> days.sorted().joinToString(", ") { it.getDisplayName(TextStyle.SHORT, Locale.getDefault()) }
 }
+
+/** How long the opening read waits for a sync to finish; a sync rarely runs longer. */
+private val OPEN_WAIT = 90.seconds

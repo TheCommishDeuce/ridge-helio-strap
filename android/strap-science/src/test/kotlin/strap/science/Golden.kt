@@ -19,6 +19,24 @@ import java.time.LocalDate
 
 /** A golden case exported from the server (tools/science-golden): its raw inputs and expected outputs. */
 internal object Golden {
+    /**
+     * D37 changed what counts as daily load after these outputs were frozen. The load's value and
+     * its two parts, and the strain numbers built on them, are left out of the comparison; every
+     * other value and flag still has to match. NightAndLoadTest holds the new rule.
+     */
+    const val LOAD_METRIC: String = "cardio_load"
+
+    fun loadFlags(flags: JsonObject): JsonObject = JsonObject(flags - "workout_load" - "everyday_load")
+
+    fun summaryBeforeLoadSplit(summary: JsonObject): JsonObject {
+        val strain = summary["strain"] as? JsonObject ?: return summary
+        val kept = LinkedHashMap<String, JsonElement>(strain).apply {
+            remove("value"); remove("cardio_load"); remove("typical_load")
+            (strain["flags"] as? JsonObject)?.let { put("flags", loadFlags(it)) }
+        }
+        return JsonObject(LinkedHashMap<String, JsonElement>(summary).apply { put("strain", JsonObject(kept)) })
+    }
+
     fun read(path: String): JsonElement {
         val stream = Golden::class.java.getResourceAsStream("/golden/$path") ?: error("no resource $path")
         val text = (if (path.endsWith(".gz")) java.util.zip.GZIPInputStream(stream) else stream).bufferedReader().readText()

@@ -33,7 +33,7 @@ public fun Science.deriveDay(day: LocalDate) {
 /**
  * How far back, in days before the first day worked out or shown, any pass or card reads raw
  * data: 30 days for the summary's usual values and breathing baseline (the longest; illness
- * reads 15 nights, Charge 14 days and a 48-hour warm-up, the SRI 7 nights), one more for a night
+ * reads 15 nights, Energy 14 days and an 8-day warm-up, the SRI 7 nights), one more for a night
  * that began the evening before, and one for a day a zone change stretched. Baselines read the
  * derived rows, which this does not limit. [MemoryData.window] and the phone's store cut by it.
  */

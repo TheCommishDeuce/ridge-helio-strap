@@ -1,5 +1,6 @@
 package app.strap
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -23,6 +24,8 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -81,16 +84,31 @@ import app.strap.ui.today.TodayNav
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+    /** The tab a widget asked for (D39), taken once by the shell. */
+    private val requestedTab = mutableStateOf<Tab?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val app = application as StrapApp
-        setContent { StrapTheme { AppShell(app) } }
+        requestedTab.value = tabOf(intent)
+        setContent { StrapTheme { AppShell(app, requestedTab) } }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        requestedTab.value = tabOf(intent)
+    }
+
+    companion object {
+        const val EXTRA_TAB: String = "tab"
+
+        private fun tabOf(intent: Intent?): Tab? = intent?.getStringExtra(EXTRA_TAB)?.let { name -> Tab.entries.firstOrNull { it.name == name } }
     }
 }
 
 @Composable
-private fun AppShell(app: StrapApp) {
+private fun AppShell(app: StrapApp, requestedTab: MutableState<Tab?>) {
     // First run (D27, D34): until the strap is paired and a server is set (or declined), only setup shows.
     var setUp by remember { mutableStateOf(app.vault.load() != null && (app.vault.loadServer() != null || app.withoutServer)) }
     if (!setUp) {
@@ -98,6 +116,7 @@ private fun AppShell(app: StrapApp) {
         return
     }
     val shell = rememberShell()
+    LaunchedEffect(requestedTab.value) { requestedTab.value?.let { shell.select(it); requestedTab.value = null } }
     val sync by app.syncRunner.state.collectAsStateWithLifecycle()
     val lastSync = remember(sync) { app.store.lastSync()?.first }
     // The phone works every number out itself (D34).
@@ -228,7 +247,7 @@ private fun screenTone(shell: Shell, colors: MetricColors): MetricTone? = when (
     Pushed.Recovery -> colors.recoveryTone
     Pushed.Strain, is Pushed.Workout -> colors.strainTone
     is Pushed.Detail -> top.metric.tone
-    Pushed.Journal -> colors.chargeTone
+    Pushed.Journal -> colors.energyTone
     Pushed.Timeline -> colors.neutralTone
     null -> when (shell.tab) {
         Tab.TODAY -> colors.recoveryTone

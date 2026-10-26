@@ -72,7 +72,7 @@ import java.time.LocalDate
 import java.time.format.TextStyle
 import kotlin.math.roundToInt
 
-/** Recovery (pushed from Today): the score with its parts, Charge, and the week. */
+/** Recovery (pushed from Today): the score with its parts, Energy, and the week. */
 @Composable
 fun RecoveryContent(api: Reader, data: TodayData, onSelectDay: (LocalDate) -> Unit, onSdnn: () -> Unit) {
     val r = LocalRidgeColors.current
@@ -110,7 +110,7 @@ fun RecoveryContent(api: Reader, data: TodayData, onSelectDay: (LocalDate) -> Un
                 data.factors.forEachIndexed { i, f -> PartRow(f, first = i == 0) }
             }
         }
-        item { ChargeCard(data) }
+        item { EnergyCard(data) }
         item { IllnessCard(data.illness, data.illnessNight, data.day, data.illnessCheck) }
         item { SectionTitle("This week", trailing = { data.recoveryWeekTo(data.stripEnd)?.let { Subtle("average ${it.roundToInt()}%", style = RidgeType.caption) } }) }
         item { WeekBars(data, onSelectDay) }
@@ -191,18 +191,20 @@ private fun recoverySummary(data: TodayData): String {
 }
 
 @Composable
-private fun ChargeCard(data: TodayData) {
-    val c = data.charge
+private fun EnergyCard(data: TodayData) {
+    val c = data.energy
     val m = LocalMetricColors.current
     RidgeCard(spacing = 12.dp) {
-        CardHeader("Charge", c?.let { if (data.day == LocalDate.now()) "now" else "end of day" }, info = Infos.charge(c?.threshold, c?.personal == true),
-            icon = Icons.Rounded.BatteryChargingFull, tone = m.chargeTone)
+        CardHeader("Energy", c?.let { if (data.day == LocalDate.now()) "now" else "end of day" }, info = Infos.energy(c?.threshold, c?.personal == true),
+            icon = Icons.Rounded.BatteryChargingFull, tone = m.energyTone)
         if (c == null) {
-            Subtle(data.chargeNote ?: "Not available.")
+            Subtle(data.energyNote ?: "Not available.")
             return@RidgeCard
         }
-        val color = m.charge
-        CardValue("${c.value}", "of 100", c.atWake?.let { Note("$it when you woke", MaterialTheme.colorScheme.onSurfaceVariant) })
+        val color = m.energy
+        val wake = c.atWake?.let { if (c.estimated) "about $it at wake" else "$it when you woke" }
+        CardValue("${c.value}", "of 100", wake?.let { Note(it, MaterialTheme.colorScheme.onSurfaceVariant) })
+        if (c.estimated) Subtle("Strap off overnight, so the morning is estimated from your usual wake.")
         DayLineChart(c.curve, data.curves.window.start, color, 11 * 60_000L, "", dayEnd = data.curves.window.end,
             zone = data.curves.window.zone, shaded = data.curves.sleep, height = 110.dp)
         CardFoot(listOf("Recharged" to "+${c.recharged.roundToInt()}", "Activity" to drained(c.activity), "Stress" to drained(c.stress), "Waking day" to drained(c.living)))

@@ -13,9 +13,9 @@ up once a night, so a new phone can start from your whole history.
 <p>
   <img src="docs/screenshots/demo-today.png" width="19%" alt="Today: week strip, strain, recovery and sleep rings, last night's vitals against your usual">
   <img src="docs/screenshots/demo-recovery.png" width="19%" alt="Recovery: the score, HRV and resting heart rate, the weighted parts">
-  <img src="docs/screenshots/demo-sleep.png" width="19%" alt="Sleep: the strap's score, time in bed and asleep, the night in words, sleep health">
+  <img src="docs/screenshots/demo-sleep.png" width="19%" alt="Sleep: the strap's score, time in bed and asleep, the night's headline, sleep health">
   <img src="docs/screenshots/demo-fitness.png" width="19%" alt="Fitness: the day's note, training load against its range, PAI, weekly steps">
-  <img src="docs/screenshots/demo-biology.png" width="19%" alt="Biology: biological age, its range and the biomarkers that move it">
+  <img src="docs/screenshots/demo-biology.png" width="19%" alt="Biology: biological age as a range, and the habits that move it against their targets">
 </p>
 
 <sub>Screenshots show synthetic demo data (`tools/demo-data`), not a real person's.</sub>
@@ -30,13 +30,14 @@ up once a night, so a new phone can start from your whole history.
   days; heart rate, stress and steps open per-minute charts with the peaks kept.
 - **Timeline**: the day hour by hour behind Today's moments, with rings you pin and a quick
   log (coffee, tea, a drink, your weight) at any hour.
-- **Charge**: a body battery from 0 to 100, minute by minute. Sleep fills it; activity,
-  stress and the waking day drain it, and the Recovery screen shows what did which.
+- **Energy**: a body battery from 0 to 100, minute by minute. Sleep fills it; movement,
+  stress and the waking day drain it, and the Recovery screen shows what did which. With the
+  strap off it drifts and then shows a gap rather than freezing.
 - **Sleep, Fitness, Biology, Journal**: any of the last seven nights with its stages, sleep
   health and vitals through the night; training load against its range, pinned charts, a
-  training calendar and each workout's strain, zones and load; biological age with the
-  biomarkers that move it; and a journal for caffeine, alcohol and weight. The strap's own
-  PAI (Fitness) and its nightly breathing disturbances (Sleep) are shown as the strap's
+  training calendar and each workout's strain, zones and load; biological age from your
+  habits (resting heart rate, steps, sleep regularity and length, strength training); and a
+  journal for caffeine, alcohol and weight. The strap's own PAI (Fitness) and its nightly breathing disturbances (Sleep) are shown as the strap's
   figures, and its HRV (SDNN) through the day has its own chart.
 - **Strap**: battery, the strap's own alarms (read, add, edit, delete, each in a timezone
   you pick, so a 07:00 alarm rings at 07:00 there), and its heart-rate, stress, SpO₂, sleep

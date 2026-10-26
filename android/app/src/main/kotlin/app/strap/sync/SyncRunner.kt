@@ -7,7 +7,12 @@ import android.util.Log
 import app.strap.ble.AndroidStrapLink
 import app.strap.pairing.KeyVault
 import app.strap.store.LocalStore
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
@@ -19,6 +24,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -158,6 +164,53 @@ class SyncRunner(private val context: Context, private val store: LocalStore, pr
         add(job.failure?.let { "ended: $it" } ?: "disconnected")
         runCatching { java.io.File(context.getExternalFilesDir(null), "steps-probe.txt").writeText(lines.joinToString("\n")) }
         return job.failure
+    }
+
+    private val _finding = MutableStateFlow(false)
+
+    /** The strap is buzzing for Find strap. */
+    val finding: StateFlow<Boolean> = _finding.asStateFlow()
+    @Volatile private var stopFinding: CompletableDeferred<Unit>? = null
+
+    /**
+     * Find strap (D40; spec/01 §5): `03` on Find device (`0x001A`) buzzes the strap until `06`,
+     * after which the strap sends `07`. Tapping the strap does not stop it (OpenStrap's hardware
+     * check, fw 3.25.0.3), so this always sends `06`: on [stopFind], after [FIND_LIMIT], or when
+     * anything goes wrong, unless the strap already said it stopped. Null when it buzzed and
+     * stopped, else why not.
+     */
+    suspend fun findStrap(): String? {
+        val stop = CompletableDeferred<Unit>().also { stopFinding = it }
+        val job = strapJob { s ->
+            s.requestServices()
+            val services = s.awaitServices() ?: return@strapJob "The strap didn't say what it can do. Try again."
+            val encrypt = services[FIND_DEVICE] ?: return@strapJob "This strap can't be found from the phone."
+            coroutineScope {
+                val stopped = async(start = CoroutineStart.UNDISPATCHED) { s.frames(FIND_DEVICE).first { it.isNotEmpty() && it[0] == 0x07.toByte() } }
+                try {
+                    val ack = s.exchange(FIND_DEVICE, byteArrayOf(0x03), 0x04, encrypt)
+                    log("find strap 03 → ${ack?.hex() ?: "no reply"}")
+                    // A lost acknowledgement doesn't mean it isn't buzzing (seen out of range), so it still waits and stops.
+                    _finding.value = true
+                    withTimeoutOrNull(FIND_LIMIT) { select<Unit> { stop.onAwait {}; stopped.onAwait {} } }
+                    if (ack == null) "The strap didn't answer; it may not have buzzed." else null
+                } finally {
+                    _finding.value = false
+                    if (!stopped.isCompleted) withContext(NonCancellable) {
+                        val end = s.exchange(FIND_DEVICE, byteArrayOf(0x06), 0x07, encrypt)
+                        log("find strap 06 → ${end?.hex() ?: "no reply"}")
+                    }
+                    stopped.cancel()
+                }
+            }
+        }
+        stopFinding = null
+        return job.failure ?: job.value
+    }
+
+    /** Stops a running [findStrap]. */
+    fun stopFind() {
+        stopFinding?.complete(Unit)
     }
 
     /**
@@ -316,10 +369,12 @@ class SyncRunner(private val context: Context, private val store: LocalStore, pr
 
     /**
      * One short strap job outside a sync (alarms): connect, authenticate, [block], disconnect.
-     * Refused, not queued, while a sync or another job holds the strap.
+     * While a sync, live steps or another job holds the strap it waits up to [wait] for it (a
+     * read the page makes on opening), else is refused at once (a change the owner just made).
      */
-    suspend fun <T> strapJob(block: suspend (StrapSession) -> T): StrapJob<T> {
-        if (!lock.tryLock()) return StrapJob(null, "The strap is busy with a sync. Try again in a moment.")
+    suspend fun <T> strapJob(wait: Duration = Duration.ZERO, block: suspend (StrapSession) -> T): StrapJob<T> {
+        val locked = if (wait > Duration.ZERO) withTimeoutOrNull(wait) { lock.lock() } != null else lock.tryLock()
+        if (!locked) return StrapJob(null, "The strap is busy with a sync. Try again in a moment.")
         try {
             val (value, failure) = withContext(Dispatchers.IO) {
                 onStrap { session, link -> block(session).also { link.batteryPercent()?.let { saveBattery(it) } } }
@@ -430,6 +485,9 @@ class SyncRunner(private val context: Context, private val store: LocalStore, pr
         val LIVE_RETRY = 15.seconds
         val LIVE_OFF_WAIT = 1.seconds
         const val DEVICE_INFO = 0x0043
+        const val FIND_DEVICE = 0x001A
+        /** As long as Zepp's find dialog waits before it closes. */
+        val FIND_LIMIT = 60.seconds
         val BACKGROUND_WAIT = 3.minutes
     }
 }
