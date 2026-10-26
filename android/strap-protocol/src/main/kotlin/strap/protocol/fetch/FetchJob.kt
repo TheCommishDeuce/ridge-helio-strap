@@ -92,8 +92,8 @@ public class FetchJob(
         val decoded = ActivityParser.parse(code, raw, roundStart)
         samples += decoded
         val next = nextSince(raw, decoded) ?: return finish(null, ACK_KEEP)
+        since = next // past this round even at the cap, so the result's cursor keeps the ground gap-skips covered
         if (rounds >= maxRounds) return finish(FetchFailure.RoundLimit, ACK_KEEP)
-        since = next
         return FetchOutput(listOf(ACK_KEEP, startRound()))
     }
 
@@ -127,7 +127,7 @@ public class FetchJob(
     }
 
     private fun finish(failure: FetchFailure?, vararg writes: ByteArray): FetchOutput {
-        val result = FetchResult(code, samples.toList(), allRaw.toByteArray(), expected, roundStats.toList(), if (probeOnly) null else failure)
+        val result = FetchResult(code, samples.toList(), allRaw.toByteArray(), expected, roundStats.toList(), if (probeOnly) null else failure, since)
         finished = result
         return FetchOutput(writes.toList(), result)
     }
@@ -164,7 +164,9 @@ public class FetchOutput(public val writes: List<ByteArray>, public val result: 
  * Everything one job collected. [raw] spans every completed round (sleep and workouts are
  * decoded from it). [failure] is null on success; on failure the samples of completed
  * rounds are still here. [announced] is the last start reply's count (unit: see
- * [FetchJob.announcedBytes]), −1 when the strap never answered a start.
+ * [FetchJob.announcedBytes]), −1 when the strap never answered a start. [cursor] is where the
+ * next round would have started: past every completed round, the gap-skipped ones included,
+ * so a fetch cut short by [FetchFailure.RoundLimit] can resume there.
  */
 public class FetchResult(
     public val code: Int,
@@ -173,6 +175,7 @@ public class FetchResult(
     public val announced: Long,
     public val rounds: List<RoundStat>,
     public val failure: FetchFailure?,
+    public val cursor: Instant,
 )
 
 /** One downloaded round, as diagnostics: what the start reply announced against what arrived. */

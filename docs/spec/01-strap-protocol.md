@@ -307,6 +307,11 @@ app → 0004  [0x03, 0x09]     ← 0x09 = ACK and KEEP data on the strap. Never 
   round, retry same cursor, max 2 retries, then fail.
 - **Paging:** after each round, next `since` = last decoded sample + 1 min, while that
   is > 30 s in the past and > current since; cap rounds (`maxRounds`, 400 normally).
+  A fetch that hits the cap returns its **cursor** (the next round's `since`, past every
+  completed round, gap-skipped ones included); the phone keeps it per type and the next
+  sync resumes from it. A new strap answers every window before its first day with 3
+  empty minutes (`0x01`, 24 B of `0xFF`), so 30 days take ~36 syncs; without the cursor
+  each sync restarted at the same place and never got through.
 - **0xFF gap-skip (types 0x01, 0x13):** a round that decodes to zero samples but has
   raw bytes → advance `since` by `rawLen / recordSize` minutes (clamp 1–1440); record
   size 8 (0x01; 4 if len%8≠0) or 1 (0x13). Without it the pager stalls forever.
@@ -321,11 +326,14 @@ app → 0004  [0x03, 0x09]     ← 0x09 = ACK and KEEP data on the strap. Never 
 | # | step | type | window |
 |---|---|---|---|
 | 1 | daily totals | ep `0x0016` | — |
-| 2–10 | metrics | `0x01 0x49 0x25 0x26 0x2E 0x13 0x38 0x3A 0x3D` | since last sample of that metric + 1 min, else 30 d back. If empty **and** watermark > 2 d old → retry from now − 2 d (stale-feed recovery) |
-| 11 | stress backfill | `0x13` | one-shot, now − 25 d |
+| 2–10 | metrics | `0x01 0x49 0x25 0x26 0x2E 0x13 0x38 0x3A 0x3D` | since last sample of that metric + 1 min, else 30 d back; or the type's capped cursor if later. If empty **and** watermark > 2 d old → retry from now − 2 d (stale-feed recovery), unless the cursor is already past that |
+| 11 | stress backfill | `0x13` | one-shot, now − 25 d, or its own capped cursor if later; done once a fetch of it completes (reaches now) |
 | 12 | sleep | `0x48` | min(lastSleepStart, now − 2 d); one-shot 14 d on first run (nap backfill). Always re-pulls 2 d so a nap appended later in the day is caught |
 | 13 | workouts | `0x05` | lastWorkoutStart − 1 d, else 90 d back |
 | 14–16 | strap summaries | `0x4E 0x0D 0x4A` | as the metrics (rows 2–10); last, so a refused type costs nothing before it. Watermarks `hrv_sdnn`, `pai_total`, `odi_valid_time` |
+
+A round cap ends only its own step: its cursor is kept, the later steps still run, and the
+sync reports `RoundLimit` at the end. Any other failure ends the sync (the link is suspect).
 
 Dedup: sleep by session start, workouts by start (overlaps are intentional).
 Watermark key per type: `0x2E → temperature_c`, `0x38 → respiratory_rate`, rest by label.

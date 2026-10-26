@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import strap.protocol.fetch.FetchFailure
 import strap.protocol.model.DailyTotals
 import strap.protocol.parse.AlarmZones
 import strap.protocol.parse.Config
@@ -401,7 +402,11 @@ class SyncRunner(private val context: Context, private val store: LocalStore, pr
             if (result.failure == null) _clock.value?.let { alarms.reconcile(session, it, ::log) }
             log("sync done in %.1f s: %d samples, %d sleep, %d workouts, failure=%s".format(
                 (System.nanoTime() - started) / 1e9, result.samples.size, result.sleepSessions.size, result.workouts.size, result.failure))
-            result.failure?.let { "Sync stopped early: $it (what arrived was saved)" }
+            when (val f = result.failure) {
+                null -> null
+                FetchFailure.RoundLimit -> "More history than one sync fetches: what arrived was saved, and the next sync continues from there."
+                else -> "Sync stopped early: $f (what arrived was saved)"
+            }
         }
         return connectFailure ?: failure
     }

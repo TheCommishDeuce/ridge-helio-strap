@@ -14,10 +14,12 @@ import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Test
 import org.robolectric.RuntimeEnvironment
+import strap.protocol.fetch.FetchFailure
 import strap.protocol.model.DailyTotals
 import strap.protocol.model.Metric
 import strap.protocol.model.Sample
 import strap.protocol.model.Workout
+import strap.protocol.parse.FetchType
 import strap.science.Derived
 import strap.science.IllnessFlag
 import strap.science.SleepSession
@@ -144,6 +146,21 @@ class LocalStoreTest : PhoneTest() {
         store.save(sync(at("2026-09-06")), null)
         assertEquals(at("2026-09-02", "23:00"), store.firstData())
         assertEquals(at("2026-09-05"), store.firstSync())
+    }
+
+    @Test
+    fun `a fetch cut short by its round cap resumes from its cursor, which only moves forward`() {
+        val store = Phone().store
+        val t = at("2026-09-05", "10:00")
+        store.save(sync(t).copy(failure = FetchFailure.RoundLimit, fetchCursors = mapOf(FetchType.ACTIVITY to t.minusSeconds(3600)), stressBackfillCursor = t.minusSeconds(7200)), null)
+        store.save(sync(t).copy(fetchCursors = mapOf(FetchType.ACTIVITY to t.minusSeconds(4 * 3600), FetchType.STRESS to t.minusSeconds(60))), null)
+        val w = store.window()
+        assertEquals(mapOf(FetchType.ACTIVITY to t.minusSeconds(3600), FetchType.STRESS to t.minusSeconds(60)), w.fetchCursors)
+        assertEquals(t.minusSeconds(7200), w.stressBackfillCursor)
+        assertEquals(false, w.stressBackfillDone)
+
+        store.save(sync(t).copy(stressBackfillRan = true), null)
+        assertEquals(true, store.window().stressBackfillDone)
     }
 
     @Test

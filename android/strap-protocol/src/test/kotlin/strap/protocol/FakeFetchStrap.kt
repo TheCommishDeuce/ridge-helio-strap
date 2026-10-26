@@ -13,6 +13,18 @@ import java.time.LocalDateTime
 /** The start reply's count, as the real strap sends it: 8-byte records for 0x01, bytes otherwise. */
 fun announce(code: Int, bytes: Int): Long = if (code == 0x01) bytes / 8L else bytes.toLong()
 
+/** An accepted start reply: the announced count for [bytes], and [start] as the round's start. */
+fun startReply(code: Int, bytes: Int, start: LocalDateTime): ByteArray =
+    "100101".unhex() + ByteArray(4).also { Bytes.putU32(it, 0, announce(code, bytes)) } +
+        ByteArray(7).also {
+            Bytes.putU16(it, 0, start.year)
+            it[2] = start.monthValue.toByte(); it[3] = start.dayOfMonth.toByte()
+            it[4] = start.hour.toByte(); it[5] = start.minute.toByte(); it[6] = start.second.toByte()
+        }
+
+/** The local `since` of a start command. */
+fun sinceOf(w: ByteArray): LocalDateTime = LocalDateTime.of(Bytes.u16(w, 2), w[4].toInt(), w[5].toInt(), w[6].toInt(), w[7].toInt())
+
 /** A strap's answer to `0004` writes for one fetch type. */
 interface FetchResponder {
     fun handle(write: ByteArray): List<FakeFetchStrap.Event>
@@ -68,20 +80,13 @@ class FakeFetchStrap(
 
     private fun onStart(w: ByteArray): List<Event> {
         round++
-        val since = LocalDateTime.of(Bytes.u16(w, 2), w[4].toInt(), w[5].toInt(), w[6].toInt(), w[7].toInt())
+        val since = sinceOf(w)
         startCommands += since
         val fromMinute = maxOf(0L, Duration.between(origin, since).toMinutes()).toInt()
         val available = stream.size / recordSize - fromMinute
         val minutes = available.coerceIn(0, minutesPerRound)
         pending = stream.copyOfRange(fromMinute * recordSize, (fromMinute + minutes) * recordSize)
-        val start = origin.plusMinutes(fromMinute.toLong())
-        val reply = "100101".unhex() + ByteArray(4).also { Bytes.putU32(it, 0, announce(w[1].toInt(), pending.size)) } +
-            ByteArray(7).also {
-                Bytes.putU16(it, 0, start.year)
-                it[2] = start.monthValue.toByte(); it[3] = start.dayOfMonth.toByte()
-                it[4] = start.hour.toByte(); it[5] = start.minute.toByte(); it[6] = start.second.toByte()
-            }
-        return listOf(Event.Control(reply))
+        return listOf(Event.Control(startReply(w[1].toInt(), pending.size, origin.plusMinutes(fromMinute.toLong()))))
     }
 
     private fun onFetch(): List<Event> {
@@ -105,5 +110,37 @@ class FakeFetchStrap(
             }
         }
         error("job never finished")
+    }
+}
+
+/**
+ * A new strap, first worn at [firstWorn] and read at [end]: a window that starts before it
+ * gets [pastBytes] bytes of `0xFF` records and nothing more, as a real one answers (`3/1p/24b`
+ * rounds for `0x01`); from there it gets up to [minutesPerRound] minutes of [record]s.
+ */
+class NewStrapHistory(
+    private val firstWorn: LocalDateTime,
+    private val end: LocalDateTime,
+    private val recordSize: Int,
+    private val record: (LocalDateTime) -> ByteArray,
+    private val pastBytes: Int = 24,
+    private val minutesPerRound: Int = 120,
+) : FetchResponder {
+    private var pending = ByteArray(0)
+
+    override fun handle(write: ByteArray): List<FakeFetchStrap.Event> = when (write[0].toInt()) {
+        0x01 -> {
+            val since = sinceOf(write)
+            val minutes = if (since < firstWorn) pastBytes / recordSize else Duration.between(since, end).toMinutes().toInt().coerceIn(0, minutesPerRound)
+            pending = (0 until minutes).map { since.plusMinutes(it.toLong()) }
+                .fold(ByteArray(0)) { acc, t -> acc + if (t < firstWorn) ByteArray(recordSize) { 0xFF.toByte() } else record(t) }
+            listOf(FakeFetchStrap.Event.Control(startReply(write[1].toInt(), pending.size, since)))
+        }
+        0x02 -> pending.toList().chunked(20).mapIndexed { i, c -> FakeFetchStrap.Event.Data(byteArrayOf(i.toByte()) + c.toByteArray()) } +
+            FakeFetchStrap.Event.Control("100201".unhex())
+        else -> {
+            require(write.contentEquals(byteArrayOf(0x03, 0x09))) { "must always ack with KEEP" }
+            listOf(FakeFetchStrap.Event.Control("100301".unhex()))
+        }
     }
 }

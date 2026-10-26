@@ -160,7 +160,7 @@ class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null,
     fun derivedThrough(): LocalDate? = readableDatabase.rawQuery("SELECT MAX(day) FROM derived", null)
         .use { if (it.moveToFirst() && !it.isNull(0)) LocalDate.ofEpochDay(it.getLong(0)) else null }
 
-    /** Where the next sync resumes: newest held timestamp per stream, and the one-shot flags. */
+    /** Where the next sync resumes: newest held timestamp per stream, the one-shot flags, and capped fetches' cursors. */
     fun window(): SyncWindow {
         val db = readableDatabase
         val last = mutableMapOf<Metric, Instant>()
@@ -176,6 +176,10 @@ class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null,
             lastWorkoutStart = maxInstant(db, "SELECT MAX(start) FROM workouts"),
             stressBackfillDone = meta(db, STRESS_BACKFILL) == "1",
             napBackfillDone = meta(db, NAP_BACKFILL) == "1",
+            fetchCursors = db.rawQuery("SELECT key, value FROM meta WHERE key GLOB ?", arrayOf("$FETCH_CURSOR*")).use { c ->
+                buildMap { while (c.moveToNext()) put(c.getString(0).removePrefix(FETCH_CURSOR).toInt(), Instant.ofEpochMilli(c.getString(1).toLong())) }
+            },
+            stressBackfillCursor = meta(db, STRESS_BACKFILL_CURSOR)?.let { Instant.ofEpochMilli(it.toLong()) },
         )
     }
 
@@ -225,6 +229,8 @@ class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null,
             ).minOrNull())
             batteryPercent?.let { setMeta(db, BATTERY, "$it@${result.completedAt.toEpochMilli()}") }
             if (result.stressBackfillRan) setMeta(db, STRESS_BACKFILL, "1")
+            result.fetchCursors.forEach { (code, at) -> advanceMeta(db, "$FETCH_CURSOR$code", at) }
+            result.stressBackfillCursor?.let { advanceMeta(db, STRESS_BACKFILL_CURSOR, it) }
             if (result.napBackfillRan) setMeta(db, NAP_BACKFILL, "1")
             db.insert("sync_log", null, ContentValues().apply {
                 put("at", result.completedAt.toEpochMilli())
@@ -561,6 +567,12 @@ class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null,
         db.insertWithOnConflict("meta", null, ContentValues().apply { put("key", key); put("value", value) }, SQLiteDatabase.CONFLICT_REPLACE)
     }
 
+    /** A cursor only moves forward: everything before it was fetched. */
+    private fun advanceMeta(db: SQLiteDatabase, key: String, at: Instant) {
+        val held = meta(db, key)?.toLong()
+        if (held == null || at.toEpochMilli() > held) setMeta(db, key, at.toEpochMilli().toString())
+    }
+
     /**
      * Keyed by when the sleep STARTED, not by the record's own timestamp: that one is when
      * the strap last wrote the record (seen as late as the same evening), so a record the
@@ -585,6 +597,8 @@ class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null,
     companion object {
         private const val STRESS_BACKFILL = "stress_backfill_done"
         private const val NAP_BACKFILL = "nap_backfill_done"
+        private const val FETCH_CURSOR = "fetch_cursor_" // + fetch type code; epoch millis
+        private const val STRESS_BACKFILL_CURSOR = "stress_backfill_cursor" // epoch millis
         private const val BATTERY = "battery" // "percent@epochMillis"
         private const val UNDERIVED = "underived_from" // epoch millis
 
