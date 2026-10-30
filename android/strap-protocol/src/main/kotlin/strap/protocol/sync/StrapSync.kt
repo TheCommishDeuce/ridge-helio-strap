@@ -20,7 +20,9 @@ import kotlin.time.Duration.Companion.seconds
  * each metric from its watermark, the one-shot stress backfill, sleep, workouts, and last
  * the strap's own summaries (SDNN, PAI, ODI), so a newer type cannot cost the core streams.
  * The first failing fetch ends the sync; everything collected before it is returned with
- * the failure.
+ * the failure. A fetch that runs out of rounds is the exception: the link is fine, so its
+ * cursor is kept to resume from and the later steps still run (the sync reports the
+ * [FetchFailure.RoundLimit] at the end).
  */
 public class StrapSync(
     private val session: StrapSession,
@@ -34,6 +36,9 @@ public class StrapSync(
     private var step = 0
     private var stressBackfillRan = false
     private var napBackfillRan = false
+    private val fetchCursors = mutableMapOf<Int, Instant>()
+    private var stressBackfillCursor: Instant? = null
+    private var roundLimited = false
 
     public suspend fun run(window: SyncWindow): SyncResult {
         progress("daily step counter")
@@ -47,40 +52,56 @@ public class StrapSync(
         val t = now()
         for ((code, label, watermark) in SyncPlan.METRICS) {
             progress(label)
-            fetchMetric(code, window.lastSampleAt[watermark], t)?.let { return it }
+            fetchMetric(code, window.lastSampleAt[watermark], window.fetchCursors[code], t)?.let { return it }
         }
         progress("stress backfill")
         if (!window.stressBackfillDone) {
-            fetch(FetchType.STRESS, SyncPlan.stressBackfillSince(t))?.let { return it }
-            stressBackfillRan = true
+            val r = fetch(FetchType.STRESS, SyncPlan.stressBackfillSince(t, window.stressBackfillCursor))
+            when {
+                r.failure == FetchFailure.RoundLimit -> stressBackfillCursor = r.cursor
+                r.failure != null -> return r.failure
+                else -> stressBackfillRan = true // its cursor reached now
+            }
         }
         progress("sleep")
-        fetch(FetchType.SLEEP, SyncPlan.sleepSince(window.lastSleepStart, window.napBackfillDone, t))?.let { return it }
+        fetch(FetchType.SLEEP, SyncPlan.sleepSince(window.lastSleepStart, window.napBackfillDone, t)).fatal()?.let { return it }
         napBackfillRan = !window.napBackfillDone
         progress("workouts")
-        fetch(FetchType.WORKOUTS, SyncPlan.workoutsSince(window.lastWorkoutStart, t), SyncPlan.WORKOUT_ROUNDS, WORKOUT_TIMEOUT)?.let { return it }
+        fetch(FetchType.WORKOUTS, SyncPlan.workoutsSince(window.lastWorkoutStart, t), SyncPlan.WORKOUT_ROUNDS, WORKOUT_TIMEOUT).fatal()?.let { return it }
         for ((code, label, watermark) in SyncPlan.SUMMARIES) {
             progress(label)
-            fetchMetric(code, window.lastSampleAt[watermark], t)?.let { return it }
+            fetchMetric(code, window.lastSampleAt[watermark], window.fetchCursors[code], t)?.let { return it }
         }
+        return if (roundLimited) FetchFailure.RoundLimit else null
+    }
+
+    /**
+     * A metric from its watermark (or the cursor a capped fetch left, if later), re-established
+     * from 2 days back if a stale feed came back empty.
+     */
+    private suspend fun fetchMetric(code: Int, last: Instant?, cursor: Instant?, t: Instant): FetchFailure? {
+        val before = samples.size
+        fetch(code, SyncPlan.metricSince(last, t, cursor)).fatal()?.let { return it }
+        if (fetchCursors.containsKey(code)) return null // capped: the next sync resumes from the cursor
+        val retry = SyncPlan.staleRetrySince(last, t, gotSamples = samples.size > before)?.takeIf { cursor == null || it.isAfter(cursor) } ?: return null
+        return fetch(code, retry).fatal()
+    }
+
+    /** The failure that ends the sync: none for a round cap, whose cursor is kept instead. */
+    private fun FetchResult.fatal(): FetchFailure? {
+        if (failure != FetchFailure.RoundLimit) return failure
+        roundLimited = true
+        if (code != FetchType.SLEEP && code != FetchType.WORKOUTS) fetchCursors[code] = cursor
         return null
     }
 
-    /** A metric from its watermark, re-established from 2 days back if a stale feed came back empty. */
-    private suspend fun fetchMetric(code: Int, last: Instant?, t: Instant): FetchFailure? {
-        val before = samples.size
-        fetch(code, SyncPlan.metricSince(last, t))?.let { return it }
-        val retry = SyncPlan.staleRetrySince(last, t, gotSamples = samples.size > before) ?: return null
-        return fetch(code, retry)
-    }
-
-    /** Runs one fetch, keeps whatever it decoded, and returns its failure (null on success). */
+    /** Runs one fetch and keeps whatever it decoded. */
     private suspend fun fetch(
         code: Int,
         since: Instant,
         maxRounds: Int = SyncPlan.ROUNDS,
         timeout: kotlin.time.Duration = StrapSession.FETCH_TIMEOUT,
-    ): FetchFailure? {
+    ): FetchResult {
         val r = session.fetch(code, since, maxRounds, timeout)
         stats += r
         when (code) {
@@ -88,7 +109,7 @@ public class StrapSync(
             FetchType.WORKOUTS -> WorkoutParser.parseStream(r.raw).forEach { workouts[it.start] = it }
             else -> samples += r.samples
         }
-        return r.failure
+        return r
     }
 
     private fun progress(label: String) = onProgress(SyncProgress(++step, SyncPlan.STEPS, label))
@@ -104,6 +125,8 @@ public class StrapSync(
         napBackfillRan = napBackfillRan,
         fetches = stats.map { FetchStat(it.code, it.rounds.size, it.rounds, it.samples.size, it.raw.size, it.failure) },
         completedAt = now(),
+        fetchCursors = fetchCursors.toMap(),
+        stressBackfillCursor = stressBackfillCursor,
     )
 
     private companion object {
@@ -139,13 +162,17 @@ public object SyncPlan {
     public const val WORKOUT_ROUNDS: Int = 100
     public val BACKFILL: Duration = Duration.ofDays(30)
 
-    public fun metricSince(last: Instant?, now: Instant): Instant = last?.plusSeconds(60) ?: now.minus(BACKFILL)
+    /** Past the watermark, or past a capped fetch's [cursor] when that got further (empty rounds hold no sample). */
+    public fun metricSince(last: Instant?, now: Instant, cursor: Instant? = null): Instant =
+        maxOf(last?.plusSeconds(60) ?: now.minus(BACKFILL), cursor ?: Instant.MIN)
 
     /** A watermark older than 2 days that produced nothing: re-establish the feed from 2 days back. */
     public fun staleRetrySince(last: Instant?, now: Instant, gotSamples: Boolean): Instant? =
         if (!gotSamples && last != null && Duration.between(last, now) > Duration.ofDays(2)) now.minus(Duration.ofDays(2)) else null
 
-    public fun stressBackfillSince(now: Instant): Instant = now.minus(Duration.ofDays(25))
+    /** One-shot, 25 days back; a backfill cut short by its round cap resumes from its [cursor]. */
+    public fun stressBackfillSince(now: Instant, cursor: Instant? = null): Instant =
+        maxOf(now.minus(Duration.ofDays(25)), cursor ?: Instant.MIN)
 
     /** Always re-pulls 2 days (a nap appended later in the day); 14 days once for the nap backfill. */
     public fun sleepSince(lastSleepStart: Instant?, napBackfillDone: Boolean, now: Instant): Instant {
@@ -166,6 +193,10 @@ public data class SyncWindow(
     val lastWorkoutStart: Instant? = null,
     val stressBackfillDone: Boolean = false,
     val napBackfillDone: Boolean = false,
+    /** Per fetch type, where a fetch cut short by its round cap stopped (spec/01 §6). */
+    val fetchCursors: Map<Int, Instant> = emptyMap(),
+    /** Where the stress backfill stopped, while it is not done. */
+    val stressBackfillCursor: Instant? = null,
 )
 
 public data class SyncProgress(val step: Int, val total: Int, val label: String)
@@ -192,4 +223,7 @@ public data class SyncResult(
     val napBackfillRan: Boolean,
     val fetches: List<FetchStat>,
     val completedAt: Instant,
+    /** The cursors of fetches cut short by their round cap, to resume from next time. */
+    val fetchCursors: Map<Int, Instant> = emptyMap(),
+    val stressBackfillCursor: Instant? = null,
 )

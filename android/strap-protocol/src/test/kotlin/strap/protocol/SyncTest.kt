@@ -12,6 +12,7 @@ import strap.protocol.session.StrapFailure
 import strap.protocol.session.StrapSession
 import strap.protocol.sync.StrapSync
 import strap.protocol.sync.SyncPlan
+import strap.protocol.sync.SyncResult
 import strap.protocol.sync.SyncWindow
 import java.time.Duration
 import java.time.Instant
@@ -24,6 +25,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.test.fail
 import kotlin.time.Duration.Companion.seconds
 
 class SyncTest {
@@ -111,6 +113,76 @@ class SyncTest {
         assertNotNull(result.dailyTotals)
     }
 
+    // ── a new strap: nothing before the day it was first worn ──
+
+    private val worn = LocalDateTime.of(2026, 6, 4, 7, 13)
+    private val end = now.atZone(zone).toLocalDateTime()
+
+    private fun newStrap() = FakeStrapLink(
+        authKey,
+        fetch = mapOf(
+            FetchType.ACTIVITY to NewStrapHistory(worn, end, 8, { t -> byteArrayOf(0, 0, 10, (60 + t.minute).toByte(), 0, 0, 0, 0) }),
+            FetchType.STRESS to NewStrapHistory(worn, end, 1, { t -> byteArrayOf((20 + t.minute).toByte()) }),
+        ),
+    )
+
+    /** Syncs until one completes, carrying the window forward as the phone's store does; every sync's result. */
+    private suspend fun TestScope.syncUntilComplete(start: SyncWindow, max: Int): List<SyncResult> {
+        var window = start
+        val results = mutableListOf<SyncResult>()
+        while (results.size < max) {
+            val steps = mutableListOf<String>()
+            val r = StrapSync(session(newStrap()), now = { now }) { steps += it.label }.run(window)
+            assertEquals(SyncPlan.STEPS, steps.size, "sync ${results.size + 1} ran every step")
+            results += r
+            if (r.failure == null) return results
+            window = window.after(r)
+        }
+        fail("no sync completed in $max: ${results.last().fetches.filter { it.failure != null }}")
+    }
+
+    private fun SyncWindow.after(r: SyncResult) = copy(
+        lastSampleAt = lastSampleAt + r.samples.groupBy { it.metric }.mapValues { (m, s) -> listOfNotNull(lastSampleAt[m], s.maxOf { it.at }).max() },
+        fetchCursors = fetchCursors + r.fetchCursors.mapValues { (code, at) -> listOfNotNull(fetchCursors[code], at).max() },
+        stressBackfillCursor = listOfNotNull(stressBackfillCursor, r.stressBackfillCursor).maxOrNull(),
+        stressBackfillDone = stressBackfillDone || r.stressBackfillRan,
+        napBackfillDone = napBackfillDone || r.napBackfillRan,
+    )
+
+    /** Syncs it takes to walk [days] of empty rounds of [minutes] each, at the round cap. */
+    private fun syncsFor(days: Long, minutes: Int) = Math.ceil(days * 1440.0 / (SyncPlan.ROUNDS * minutes)).toInt()
+
+    @Test
+    fun `a new strap's first sync completes within a bounded number of syncs, from a fresh install`() = runTest {
+        val results = syncUntilComplete(SyncWindow(), max = 60)
+
+        assertTrue(results.size <= syncsFor(30, 3), "${results.size} syncs") // 30 days of 3-minute rounds
+        val wornMinutes = Duration.between(worn, end).toMinutes().toInt()
+        for (metric in listOf(Metric.HR, Metric.STEPS)) {
+            val at = results.flatMap { r -> r.samples.filter { it.metric == metric }.map { it.at } }
+            assertEquals((0 until wornMinutes).map { worn.plusMinutes(it.toLong()).atZone(zone).toInstant() }, at, "$metric: every worn minute once")
+        }
+        val stress = results.flatMap { r -> r.samples.filter { it.metric == Metric.STRESS }.map { it.at } }
+        assertEquals(wornMinutes, stress.toSet().size)
+        assertTrue(results.any { it.stressBackfillRan })
+        for (r in results) {
+            assertTrue(r.fetches.map { it.code }.containsAll(listOf(FetchType.SLEEP, FetchType.WORKOUTS, FetchType.HRV_SDNN, FetchType.PAI, FetchType.ODI)))
+        }
+    }
+
+    @Test
+    fun `a new strap's first sync completes within a bounded number of syncs, after an HR backfill`() = runTest {
+        val restored = worn.plusMinutes(60).atZone(zone).toInstant()
+        val results = syncUntilComplete(SyncWindow(lastSampleAt = mapOf(Metric.HR to restored)), max = 60)
+
+        assertTrue(results.size <= syncsFor(30, 24), "${results.size} syncs") // stress: 30 days of 24-minute rounds
+        val hr = results.flatMap { r -> r.samples.filter { it.metric == Metric.HR }.map { it.at } }
+        assertEquals(hr.distinct(), hr)
+        assertEquals(restored.plusSeconds(60), hr.first())
+        assertEquals(now.minusSeconds(60), hr.last())
+        assertTrue(results.any { it.stressBackfillRan })
+    }
+
     // ── the fetch windows (spec/01 §6) ──
 
     @Test
@@ -129,6 +201,10 @@ class SyncTest {
         val t = Instant.parse("2026-06-10T12:00:00Z")
         assertEquals(t.minus(Duration.ofDays(30)), SyncPlan.metricSince(null, t))
         assertEquals(t.minusSeconds(3600 - 60), SyncPlan.metricSince(t.minusSeconds(3600), t))
+        assertEquals(t.minus(Duration.ofDays(9)), SyncPlan.metricSince(null, t, cursor = t.minus(Duration.ofDays(9)))) // a capped fetch's cursor
+        assertEquals(t.minusSeconds(3600 - 60), SyncPlan.metricSince(t.minusSeconds(3600), t, cursor = t.minus(Duration.ofDays(9))))
+        assertEquals(t.minus(Duration.ofDays(25)), SyncPlan.stressBackfillSince(t))
+        assertEquals(t.minus(Duration.ofDays(3)), SyncPlan.stressBackfillSince(t, cursor = t.minus(Duration.ofDays(3))))
         assertEquals(t.minus(Duration.ofDays(2)), SyncPlan.staleRetrySince(t.minus(Duration.ofDays(3)), t, gotSamples = false))
         assertNull(SyncPlan.staleRetrySince(t.minus(Duration.ofDays(3)), t, gotSamples = true))
         assertNull(SyncPlan.staleRetrySince(t.minus(Duration.ofDays(1)), t, gotSamples = false))

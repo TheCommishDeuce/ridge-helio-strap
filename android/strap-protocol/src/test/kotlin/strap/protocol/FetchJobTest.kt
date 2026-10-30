@@ -106,6 +106,22 @@ class FetchJobTest {
         val result = strap.run(job(FetchType.ACTIVITY, origin, maxRounds = 2))
         assertEquals(FetchFailure.RoundLimit, result.failure)
         assertEquals(10, result.samples.count { it.metric == Metric.HR })
+        assertEquals(at(origin.plusMinutes(10)), result.cursor) // past both rounds, where the next would start
+    }
+
+    /** A new strap answers each window before its first day with three empty minutes (`3/1p/24b`). */
+    @Test
+    fun `a round cap keeps the ground its gap-skipped rounds covered`() {
+        val strap = FakeFetchStrap(origin, 8, ByteArray(30 * 8) { 0xFF.toByte() } + activity(5), minutesPerRound = 3)
+        val first = strap.run(job(FetchType.ACTIVITY, origin, maxRounds = 4))
+        assertEquals(FetchFailure.RoundLimit, first.failure)
+        assertTrue(first.samples.isEmpty())
+        assertEquals(at(origin.plusMinutes(12)), first.cursor) // four rounds of three empty minutes
+
+        val resumed = strap.run(FetchJob(FetchType.ACTIVITY, first.cursor, zone, now = { now }, maxRounds = 400))
+        assertNull(resumed.failure)
+        assertEquals(origin.plusMinutes(12), strap.startCommands[4])
+        assertEquals((0 until 5).map { at(origin.plusMinutes(30L + it)) }, resumed.samples.filter { it.metric == Metric.HR }.map { it.at })
     }
 
     @Test
