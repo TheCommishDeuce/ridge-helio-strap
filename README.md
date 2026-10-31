@@ -70,8 +70,8 @@ up once a night, so a new phone can start from your whole history.
 ## Limitations
 
 - **Android 12 or newer only.** There is no iPhone app.
-- **The Amazfit Helio Strap only.** Tested with firmware 0.132.27.2. Other Zepp OS devices
-  speak a similar protocol but are untested.
+- **The Amazfit Helio Strap only.** Confirmed to work on the latest firmware,
+  3.27.0.1 (October 2026). Other Zepp OS devices speak a similar protocol but are untested.
 - **Without a server there is no backup.** Everything works on the phone alone, but losing
   the phone then loses the history. A small always-on machine with Docker is enough for one.
 - **One person per server.** There is one device token, no accounts and no sign-up.

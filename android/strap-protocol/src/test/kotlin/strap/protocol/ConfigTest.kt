@@ -10,7 +10,8 @@ import kotlin.test.assertTrue
 
 /** Built from the layouts in spec/01 "Config"; to be joined by bytes read off the strap. */
 class ConfigTest {
-    // Layout as read off a strap on 2026-09-27 (firmware 0.132.27.2). Personal values (the step
+    // Layout as read off a strap on 2026-09-27 (hardware revision 0.132.27.2;
+    // unchanged on firmware 3.27.0.1, 2026-10-31). Personal values (the step
     // goal, the second zone set, workout key 07) are replaced with neutral ones; every length and type is as read.
     private val health = ("04010803011d0110fe0600fe01050a1e0210960700646e78828c960310320400282d32040b00830b00110b01120b01130b01" +
         "140b00160b01181001060001050a0f1e310b01321055040050555a410b014230080043301500440b0145300c0046300e00510b01520310270000d007" +

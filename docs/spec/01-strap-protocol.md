@@ -121,6 +121,10 @@ the strap does not volunteer it; `*` = encrypted): `0000 000a* 000c* 000d 000f 0
 004b 004d* 0081* 0082`. Note `0x004b` IS listed, contrary to the table above (history via
 chars 0004/0005 works and stays).
 
+**After the update to firmware 3.27.0.1 (2026-10-31):** the services list is unchanged (same
+28 endpoints, same encryption), and so are the config capabilities and every settings group
+(same keys, types and lengths). New history types were not probed.
+
 **What the endpoints are** (names from Gadgetbridge's Zepp OS services, reading only, D8;
 2026-09-27). Only the ones marked ✓ have been talked to.
 
@@ -165,7 +169,7 @@ sleep, `12` sleep breathing, `13` stress, `14` relaxation reminder, `31` all-day
 low-SpO₂ alert. `09` WORKOUT — `05` HR zones, `40` detection categories, `41` detection alert,
 `42` sensitivity (0 high, 1 standard, 2 low).
 
-**Seen on a Helio Strap** (fw 0.132.27.2; replies are test vectors in `ConfigTest`):
+**Seen on a Helio Strap** (hardware revision 0.132.27.2, firmware before 3.27.0.1; replies are test vectors in `ConfigTest`):
 capabilities `02 03 05 · 00 0b 08 09 0a` (version 3, five groups; groups `00`, `0b`, `0a` are
 not in the reference's HEALTH/WORKOUT sense: `00` has flags `0b 0c 10`, `0b` has flags `01 02
 03`, `0a` has flags `09 2c 2d`). The read order does not matter (a HEALTH read before
@@ -194,8 +198,9 @@ true UTC time, rounded to 15 min, is the offset alarms are converted against.
 
 Battery `0029`: `03` → 21 bytes `04 · 0f · level · charging · 2 × (u16 year, month, day,
 hour, minute, second, tz byte) · level`; the second timestamp is likely the last charge. Device info `0043`: `01` → `02 …` with the
-strap's MAC, serial number and firmware/hardware versions as NUL-terminated strings — kept
-out of the repo on purpose (serial, MAC).
+strap's MAC, serial number, then the hardware revision and the firmware version as
+NUL-terminated strings, in that order (`0.132.27.2` then `3.27.0.1`; the firmware is the one
+Zepp's About shows, checked 2026-10-31). Serial and MAC are kept out of the repo on purpose.
 
 ### Alarms (endpoint `0x000f`, unencrypted) — read, update, create, delete verified 2026-09-26
 
