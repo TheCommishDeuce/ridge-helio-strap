@@ -8,6 +8,7 @@ deploy/.env
 deploy/backups/
 dist/
 tools/demo-data/.env
+tools/demo-data/integrations.json
 
 # Integration URLs and secrets for the dev box (never committed)
 *.token

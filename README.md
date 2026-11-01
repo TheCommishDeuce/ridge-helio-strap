@@ -18,6 +18,12 @@ up once a night, so a new phone can start from your whole history.
   <img src="docs/screenshots/demo-biology.png" width="19%" alt="Biology: biological age as a range, and the habits that move it against their targets">
 </p>
 
+<p>
+  <img src="docs/screenshots/demo-gym.png" width="19%" alt="An openGym session: strain and load, heart rate with each exercise shaded and each set marked, heart-rate zones">
+  <img src="docs/screenshots/demo-walk.png" width="19%" alt="A Dawarich walk on the map, its bus ride dashed and left out of the distance, with strain and heart rate">
+  <img src="docs/screenshots/demo-run.png" width="19%" alt="A Dawarich run on the map, recognised from the strap's running cadence, with strain and heart rate">
+</p>
+
 <sub>Screenshots show synthetic demo data (`tools/demo-data`), not a real person's.</sub>
 
 ## What you get
@@ -106,6 +112,9 @@ up once a night, so a new phone can start from your whole history.
 - **An Android 12+ phone.**
 - **Optional: an always-on machine with Docker** for the backup server, reachable from the
   phone over HTTPS.
+- **Optional: your own [openGym](https://github.com/DuarteSantos8/openGym) and
+  [Dawarich](https://github.com/Freika/dawarich)**, over HTTPS, if you want gym sessions or
+  walks, runs and rides with the strap's heart rate.
 
 You end up with the strap's **MAC and auth key** (from your Zepp account) and, with a server,
 its **token** (made by the server's setup). The app asks for them during setup.
@@ -124,6 +133,9 @@ its **token** (made by the server's setup). The app asks for them during setup.
    it. Setup walks you through pairing the strap (MAC and key), connecting your server or
    continuing without one, restoring from the server when it already holds your history,
    and the first sync. Later changes live under the gear (Settings).
+4. **Optional: connect openGym and Dawarich** under Settings → Integrations. openGym takes
+   the 8-character code from its Settings → "Pair the mobile app" (it lasts 5 minutes);
+   Dawarich takes the API key from its account settings. Both are read-only.
 
 ### Your history: the last 30 days, or everything
 

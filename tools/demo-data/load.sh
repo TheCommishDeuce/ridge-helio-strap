@@ -32,5 +32,11 @@ Demo server ready. On the phone (USB or wireless adb):
 In "Ridge demo" setup: any MAC and 32-hex key; server http://127.0.0.1:8767  token: $token
 then Restore: the phone copies the demo data and works every number out itself.
 (The first sync fails without a strap: press "Continue to Today".)
+
+openGym and Dawarich (made up, from integrations.json; D41, D42):
+  python3 tools/demo-data/integrations.py &
+  adb reverse tcp:8768 tcp:8768
+Settings → Integrations: both at http://127.0.0.1:8768; any 8-character pairing code, any key of
+16+ characters. Fitness then shows gym sessions, lunch walks (with a bus leg) and evening runs.
 Remove it afterwards: tools/demo-data/load.sh down
 EOT
