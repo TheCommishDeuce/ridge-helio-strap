@@ -1,0 +1,5632 @@
+0001	3/4 sit-up
+0002	45° side bend
+0003	air bike
+0005	band alternate biceps curl
+0006	alternate heel touchers
+0007	alternate lateral pulldown
+0009	assisted chest dip (kneeling)
+0010	assisted hanging knee raise with throw down
+0011	assisted hanging knee raise
+0012	assisted lying leg raise with lateral throw down
+0013	assisted lying leg raise with throw down
+0014	assisted motion russian twist
+0015	assisted parallel close grip pull-up
+0016	assisted prone hamstring
+0017	assisted pull-up
+0018	assisted standing triceps extension (with towel)
+0019	assisted triceps dip (kneeling)
+0020	balance board
+0021	ball sit up (on stability ball)
+0022	barbell pullover to press
+0023	barbell alternate biceps curl
+0024	barbell bench front squat
+0025	barbell bench press
+0026	barbell bench squat
+0027	barbell bent over row
+0028	barbell clean and press
+0029	barbell clean-grip front squat
+0030	barbell close-grip bench press
+0031	barbell curl
+0032	barbell deadlift
+0033	barbell decline bench press
+0034	barbell decline bent arm pullover
+0035	barbell decline close grip to skull press
+0036	barbell decline wide-grip press
+0037	barbell decline wide-grip pullover
+0038	barbell drag curl
+0039	barbell front chest squat
+0040	barbell front raise and pullover
+0041	barbell front raise
+0042	barbell front squat
+0043	barbell full squat
+0044	barbell good morning
+0045	barbell guillotine bench press
+0046	barbell hack squat
+0047	barbell incline bench press
+0048	barbell incline reverse-grip press
+0049	barbell incline row
+0050	barbell incline shoulder raise
+0051	barbell jefferson squat
+0052	barbell jm bench press
+0053	barbell jump squat
+0054	barbell lunge
+0055	barbell lying close-grip press
+0056	barbell lying close-grip triceps extension
+0057	barbell lying extension
+0058	barbell lying lifting (on hip)
+0059	barbell lying preacher curl
+0060	barbell lying triceps extension skull crusher
+0061	barbell lying triceps extension
+0062	barbell narrow row
+0063	barbell narrow stance squat
+0064	barbell one arm bent over row
+0065	barbell one arm floor press
+0066	barbell one arm side deadlift
+0067	barbell one arm snatch
+0068	barbell one leg squat
+0069	barbell overhead squat
+0070	barbell preacher curl
+0071	barbell press sit-up
+0072	barbell prone incline curl
+0073	barbell pullover
+0074	barbell rack pull
+0075	barbell rear delt raise
+0076	barbell rear delt row
+0077	barbell rear lunge v. 2
+0078	barbell rear lunge
+0079	barbell revers wrist curl v. 2
+0080	barbell reverse curl
+0081	barbell reverse preacher curl
+0082	barbell reverse wrist curl
+0083	barbell rollerout from bench
+0084	barbell rollerout
+0085	barbell romanian deadlift
+0086	barbell seated behind head military press
+0087	barbell seated bradford rocky press
+0088	barbell seated calf raise
+0089	barbell seated close-grip concentration curl
+0090	barbell seated good morning
+0091	barbell seated overhead press
+0092	barbell seated overhead triceps extension
+0093	barbell seated twist (on stability ball)
+0094	barbell seated twist
+0095	barbell shrug
+0096	barbell side bent v. 2
+0097	barbell side split squat v. 2
+0098	barbell side split squat
+0099	barbell single leg split squat
+0100	barbell skier
+0101	barbell speed squat
+0102	barbell squat (on knees)
+0103	barbell standing ab rollerout
+0104	barbell standing back wrist curl
+0105	barbell standing bradford press
+0106	barbell standing close grip curl
+0107	barbell standing front raise over head
+0108	barbell standing leg calf raise
+0109	barbell standing overhead triceps extension
+0110	barbell standing reverse grip curl
+0111	barbell standing rocking leg calf raise
+0112	barbell standing twist
+0113	barbell standing wide-grip curl
+0114	barbell step-up
+0115	barbell stiff leg good morning
+0116	barbell straight leg deadlift
+0117	barbell sumo deadlift
+0118	barbell reverse grip bent over row
+0119	barbell upright row v. 2
+0120	barbell upright row
+0121	barbell upright row v. 3
+0122	barbell wide bench press
+0123	barbell wide-grip upright row
+0124	barbell wide squat
+0125	barbell wrist curl v. 2
+0126	barbell wrist curl
+0127	barbell zercher squat
+0128	battling ropes
+0129	bench dip (knees bent)
+0130	bench hip extension
+0131	bent knee lying twist (on stability ball)
+0133	bent knee side plank
+0134	bent side knee push up
+0136	boat yoga pose
+0137	body-up
+0138	bottoms-up
+0139	biceps narrow pull-ups
+0140	biceps pull-up
+0142	bridge (on knees)
+0143	bridge (straight arm)
+0145	butt bridge
+0147	bicycle twisting crunch
+0148	cable alternate shoulder press
+0149	cable alternate triceps extension
+0150	cable bar lateral pulldown
+0151	cable bench press
+0152	cable concentration extension (on knee)
+0153	cable cross-over lateral pulldown
+0154	cable cross-over revers fly
+0155	cable cross-over variation
+0157	cable deadlift
+0158	cable decline fly
+0159	cable decline seated wide-grip row
+0160	cable floor seated wide-grip row
+0161	cable forward raise
+0162	cable front raise
+0163	cable front seated row
+0164	cable front shoulder raise
+0165	cable hammer curl (with rope)
+0166	cable hammer curl
+0167	cable high row (kneeling)
+0168	cable hip adduction
+0169	cable incline bench press
+0170	cable incline fly (on stability ball)
+0171	cable incline fly
+0172	cable incline pushdown
+0173	cable incline triceps extension
+0174	cable judo flip
+0175	cable kneeling crunch
+0176	cable kneeling triceps extension
+0177	cable lateral pulldown (with rope attachment)
+0178	cable lateral raise
+0179	cable low fly
+0180	cable low seated row
+0181	cable lying close grip curl
+0182	cable lying close-grip curl
+0183	cable lying curl
+0184	cable lying extension pullover (with rope attachment)
+0185	cable lying fly
+0186	cable lying triceps extension v. 2
+0187	cable lying triceps extension
+0188	cable middle fly
+0189	cable one arm bent over row
+0190	cable one arm curl
+0191	cable one arm lateral bent-over
+0192	cable one arm lateral raise
+0193	cable one arm straight back high row (kneeling)
+0194	cable overhead triceps extension (rope attachment)
+0195	cable preacher curl
+0196	cable pull through (with rope)
+0197	cable pulldown (pro lat bar)
+0198	cable pulldown
+0199	cable pushdown (straight arm) v. 2
+0200	cable pushdown (with rope attachment)
+0201	cable pushdown
+0202	cable rear delt row (stirrups)
+0203	cable rear delt row (with rope)
+0204	cable rear drive
+0205	cable rear pulldown
+0206	cable reverse curl
+0207	cable reverse-grip pushdown
+0208	cable reverse-grip straight back seated high row
+0209	cable reverse preacher curl
+0210	cable reverse wrist curl
+0211	cable russian twists (on stability ball)
+0212	cable seated crunch
+0213	cable seated high row (v-bar)
+0214	cable seated one arm alternate row
+0215	cable seated rear lateral raise
+0216	cable seated shoulder internal rotation
+0218	cable seated wide-grip row
+0219	cable shoulder press
+0220	cable shrug
+0221	cable side bend crunch (bosu ball)
+0222	cable side bend
+0223	cable side crunch
+0224	cable standing back wrist curl
+0225	cable standing cross-over high reverse fly
+0226	cable standing crunch
+0227	cable standing fly
+0228	cable standing hip extension
+0229	cable standing inner curl
+0230	cable standing lift
+0231	cable standing one arm triceps extension
+0232	cable standing pulldown (with rope)
+0233	cable standing rear delt row (with rope)
+0234	cable standing row (v-bar)
+0235	cable standing shoulder external rotation
+0236	cable standing twist row (v-bar)
+0237	cable straight arm pulldown (with rope)
+0238	cable straight arm pulldown
+0239	cable straight back seated row
+0240	cable supine reverse fly
+0241	cable triceps pushdown (v-bar)
+0242	cable tuck reverse crunch
+0243	cable twist
+0244	cable twisting pull
+0245	cable underhand pulldown
+0246	cable upright row
+0247	cable wrist curl
+0248	cambered bar lying row
+0250	ceiling look stretch
+0251	chest dip
+0253	chin-ups (narrow parallel grip)
+0255	wall ball circles
+0256	elbow arm circles
+0257	circles knee stretch
+0258	clock push-up
+0259	close-grip push-up
+0260	cocoons
+0261	corkscrew push up
+0262	cross body crunch
+0263	cross body twisting crunch
+0264	cross jacks
+0267	crunch (hands overhead)
+0268	crunch (leg raise)
+0269	crunch (legs on stability ball)
+0271	crunch (on stability ball)
+0272	crunch (on stability ball, arms straight)
+0273	crunch (straight leg up)
+0274	crunch floor
+0275	crunch floor v. 2
+0276	dead bug
+0277	decline crunch
+0278	decline push up (on stability ball)
+0279	decline push-up
+0281	decline sit up (arms straight)
+0282	decline sit-up
+0283	diamond push-up
+0284	donkey calf raise
+0285	dumbbell alternate biceps curl
+0286	dumbbell alternate side press
+0287	dumbbell arnold press v. 2
+0288	dumbbell around pullover
+0289	dumbbell bench press
+0290	dumbbell bench seated press
+0291	dumbbell bench squat
+0292	dumbbell one arm bent-over row
+0293	dumbbell bent over row
+0294	dumbbell biceps curl
+0295	dumbbell clean
+0296	dumbbell close-grip press
+0297	dumbbell concentration curl
+0298	dumbbell cross body hammer curl
+0299	dumbbell cuban press
+0300	dumbbell deadlift
+0301	dumbbell decline bench press
+0302	dumbbell decline fly
+0303	dumbbell decline hammer press
+0304	dumbbell decline shrug v. 2
+0305	dumbbell decline shrug
+0306	dumbbell decline triceps extension
+0307	dumbbell decline twist fly
+0308	dumbbell fly
+0309	dumbbell front raise v. 2
+0310	dumbbell front raise
+0311	dumbbell full can lateral raise
+0312	dumbbell hammer curl v. 2
+0313	dumbbell hammer curl
+0314	dumbbell incline bench press
+0315	dumbbell incline biceps curl
+0316	dumbbell incline breeding
+0317	dumbbell incline curl v. 2
+0318	dumbbell incline curl
+0319	dumbbell incline fly
+0320	dumbbell incline hammer curl
+0321	dumbbell incline hammer press
+0322	dumbbell incline inner biceps curl
+0323	dumbbell incline one arm lateral raise
+0324	dumbbell incline palm-in press
+0325	dumbbell incline raise
+0326	dumbbell incline rear lateral raise
+0327	dumbbell incline row
+0328	dumbbell incline shoulder raise
+0329	dumbbell incline shrug
+0330	dumbbell incline triceps extension
+0331	dumbbell incline twisted flyes
+0332	dumbbell iron cross
+0333	dumbbell kickback
+0334	dumbbell lateral raise
+0335	dumbbell lateral to front raise
+0336	dumbbell lunge
+0337	dumbbell lying extension (across face)
+0338	dumbbell lying elbow press
+0339	dumbbell lying femoral
+0340	dumbbell lying hammer press
+0341	dumbbell lying one arm deltoid rear
+0342	dumbbell lying one arm press v. 2
+0343	dumbbell lying one arm press
+0344	dumbbell lying one arm pronated triceps extension
+0345	dumbbell lying one arm rear lateral raise
+0346	dumbbell lying one arm supinated triceps extension
+0347	dumbbell lying pronation
+0348	dumbbell lying rear lateral raise
+0349	dumbbell lying supination
+0350	dumbbell lying supine curl
+0351	dumbbell lying triceps extension
+0352	dumbbell neutral grip bench press
+0353	dumbbell one arm concentration curl (on stability ball)
+0354	dumbbell one arm kickback
+0355	dumbbell one arm lateral raise
+0356	dumbbell one arm lateral raise with support
+0357	dumbbell one arm press (on stability ball)
+0358	dumbbell one arm reverse wrist curl
+0359	dumbbell one arm reverse fly (with support)
+0360	dumbbell one arm shoulder press v. 2
+0361	dumbbell one arm shoulder press
+0362	dumbbell one arm triceps extension (on bench)
+0363	dumbbell one arm upright row
+0364	dumbbell one arm wrist curl
+0365	dumbbell over bench neutral wrist curl
+0366	dumbbell over bench one arm neutral wrist curl
+0367	dumbbell over bench one arm wrist curl
+0368	dumbbell over bench revers wrist curl
+0369	dumbbell over bench wrist curl
+0370	dumbbell peacher hammer curl
+0371	dumbbell plyo squat
+0372	dumbbell preacher curl
+0373	dumbbell pronate-grip triceps extension
+0374	dumbbell prone incline curl
+0375	dumbbell pullover
+0376	dumbbell raise
+0377	dumbbell rear delt row_shoulder
+0378	dumbbell rear fly
+0379	dumbbell rear lateral raise (support head)
+0380	dumbbell rear lateral raise
+0381	dumbbell rear lunge
+0382	dumbbell revers grip biceps curl
+0383	dumbbell reverse fly
+0384	dumbbell reverse preacher curl
+0385	dumbbell reverse wrist curl
+0386	dumbbell rotation reverse fly
+0387	dumbbell seated alternate front raise
+0388	dumbbell seated alternate press
+0389	dumbbell seated bench extension
+0390	dumbbell seated biceps curl (on stability ball)
+0391	dumbbell seated curl
+0392	dumbbell seated front raise
+0393	dumbbell seated inner biceps curl
+0394	dumbbell seated kickback
+0395	dumbbell seated lateral raise v. 2
+0396	dumbbell seated lateral raise
+0397	dumbbell seated neutral wrist curl
+0398	dumbbell seated one arm kickback
+0399	dumbbell seated one arm rotate
+0400	dumbbell seated one leg calf raise
+0401	dumbbell seated palms up wrist curl
+0402	dumbbell seated preacher curl
+0403	dumbbell seated revers grip concentration curl
+0404	dumbbell seated shoulder press (parallel grip)
+0405	dumbbell seated shoulder press
+0406	dumbbell shrug
+0407	dumbbell side bend
+0408	dumbbell side lying one hand raise
+0409	dumbbell single leg calf raise
+0410	dumbbell single leg split squat
+0411	dumbbell single leg squat
+0412	dumbbell squat (back on stability ball wall)
+0413	dumbbell squat
+0414	dumbbell standing alternate overhead press
+0415	dumbbell standing alternate raise
+0416	dumbbell standing biceps curl
+0417	dumbbell standing calf raise
+0418	dumbbell standing concentration curl
+0419	dumbbell standing front raise above head
+0420	dumbbell standing kickback
+0421	dumbbell standing one arm concentration curl
+0422	dumbbell standing one arm curl (over incline bench)
+0423	dumbbell standing one arm extension
+0424	dumbbell standing one arm palm in press
+0425	dumbbell standing one arm reverse curl
+0426	dumbbell standing overhead press
+0427	dumbbell standing palms in press
+0428	dumbbell standing preacher curl
+0429	dumbbell standing reverse curl
+0430	dumbbell standing triceps extension
+0431	dumbbell step-up
+0432	dumbbell stiff leg deadlift
+0433	dumbbell straight arm pullover
+0434	dumbbell straight leg deadlift
+0435	dumbbell sumo squat (back on stability ball wall)
+0436	dumbbell tate press
+0437	dumbbell upright row
+0438	dumbbell w-press
+0439	dumbbell zottman curl
+0443	elbow-to-knee
+0445	ez barbell anti gravity press
+0446	ez barbell close-grip curl
+0447	ez barbell curl
+0448	ez barbell decline close grip face press
+0449	ez barbell incline triceps extension
+0450	ez barbell jm bench press
+0451	ez barbell reverse grip curl
+0452	ez barbell reverse grip preacher curl
+0453	ez barbell seated triceps extension
+0454	ez barbell spider curl
+0455	finger curls
+0456	flexion leg sit up (bent knee)
+0457	flexion leg sit up (straight arm)
+0458	floor fly (with barbell)
+0459	flutter kicks
+0461	frog squat
+0462	front and back neck stretch
+0463	front plank
+0464	front plank with twist
+0466	gironda sternum chin
+0467	gorilla chin
+0468	grasshopper push up
+0469	groin crunch
+0470	hand opposite knee crunch
+0471	handstand push-up
+0472	hanging leg raise
+0473	hanging pike
+0474	hanging straight leg hip raise
+0475	hanging straight leg raise
+0476	hanging straight twisting leg hip raise
+0479	high knee step up
+0480	high knee twist
+0481	high knees butt kicks
+0482	hip crunch (knees bent)
+0484	hip raise (bent knee)
+0485	hip raise bridge v. 2
+0486	hip raise bridge
+0487	hip raise crunch
+0488	hyperextension (on bench)
+0489	hyperextension
+0490	incline close-grip push-up
+0491	incline leg hip raise (leg straight)
+0492	incline push up depth jump
+0493	incline push-up
+0494	incline reverse grip push-up
+0495	incline twisting sit-up
+0496	inverse leg curl (bench support)
+0497	inverted row v. 2
+0498	inverted row with straps
+0499	inverted row
+0500	isometric wipers
+0501	jack burpee
+0502	jack knife floor
+0503	jack knife on ball
+0504	jack press
+0505	jack split crunches
+0507	jackknife sit-up
+0508	janda sit-up
+0510	jump lunge to feet jack
+0513	jump squat v. 2
+0514	jump squat
+0517	kettlebell advanced windmill
+0518	kettlebell alternating hang clean
+0519	kettlebell alternating press on floor
+0520	kettlebell alternating press
+0521	kettlebell alternating renegade row
+0522	kettlebell alternating row
+0523	kettlebell arnold press
+0524	kettlebell bent press
+0525	kettlebell bottoms up clean from the hang position
+0526	kettlebell double alternating hang clean
+0527	kettlebell double jerk
+0528	kettlebell double push press
+0529	kettlebell double snatch
+0530	kettlebell double windmill
+0531	kettlebell extended range one arm press on floor
+0532	kettlebell figure 8
+0533	kettlebell front squat
+0534	kettlebell goblet squat
+0535	kettlebell hang clean
+0536	kettlebell lunge pass through
+0537	kettlebell one arm clean and jerk
+0538	kettlebell one arm jerk
+0539	kettlebell one arm military press to the side
+0540	kettlebell one arm push press
+0541	kettlebell one arm row
+0542	kettlebell one arm snatch
+0543	kettlebell pirate supper legs
+0544	kettlebell pistol squat
+0545	kettlebell plyo push-up
+0546	kettlebell seated press
+0547	kettlebell seesaw press
+0548	kettlebell sumo high pull
+0549	kettlebell swing
+0550	kettlebell thruster
+0551	kettlebell turkish get up (squat style)
+0552	kettlebell two arm clean
+0553	kettlebell two arm military press
+0554	kettlebell windmill
+0555	kick out sit
+0556	kicks leg bent v. 2
+0558	kipping muscle up
+0559	knee to chest stretch
+0560	kneeling hip flexor
+0561	kneeling wrist flexor stretch
+0562	landmine 180
+0564	lateral box jump
+0565	lateral speed step
+0567	lateral twist box jump
+0568	leg bench side bridge
+0569	leg curl (on stability ball)
+0570	leg pull in flat bench
+0571	lever alternating narrow grip seated row
+0572	lever assisted chin-up
+0573	lever back extension
+0574	lever bent over row
+0575	lever bicep curl
+0576	lever chest press
+0577	lever chest press
+0578	lever deadlift
+0579	lever front pulldown
+0580	lever gripless shrug
+0581	lever high row
+0582	lever kneeling leg curl
+0583	lever kneeling twist
+0584	lever lateral raise
+0585	lever leg extension
+0586	lever lying leg curl
+0587	lever military press
+0588	lever narrow grip seated row
+0589	lever one arm bent over row
+0590	lever one arm shoulder press
+0591	lever overhand triceps dip
+0592	lever preacher curl
+0593	lever reverse hyperextension
+0594	lever seated calf raise
+0595	lever seated crunch (chest pad)
+0596	lever seated fly
+0597	lever seated hip abduction
+0598	lever seated hip adduction
+0599	lever seated leg curl
+0600	lever seated leg raise crunch
+0601	lever seated reverse fly (parallel grip)
+0602	lever seated reverse fly
+0603	lever shoulder press
+0604	lever shrug
+0605	lever standing calf raise
+0606	lever t bar row
+0607	lever triceps extension
+0608	lever twist
+0609	london bridge
+0610	low jacks
+0611	lunge push up
+0612	lunge
+0613	lying (side) quads stretch
+0614	lying alternate hip extension
+0615	lying crossover stretch
+0616	lying hip flexor stretch
+0617	lying hip leg raise (on floor)
+0619	lying hip straight leg raise
+0620	lying leg raise flat bench
+0621	lying scissor crunch
+0622	lying scissor kick
+0623	lying simultaneous alternating leg raise
+0624	march sit (wall)
+0625	medicine ball sit up (wall)
+0627	mixed grip chin-up
+0628	monster walk
+0629	mountain climber lunge
+0630	mountain climber
+0631	muscle up
+0632	narrow leg bench bridge
+0633	neck bridge prone
+0634	negative crunch
+0635	oblique crunches floor
+0636	olympic barbell hammer curl
+0637	olympic barbell triceps extension
+0638	one arm chin-up
+0639	one arm dip
+0640	one arm slam (with medicine ball)
+0641	otis up
+0642	outside leg kick push-up
+0643	overhead triceps stretch
+0647	plyo sit squat (wall)
+0648	power clean
+0649	pretzel stretch
+0650	pull-in (on stability ball)
+0651	pull up (neutral grip)
+0652	pull-up
+0653	push-up (bosu ball)
+0654	push up (knee chest)
+0655	push-up (on stability ball)
+0656	push-up (on stability ball)
+0657	push up (one arm on stability ball)
+0658	push-up (wall) v. 2
+0659	push-up (wall)
+0660	push-up close-grip off dumbbell
+0661	push-up inside leg kick
+0662	push-up
+0663	push-up medicine ball
+0664	push-up to side plank
+0665	push up w
+0666	raise single arm push-up
+0667	raise single leg push up
+0668	rear decline bridge
+0669	rear deltoid stretch
+0670	rear pull-up
+0672	reverse dip
+0673	reverse grip machine lat pulldown
+0674	reverse grip pull-up
+0675	reverse hyper extension (on stability ball)
+0676	reverse lunge (leg kick)
+0677	ring dips
+0678	rocky pull-up pulldown
+0679	rolling bridge
+0680	rope climb
+0681	rotate push up (on knees)
+0683	rotational jacks
+0684	run (equipment)
+0685	run
+0686	russian twist (on stability ball arms straight)
+0687	russian twist
+0688	scapular pull-up
+0689	seated leg raise
+0690	seated lower back stretch
+0691	seated side crunch (wall)
+0692	seated single leg hamstring stretch
+0693	seated straight leg calf stretch
+0694	seated twist (on stability ball)
+0696	self assisted inverse leg curl (on floor)
+0697	self assisted inverse leg curl
+0698	shoulder press (with band)
+0699	shoulder tap push-up
+0700	side bend (on stability ball)
+0701	side bridge (bent knee)
+0702	side bridge (knee tuck)
+0703	side bridge hip abduction (star)
+0705	side bridge v. 2
+0706	side bridge
+0707	side crunch v. 2
+0708	side crunch
+0709	side hip (on parallel bars)
+0710	side hip abduction
+0711	side lunge stretch
+0712	side lying feet raise
+0713	side neck stretch
+0714	side plank v. 2
+0715	side plank
+0716	side push neck stretch
+0717	side push-up
+0718	side sit up
+0719	side stretch crunch
+0720	side-to-side chin
+0721	side wrist pull stretch
+0722	sideway leg bridge
+0723	sideways lifts vertical (straight legs)
+0724	sideways lifts vertical turn (straight legs)
+0725	single arm push-up
+0726	single leg bridge
+0727	single leg calf raise (on a dumbbell)
+0728	single leg extension (on stability ball)
+0730	single leg platform slide
+0731	single leg sit (wall)
+0733	single leg step up
+0734	sit (wall)
+0735	sit-up v. 2
+0736	sit up
+0738	sled 45° calf press
+0739	sled 45° leg press
+0740	sled 45° leg wide press
+0741	sled closer hack squat
+0742	sled forward angled calf raise
+0743	sled hack squat
+0744	sled lying squat
+0746	smith back shrug
+0747	smith behind neck press
+0748	smith bench press
+0749	smith bent knee good morning
+0750	smith chair squat
+0751	smith close-grip bench press
+0752	smith deadlift
+0753	smith decline bench press
+0754	smith decline reverse-grip press
+0755	smith hack squat
+0756	smith hip raise
+0757	smith incline bench press
+0758	smith incline reverse-grip press
+0759	smith incline shoulder raises
+0760	smith leg press
+0761	smith narrow row
+0762	smith rear delt row
+0763	smith reverse calf raises
+0764	smith reverse-grip press
+0765	smith seated shoulder press
+0766	smith shoulder press
+0767	smith shrug
+0768	smith single leg split squat
+0769	smith sprint lunge
+0770	smith squat
+0771	smith standing back wrist curl
+0772	smith standing behind head military press
+0773	smith standing leg calf raise
+0774	smith standing military press
+0775	smith upright row
+0776	snatch pull
+0777	spell caster
+0778	spider crawl push up
+0781	split squat
+0782	square hop
+0783	squat (arms overhead)
+0784	squat (with band)
+0785	squat jacks
+0786	squat jerk
+0788	standing behind neck press
+0789	standing hamstring stretch
+0790	standing hip abduction (bent knee)
+0791	standing hip abduction
+0792	standing hip extension (bent knee)
+0793	band standing lateral raise
+0794	standing lateral stretch
+0795	standing single leg curl
+0796	standing wheel rollerout
+0798	stationary bike walk
+0799	step up crossover
+0800	step up opposite elbow to knee twist
+0801	step up
+0803	superman push-up
+0805	suspended abdominal fallout
+0806	suspended push-up
+0807	suspended reverse crunch
+0808	suspended row
+0809	suspended split squat
+0810	toe touch sit (wall)
+0811	trap bar deadlift
+0812	triceps dip (bench leg)
+0813	triceps dip (between benches)
+0814	triceps dip
+0815	triceps dips floor
+0816	triceps press
+0817	triceps stretch
+0818	twin handle parallel grip lat pulldown
+0820	twist side bridge
+0821	twist sit up
+0822	twist squat
+0823	twisting crunch (arms straight)
+0826	vertical leg raise (on parallel bars)
+0827	vertical mountain climber
+0828	walk (equipment)
+0829	walk (high knees)
+0830	weighted bench dip
+0831	weighted crunch (bent knee)
+0832	weighted crunch
+0833	weighted donkey calf raise
+0834	weighted front raise
+0835	weighted hyperextension (on stability ball)
+0836	weighted leg extension crunch
+0837	weighted lying hip abduction
+0838	weighted lying side lifting head (with head harness)
+0839	weighted lying twist
+0840	weighted overhead crunch (on stability ball)
+0841	weighted pull-up
+0842	weighted pullover (on stability ball)
+0843	weighted reduction triangle
+0844	weighted round arm
+0845	weighted russian twist (legs up)
+0846	weighted russian twist
+0847	weighted seated bicep curl (on stability ball)
+0848	weighted seated neck extension (with head harness)
+0849	weighted seated twist (on stability ball)
+0850	weighted side bend (on stability ball)
+0851	weighted sissy squat
+0852	weighted squat
+0853	weighted standing curl
+0854	weighted standing hand squeeze
+0855	weighted standing twist
+0856	weighted svend press
+0857	wheel rollerout
+0858	wind sprints
+0859	wrist rollerer
+0860	cable kickback
+0861	cable seated row
+0862	cable twist (up-down)
+0863	dumbbell lying external shoulder rotation
+0864	dumbbell upright shoulder external rotation
+0865	lying leg-hip raise
+0866	weighted hanging leg-hip raise
+0867	reverse plank
+0868	cable curl
+0869	lever shoulder press v. 2
+0870	butt-ups
+0871	tuck crunch
+0872	reverse crunch
+0873	cable reverse crunch
+0874	cable standing crunch (with rope attachment)
+0878	barbell full squat (with rack)
+0880	cable standing hip extension v. 2
+0881	dumbbell curtsey lunge
+0882	dumbbell one leg squat
+0884	smith lateral step up
+0885	smith lying lift (on hip)
+0886	smith one leg deadlift
+0891	band back extension
+0892	band bent over row v. 2
+0893	band bent over rear lateral raise v. 3
+0894	band calf raise
+0897	band hammer curl
+0901	band hip extension
+0902	band hyperextension
+0903	band kickback
+0905	band kneeling pulldown
+0906	band kneeling rear kick
+0907	band lateral raise
+0908	band low fly
+0909	band lunges
+0910	band lying leg and hip raise
+0911	band lying leg curl
+0912	band lying leg raise
+0913	band middle fly
+0915	band push up
+0917	band reverse curl
+0919	band single stiff leg deadlift
+0921	band standing external shoulder rotation
+0923	band standing incline chest press
+0924	band standing internal shoulder rotation
+0926	band standing leg extension
+0927	band standing straight leg raise
+0928	band straight arm pulldown
+0930	band standing row
+0931	band twist (down up)
+0934	band upright row
+0935	band upright shoulder external rotation
+0938	lever stepper
+0942	cat pose
+0943	chair pose utkatasana v. 2
+0944	chair pose utkatasana
+0945	child pose
+0946	crane pose bakasana
+0947	crescent moon pose
+0948	default pose
+0949	downward facing dog adho mukha svanasana
+0950	fish pose matsyasana
+0951	garland pose malasana
+0952	half moon pose ardha chandrasana
+0953	hands to feet pada hastasana
+0954	hero pose virasana
+0955	leg to side
+0956	lotus yoga pose padmasana
+0957	revolved side angle pose parivrtta parsvakonasana
+0958	spread leg forward fold upavista konasana
+0959	standing forward bend uttanasana
+0960	stand spread leg forward fold
+0961	tree pose vrksasana
+0962	triangle pose trikonasana
+0963	warrior pose virabhadrasana v. 2
+0964	warrior pose i virabhadrasana
+0965	wide legged forward bend prasarita padottanasana
+0966	barbell deadlift (back view)
+0967	barbell deadlift (front pov)
+0968	band alternating biceps curl
+0969	band alternating v-up
+0970	band assisted pull-up
+0971	band assisted wheel rollerout
+0972	band bicycle crunch
+0973	band calf raise v. 2
+0974	band close-grip pulldown
+0975	band close-grip push-up
+0976	band concentration curl
+0977	band front lateral raise
+0978	band front raise
+0979	band horizontal pallof press
+0980	band bent-over hip extension
+0981	band jack knife sit-up
+0982	band lying hip external rotation
+0983	band kneeling one arm pulldown
+0984	band lying hip internal rotation
+0985	band kneeling twisting crunch
+0986	band one arm overhead biceps curl
+0987	band one arm single leg split squat
+0988	band one arm standing low row
+0989	band one arm twisting chest press
+0990	band one arm twisting seated row
+0991	band pull through
+0992	band push sit-up
+0993	band reverse fly
+0994	band reverse wrist curl
+0995	band seated hip external rotation
+0996	band seated hip internal rotation
+0997	band shoulder press
+0998	band side triceps extension
+0999	band single leg calf raise
+1000	band single leg reverse calf raise
+10003	resistance band sitting floor ankle dorsi flexion
+1001	band single leg split squat
+10014	ball assisted lying supine hip adduction
+1002	band lying straight leg raise
+1003	band squat row
+10031	finger flexion while extending thumb
+10032	thumb abduction
+10038	dumbbell wrist supination
+1004	band squat
+10040	dumbbell standing alternating cross raise
+10041	dumbbell side plank v. 2
+10042	dumbbell lying floor squeeze press
+10043	dumbbell single arm z press
+10044	dumbbell hang snatch
+10045	snow angel face to floor
+10046	snow angel face to sky
+10047	barbell split stance rdl
+10048	cable step up
+10049	barbell butterfly z press
+1005	band standing crunch
+10050	superman to push up
+10051	bodyweight narrow squat lunge
+10052	landmine cossack squat
+10053	jump from seated position
+10054	barbell static lunge
+10055	dumbbell narrow squat lunge
+10056	landmine banded press
+10057	table top bridge jack
+10058	alternating kneeling to half kneeling
+1006	band rear delt row
+10065	lever torso rotation
+1007	band standing twisting crunch
+1008	band step-up
+1009	band stiff leg deadlift
+10092	barbell core squat
+10093	dumbbell half kneeling thor lift
+10094	dumbbell standing cross clean
+10095	cable single arm bear fly
+10096	dumbbell rear lunge to single arm shoulders press
+10097	weighted plate side up squat
+1010	band straight leg deadlift
+10106	barbell high pull
+10107	barbell hang clean high pull
+10108	medicine ball overhead toss
+10109	medicine ball backward overhead toss
+1011	band seated twist
+10110	barbell fat bar reverse curl
+10112	cable seated single arm lats focused row
+10113	lever isometric squat hip abduction
+10114	weighted plate lu raise
+10115	barbell decline close grip press
+10116	smith incline close grip bench press
+10117	dumbbell half kneeling single arm clean press
+10118	medicine ball overhead slam circle
+10119	cable lateral step up
+1012	band twisting overhead press
+10120	cable unilateral step up
+10126	standing isometric shoulder external rotation with towel
+1013	band underhand pulldown
+10138	standing isometric biceps hold
+10139	sitting isometric hamstring curl hold with exercise ball
+1014	band v-up
+1015	band vertical pallof press
+1016	band wrist curl
+10160	box jump drop 2 foot land
+10168	bodyweight box squat
+1017	band y-raise
+1018	band shrug
+10182	burpee over the dumbbell
+10183	dumbbell standing front raise twist
+10184	resistance band alternating split stance pallof press
+10185	dumbbell bear plank alternating row
+10186	dumbbell pullover to press bridge
+10187	jump up side jump
+10188	standing bend alternating toe touch
+10189	weighted plate deadlift rear lunge with overhead press
+10190	landmine single arm push press
+10191	clock goblet squat
+10192	kettlebell side swing
+10193	burpee power sled push
+10194	butterfly back roll
+10195	barbell half kneeling thor lift
+10196	dumbbell shoulders complex
+10197	medicine ball horizontal smash
+10198	sled alternating single leg negative press
+10199	dumbbell cross romanian deadlift
+1020	band side crunch
+10200	dumbbell kneeling around head rotation
+1021	band standing leg raise
+1022	band standing rear delt row
+1023	band straight back stiff leg deadlift
+1027	assisted single leg press
+1028	assisted standing triceps dip
+1029	lever parallel chest press
+10294	heel walk
+1030	lever pec deck fly
+1031	lever standing hip extension
+1032	lever alternate biceps curl
+10326	plank jump in squat
+10327	kettlebell strong russian twist
+10328	lever belt bulgarian split squat
+10329	dumbbell kroc row
+1033	lever triceps extension v. 2
+10330	dumbbell powell raise
+10331	resistance band weighted standing pronation twist curl (arm wrestler)
+1034	lever side hip abduction
+10345	superman pulse
+1035	lever side hip adduction
+1036	lever standing leg raise
+10366	resistance band sitting floor tibialis press
+10367	kettlebell sitting tibialis press
+1037	lever standing rear kick
+1038	lever chair squat
+10383	weighted sandbag deadlift
+10384	weighted sandbag squat
+10385	weighted sandbag shouldering
+10386	weighted sandbag carry (shoulders)
+10387	weighted sandbag carry (bear hug)
+10388	weighted sandbag military press
+10389	weighted sandbag row
+1039	lever full squat
+1040	lever pistol squat
+1041	lever lying chest press (plate loaded)
+10410	steel mace squat (weighted)
+10411	steel mace halo (weighted)
+1042	weighted lying neck extension
+10427	sandbag over the shoulder toss (weighted)
+1043	weighted lying neck flexion
+10437	cable single arm low row (with rope)
+10438	alternating dead hang
+10439	two ropes climb
+1044	plate pinch
+1045	barbell seated military press (inside squat cage)
+1046	cable elevated row
+10462	seated hamstring stretch on a chair
+10463	seated squeeze shoulder blades chest stretch on a chair
+1047	cable close grip front lat pulldown
+1048	dumbbell lying one arm rear lateral raise v. 2
+1049	one leg kickback (with bench support)
+1050	smith calf raise (with block)
+10503	cable reverse narrow grip lat pulldown
+1051	cat stretch
+10517	standing single leg hip swirl with chair support
+1052	fixed bar back stretch
+1053	kneeling hip flexor stretch
+10534	seated single leg knee flexion
+10535	seated single leg tibialis press
+10536	resistance band standing single leg knee extension
+10537	seated single leg knee extension
+10538	seated single leg knee extension v. 2
+10539	weighted seated single leg knee extension v. 2
+1054	lunging straight leg calf stretch
+10540	lying bent knee tibialis press
+10541	seated single leg hugging knee flexion
+10542	seated single leg hugging knee flexion with towel
+10543	kneeling bend knee chair supported
+10547	standing single leg calf rock
+10548	standing single leg concentration calf raise
+10549	elevated single leg bridge
+10550	lying floor svend press
+10551	squat mobilization
+10552	medicine ball split stance torso twist
+10553	resistance band overhead hit
+10554	plank alternating hit the ball
+10555	seated neck flexion to extension on chair
+10556	seated side to side neck twist on chair
+10557	seated side to side neck bend on chair
+10558	medicine ball sit up slam
+10559	dumbbell full front raise catch
+1056	lying glute stretch
+10560	barbell bench press catch
+10561	kettlebell single leg deadlift pass
+10562	kettlebell ipsilateral reverse lunge high knee
+10563	knee to box calf stretch
+10564	seated pronation supination foot
+10565	90 to 90 press stretch
+10566	half kneeling torso twist
+1058	standing one arm chest stretch
+10588	barbell lying front raise
+10589	stick lying front raise
+1059	standing quadriceps stretch
+10590	walkout lat stretch
+10591	resistance band seated single leg hugging knee flexion
+10592	half kneeling hamstrings stretch
+10593	incline jack plank
+10594	resistance band lateral hit
+10595	medicine ball pullover catch
+10597	cable 90 degrees internal rotation catch
+10598	medicine ball lying floor close press catch
+1060	barbell hip thrust
+1061	barbell one leg hip thrust
+1062	weighted one leg hip thrust
+1063	barbell sumo squat
+10639	glute ham developer full sit up
+1064	sumo squat
+10646	lever incline prone row
+1065	lying hip lift (on stability ball)
+10650	resistance band explosive push up
+10651	band standing on bosu ball single leg abduction
+10654	pilates machine lying knee extension on toes
+10655	pilates machine lying knee extension
+10656	pilates machine lying knee extension on heels
+10657	pilates machine lying calf raise
+10658	pilates machine hundred
+10660	resistance band assisted single arm pull up
+10661	ring resistance band assisted single arm pull up
+10662	ring rocky pull up pulldown
+10663	ring skin the cat
+10664	planche press
+10665	elbow planche
+10667	cable kneeling single arm horizontal row
+10668	band kneeling single arm horizontal row
+10669	lever stack seated incline chest press
+1067	cable straight arm pulldown v. 3
+10670	lever stack seated incline single arm chest press
+10671	lever stack seated chest press
+10672	lever stack seated single arm chest press
+10673	kettlebell squat
+10674	kettlebell back squat
+10675	landmine squat jump
+10676	weighted backpack walking
+10677	weighted backpack running
+1068	cable kickback v. 3
+1069	cable twist v. 3
+1070	suspender arm curl
+1071	suspender bent knee inverted row
+10710	weight plate lying crunch
+1072	suspender chest dip
+10729	aquabike
+1073	suspender chest press
+10730	weighted sandbag romanian deadlift
+10731	l sit rope climb
+10732	side to side jump over stepbox
+10733	balance board single leg balance
+10734	balance pad single leg balance
+10735	hanging alternating knee raise
+10736	headbanger
+10738	box jump through the arms
+10739	lying single arm triceps stretch
+1074	suspender fly
+10740	stick lying single arm triceps stretch
+10741	resistance band standing single arm triceps stretch
+10742	lying single arm slide from y to t
+10743	kneeling to box jump
+10744	resistance band seated single leg hamstring stretch
+10745	seated single leg half circle
+10746	resistance band seated single leg knee extension
+10747	quick feet in out run
+10748	standing single leg front back side to side toe tap
+10749	walk leg kick
+1075	suspender front raise
+10750	kneeling to stand
+10751	calf jump
+10752	bodyweight jefferson curl
+10753	resistance band seated knee raise
+10754	single leg calf jump
+10755	single leg calf jump step box supported
+10756	calf forward jump
+10757	calf side to side jump
+10758	medicine ball skater hop
+10759	high knee walk
+1076	suspension hamstring runner
+10760	resistance band toe walk
+10761	resistance band toe side walk
+10762	toe side walk
+10763	lever seated single leg curl (plate loaded)
+10764	sled lying single leg squat
+1077	suspension hip abduction
+1078	suspension hip bridge
+10780	lying neck flexion
+10781	lying neck extension
+1079	suspension hyperextension
+1080	suspension inverted row
+1081	suspension jackknife pike
+10817	dumbbell wrist rotation
+10818	4 way single leg hop v. 2
+10819	split stance single leg calf raise
+1082	suspension jackknife
+10820	resistance band standing balance bent leg hip abduction
+1083	suspension leg curl
+1084	suspension mountain climber
+10847	pilates machine lying frog and leg circle
+10848	pilates machine lying running
+10849	pilates machine lying pelvic lift
+10850	pilates machine side split
+10851	pilates machine russian squat
+10852	pilates machine russian split
+10853	pilates machine long spine
+10854	pilates machine arm circle
+10855	pilates machine chest expansion
+10856	pilates machine overhead
+10857	barbell jefferson curl
+10858	dumbbell lu raise
+10859	standing floor tibialis raise wall supported
+1086	suspension power pull
+10860	cable side leg kick from back
+10861	weighted ball reverse hyperextension on ghd
+10862	bodyweight single leg deadlift against ball
+10863	smith seated single arm neutral grip shoulders press
+10864	high box step up
+10865	dumbbell single leg romanian deadlift on bench
+10866	lever bent over single arm lats focused row
+10867	lever incline prone neutral grip row
+10868	bosu ball squat
+10869	bosu ball single leg squat
+1087	suspension pull through
+10870	resistance band glute bridge walk
+10871	weighted plate crunch (hands overhead)
+10873	dumbbell weighted crunch (hands overhead)
+10875	weighted plate 45 degrees side bend
+10877	weighted plate crunch (hands overhead) v. 2
+10879	weighted dumbbell crunch (hands overhead) v. 2
+1088	suspension pull up
+10882	kneeling plyo push up
+10890	elastic bed toe jump
+10899	resistance band lying abduction
+1090	suspension reverse fly
+10901	dumbbell single arm shrug
+10902	eccentric single arm pull up
+10903	resistance band assisted single arm pull up v. 2
+10904	hamstring bridge v. 2
+10905	hamstring bridge leg kick v. 2
+10906	bodyweight split squat hold
+10907	bodyweight half split squat hold
+10908	seated single leg foot circle
+10909	seated feet circle
+1091	suspension rollout
+10910	seated single leg foot side to side
+10911	seated squeezing toes
+10912	seated single leg squeezing toes
+10913	lying single leg raise
+10914	bodyweight quarter squat
+10915	bodyweight single leg deadlift hold
+10916	bodyweight single leg deadlift toe touch
+10917	seated single leg tibialis press v. 2
+10918	seated single leg squeezing toes v. 2
+10919	seated single leg foot side to side v. 2
+10920	seated single leg toes press
+10921	resistance band seated single leg knee extension hold
+10922	standing back achilles stretch
+10925	two to one leg jump
+10926	standing wall slide quarter squat hold
+10927	standing forward slide press with towel
+10928	standing wall serratus slide with towel
+10929	standing internal rotation slide with towel
+1093	suspension self assisted chest dip
+10930	standing external rotation slide with towel
+10931	standing external rotation behind back with towel
+10932	shoulder stretch behind the back with towel
+10933	side lying external rotation
+10934	bodyweight side lying shoulder external rotation
+10935	stick shoulder mobilization in abduction behind back
+10936	stick shoulder rotation over head
+10937	standing wall shoulder rotation
+1094	suspension self assisted pull up
+10948	scapular pull up swing
+10949	dumbbell straight arm bicep swing
+1095	suspension self assisted triceps dip
+10950	ring long arms push up hold
+10951	l sit leg raise
+1096	suspension shoulder external rotation
+1097	suspension side bend
+10977	dumbbell hyperextension v. 2
+1098	suspension side bridge
+10987	dumbbell jump box
+10988	dumbbell kneeling to jump box
+10989	tuck planche on parallette
+1099	suspension single leg split squat (self assisted)
+10995	forward and backward crab walk
+10997	wall assisted handstand to tuck planche negative
+10998	wall facing single leg split handstand hold
+1100	suspension single leg split squat
+11006	seated arm crossover and chest out on a chair
+1101	suspension single leg squat
+11010	hip lift low back off floor
+11014	dumbbell underhand front raise
+11015	scapular pull up v. 2
+11016	dumbbell half kneeling single arm shoulder press
+11017	dumbbell kneeling single arm shoulder press
+1102	suspension straight hip leg curl
+1103	suspension triceps dip
+1104	suspension triceps extension v. 2
+11047	lying abduction
+11048	seated bent knee abduction
+11049	seated bent knee abduction feet floor off
+1105	suspension twist
+11050	resistance band seated bent knee abduction feet floor off
+11051	cable standing high cross neutral grip triceps extension
+11053	smith staggered stance hip thrust
+11054	lever staggered stance hip thrust (plate loaded)
+11055	lever belt sumo deadlift (v bar)
+11056	lever seated scapular retraction (plate loaded)
+11057	cable seated scapular retraction
+11058	dumbbell hip supported romanian deadlift
+11059	resistance band kneeling leg kickback on bench
+1106	suspender twisting jackknife
+11060	cable face pull with external rotation
+1107	suspender y lateral raise
+11077	dumbbell over the chest lying abduction
+1108	suspender arm curl to ears
+11088	reverse lunge arm reach twist
+11089	split stretch spine rolling
+1109	suspender biceps clutch
+11090	negative front lever raise
+11091	single arm hanging toes to bar
+11092	landmine kneeling 180s
+11093	barbell 2 3 deadlift
+11095	sitting cat cow stretch on a chair
+1110	suspender body saw
+1111	suspender close grip chest press
+1112	suspender crunch
+1113	suspender face pull
+1115	suspender handstand push up
+1116	suspender incline push up
+1117	suspender jump squat
+1119	suspender lunge back crossover
+1120	suspender middle row
+1121	suspender mountain climber push up
+1122	suspender oblique rollout
+1123	suspender one arm biceps curl
+1124	suspender one arm chest press
+1125	suspender one arm leg push up
+11250	cable standing fly v. 3
+11251	cable kneeling woodchop v. 3
+11252	cable overhead squat v. 3
+11253	cable kneeling pulldown v. 3
+11254	cable standing reverse fly v. 3
+11255	cable lateral lunge v. 3
+11256	cable bench press v. 3
+11257	cable seated high row v. 3
+11258	cable standing push pull v. 3
+11259	cable standing hip extension v. 3
+1126	suspender one leg chest press
+11260	cable kneeling military press v. 3
+11261	cable standing biceps curl (rope attachment) v. 3
+11262	cable lying alternating bent leg jackknife v. 3
+11263	cable single arm row with rotation v. 3
+11264	cable incline bench press v. 3
+11265	cable standing hip flexion v. 3
+11266	cable standing hip abduction v. 3
+11267	cable standing hip adduction v. 3
+11268	cable squat v. 3
+11269	cable bent over single arm row v. 3
+1127	suspender pull up v. 2
+11270	cable kneeling crunch v. 3
+11271	cable standing torso twist v. 3
+11272	cable standing biceps curl to arnold press v. 3
+11273	cable lying fly v. 3
+11274	cable standing alternating diagonal chest press v. 3
+11275	cable side plank row v. 3
+11276	cable prone single leg curl v. 3
+11277	cable standing front raise v. 3
+11278	cable standing side bend v. 3
+11279	cable standing single arm overhead triceps extension v. 3
+1128	suspender push up
+11282	glute ham developer straight arms sit up
+11283	criss cross tuck jump
+11284	kettlebell single arm alternate fly
+11285	resistance band lying floor chest press
+11286	kettlebell half kneeling side lunge
+11287	kettlebell standing behind back romanian deadlift
+11288	bodyweight standing overhead shrug
+11289	standing ankle and hip drill
+1129	suspender rear lunge
+1130	suspender reverse fly wake up
+11303	smith bench squat
+11309	lever single arm reverse grip lateral pulldown (plate loaded)
+1131	suspender side cross lunge
+11315	incline close grip push up with chair against wall
+11316	standing wall slide half squat
+11317	weighted plate hyperextension v. 2
+1132	suspender side lunge
+1133	suspender single arm rear delt row
+1134	suspender single leg plank straight arm
+1135	suspender single leg plank
+1136	suspender single leg squat figure
+1137	suspender sit up
+11374	sleepers stretch
+1138	suspender spiderman push up
+11383	wrist extensor stretch
+1139	suspender split fly
+1140	suspender sprinter
+1141	suspender squat arms overhead
+1143	suspender squat
+11436	cable standing neutral grip overhead triceps extension
+1144	suspender standing ab rollout
+1145	suspender star plank
+11450	step up (1st and 2nd stairs steps)
+11451	standing wall slide half squat hold
+11452	calves stretch v. 2
+1146	suspender star push up
+1147	suspender supine crunch
+1148	suspender supine plank
+1149	suspender triceps extension push up
+1150	suspender triceps kickback
+1151	suspender twist side
+1152	suspender twist up
+11529	lever belt single leg romanian deadlift
+1153	suspender upper back stretch
+1154	suspender calf raise
+1155	suspender single leg deadlift
+1156	suspender pendulum
+11567	lever lying leg curl to reverse hyperextension
+11568	smith unilateral bulgarian split squat from deficit
+11569	resistance band standing side leg raise
+1157	suspender hip hinge
+11570	resistance band standing hip extension
+11571	butt walking
+11572	lying thoracic extensions on foam roller
+1158	suspender side stretch
+1159	suspender abduction lunge
+1160	burpee
+1161	rowing (with rowing machine)
+1162	barbell standing military press
+1163	lying leg raise
+1164	smith calf raise v. 2
+11644	resistance band side lying hip abduction
+11645	static quadriceps contraction (isometric)
+11646	static glutes contraction (isometric)
+11647	single leg pogo jump
+11648	floor w raise
+11649	bent knee calves stretch
+1165	barbell standing military press (without rack)
+11650	seated single leg calf raise on a chair
+11651	seated patella mobilization
+11652	sciatic nerve glide floss
+11653	standing glute squeeze
+11654	seated knee down
+11656	hydrotherapy walking on spot
+11657	weighted plate overhead reverse lunge
+1166	jump split
+1167	dynamic chest stretch (male)
+1168	lying (prone) abdominal stretch
+1169	seated groin stretch
+1170	45 degree one leg hyperextension (arms in front of chest)
+1171	45 degree twisting hyperextension
+11714	bodyweight rope pull up
+11715	bodyweight rope inverted row
+11716	weighted stone standing power overhead press
+11717	plyo push up v. 2
+11718	lever incline chest supported reverse delt fly (plate loaded)
+1172	assisted weighted push up
+1173	barbell incline wide reverse grip bench press
+1174	diamond push up (on knees)
+1175	dumbbell forward leaning lunge
+1176	dumbbell incline front raise
+11762	smith bent over row (chest supported)
+11763	cable seated incline curl
+11764	cable standing single arm supinated grip chest press
+1177	dumbbell lying hammer press v. 2
+1178	dumbbell standing single leg calf raise
+11781	jump step box
+11782	lateral jump
+11783	explosive fingers
+11784	explosive hang squat
+11785	internal rotation shoulders mobilization
+11786	seated radial nerve mobilization
+11787	seated median nerve mobilization
+11788	seated ulnar nerve mobilization
+11789	barbell staggered stance stiff legged deadlift
+1179	flutter kicks v. 2
+11790	balance 3 point toe tap
+11791	single arm fingers press with ball
+11792	kneeling isometric biceps hold
+11793	external press shoulders mobilization
+11794	single arm fingers press with ball v. 2
+11795	backward press shoulders mobilization
+11796	external rotation shoulders mobilization
+11797	forward press shoulders mobilization
+11798	bent over back to side to front arms raise
+11799	dumbbell bent over back to side to front arms raise
+1180	lying simultaneous alternating straight leg raise
+11800	dumbbell lying single straight arm press on floor
+11801	lying single leg quadriceps mobilization
+1181	lying straight leg raise v. 2
+1182	push up (on knees)
+1183	smith kneeling rear kick
+1184	weighted inverted row
+1186	alternate straight leg raise (on bosu ball)
+11864	dumbbell single arm curl with isometric hold
+1187	kettlebell sit up
+11877	hanging l sit
+11878	stall bar leg raise
+11879	smith step up
+1188	weighted twisting crunch (on bench)
+11880	lever t bar close grip row (plate loaded)
+1189	weighted v crunch (on bosu ball)
+1190	incline twisting sit up v. 2
+11903	standing hip flexors stretch
+11904	standing half kneeling hip flexors stretch
+1191	triceps press (head below bench)
+1193	iron cross plank
+1194	lever lying t bar row
+1195	lever incline hammer chest press
+11954	lying pretzel stretch
+1196	dumbbell alternate biceps curl v. 2
+1197	squat
+1198	jumping pull up
+1199	sumo deadlift high pull
+1200	push press
+1201	dumbbell burpee
+12018	kettlebell standing slingshots (advanced)
+1202	cable horizontal pallof press
+1203	cable one arm inner biceps curl
+1204	cable one arm lat pulldown
+1205	cable one arm twisting seated row
+1206	cable pull through
+1207	cable twist (down up)
+1208	cable twist (up down) v. 2
+1209	cable twisting overhead press
+1210	cable twisting standing high row
+1211	cable twisting standing one arm chest press
+1212	cable twisting standing row
+1213	cable vertical pallof press
+1214	dumbbell incline reverse grip 30 degrees bench press
+1215	dumbbell side lunge
+1216	lever seated one leg calf raise
+1220	lever calf raise (bench press machine)
+1221	lever shrug (bench press machine)
+1222	assisted close grip underhand chin up
+1223	underhand grip inverted back row
+1224	smith standing shoulder press
+1225	standing plate presses
+1226	ez barbell standing overhead press
+1227	cable standing one arm triceps pushdown (overhand grip)
+1228	dumbbell standing inner biceps curl
+1229	cable standing lat pushdown (rope equipment)
+1230	dumbbell standing alternate vertical front raises
+1231	dumbbell seated one arm shoulder press
+1232	lever seated squat
+1233	dumbbell incline alternate hammer curl
+1234	plate hyperextension
+1235	lever one arm seated row (seated row machine)
+1236	dumbbell one arm row (rack support)
+1237	lever row (plate loaded)
+1238	cable seated row (bent bar)
+1241	bird dog
+1242	crunch (on bosu ball)
+1243	dead bug v. 2
+1244	flutter kicks v. 3
+1245	lying leg raise and hold
+1246	hollow hold
+1247	russian twist (with medicine ball)
+1248	half wipers (bent leg)
+1249	wipers (straight leg)
+1250	weighted crunch (behind head)
+1253	lever donkey calf raise
+1254	band bench press
+1255	barbell decline pullover
+1256	barbell reverse grip decline bench press
+1257	barbell reverse grip incline bench press
+1258	barbell wide reverse grip bench press
+1259	behind head chest stretch
+1260	cable decline one arm press
+1261	cable decline press
+1262	cable one arm decline chest fly
+1263	cable one arm fly on exercise ball
+1264	cable one arm incline fly on exercise ball
+1265	cable one arm incline press
+1266	cable one arm incline press on exercise ball
+1267	cable one arm press on exercise ball
+1268	cable press on exercise ball
+1269	cable standing up straight crossovers
+1270	cable upper chest crossovers
+1271	chest and front of shoulder stretch
+1272	chest stretch with exercise ball
+1273	clap push up
+1274	deep push up
+1275	drop push up
+1276	dumbbell decline one arm fly
+1277	dumbbell fly on exercise ball
+1278	dumbbell incline fly on exercise ball
+1279	dumbbell incline one arm fly
+1280	dumbbell incline one arm fly on exercise ball
+1281	dumbbell incline one arm press
+1282	dumbbell incline one arm press on exercise ball
+1283	dumbbell incline press on exercise ball
+1284	dumbbell lying pullover on exercise ball
+1285	dumbbell one arm bench fly
+1286	dumbbell one arm chest fly on exercise ball
+1287	dumbbell one arm decline chest press
+1288	dumbbell one arm fly on exercise ball
+1289	dumbbell one arm incline chest press
+1290	dumbbell one arm press on exercise ball
+1291	dumbbell one arm pullover on exercise ball
+1292	dumbbell one leg fly on exercise ball
+1293	dumbbell press on exercise ball
+1294	dumbbell pullover hip extension on exercise ball
+1295	dumbbell pullover on exercise ball
+1296	exercise ball pike push up
+1297	isometric chest squeeze
+1298	kettlebell one arm floor press
+1299	lever incline chest press
+1300	lever decline chest press
+1301	machine inner chest press
+1302	medicine ball chest pass
+1303	medicine ball chest push from 3 point stance
+1304	medicine ball chest push multiple response
+1305	medicine ball chest push single response
+1306	plyo push up
+1307	push up on bosu ball
+1308	smith wide grip bench press
+1309	smith wide grip decline bench press
+1310	weighted drop push up
+1311	wide hand push up
+1312	medicine ball chest push with run release
+1313	lever unilateral row
+1314	back extension on exercise ball
+1315	back relaxation
+1316	barbell bent arm pullover
+1317	barbell reverse grip incline bench row
+1318	cable incline bench row
+1319	cable palm rotational row
+1320	cable rope crossover seated row
+1321	cable rope elevated seated row
+1322	cable rope extension incline bench row
+1323	cable rope seated row
+1324	cable upper row
+1325	cable wide grip rear pulldown behind neck
+1326	chin-up
+1327	close grip chin-up
+1328	dumbbell lying rear delt row
+1329	dumbbell palm rotational bent over row
+1330	dumbbell reverse grip incline bench one arm row
+1331	dumbbell reverse grip incline bench two arm row
+1332	exercise ball alternating arm ups
+1333	exercise ball back extension with arms extended
+1334	exercise ball back extension with hands behind head
+1335	exercise ball back extension with knees off ground
+1336	exercise ball back extension with rotation
+1337	exercise ball back stretch
+1338	exercise ball hug
+1339	exercise ball lat stretch
+1340	exercise ball lower back prone stretch
+1341	exercise ball lower back stretch (pyramid)
+1342	exercise ball lying side lat stretch
+1343	exercise ball prone leg raise
+1344	ez bar reverse grip bent over row
+1345	kettlebell two arm row
+1346	kneeling lat stretch
+1347	lever one arm lateral wide pulldown
+1348	lever reverse grip vertical row
+1349	lever reverse t-bar row
+1350	lever seated row
+1351	lever t-bar reverse grip row
+1352	lower back curl
+1353	medicine ball catch and overhead throw
+1354	medicine ball overhead slam
+1355	one arm against wall
+1356	lever one arm lateral high row
+1357	one handed hang
+1358	side lying floor stretch
+1359	smith bent over row
+1360	smith one arm row
+1361	smith reverse grip bent over row
+1362	sphinx
+1363	spine stretch
+1364	standing pelvic tilt
+1365	upper back stretch
+1366	upward facing dog
+1367	wide grip rear pull-up
+1368	ankle circles
+1369	band two legs calf raise - (band under both legs) v. 2
+1370	barbell floor calf raise
+1371	barbell seated calf raise
+1372	barbell standing calf raise
+1373	bodyweight standing calf raise
+1374	box jump down with one leg stabilization
+1375	cable standing calf raise
+1376	cable standing one leg calf raise
+1377	calf stretch with hands against wall
+1378	calf stretch with rope
+1379	dumbbell seated calf raise
+1380	dumbbell seated one leg calf raise - hammer grip
+1381	dumbbell seated one leg calf raise - palm up
+1382	exercise ball on the wall calf raise
+1383	hack calf raise
+1384	hack one leg calf raise
+1385	lever seated squat calf raise on leg press machine
+1386	one leg donkey calf raise
+1387	one leg floor calf raise
+1388	peroneals stretch
+1389	posterior tibialis stretch
+1390	seated calf stretch (male)
+1391	sled calf press on leg press
+1392	sled one leg calf press on leg press
+1393	smith one leg floor calf raise
+1394	smith reverse calf raises
+1395	smith seated one leg calf raise
+1396	smith toe raise
+1397	standing calves
+1398	standing calves calf stretch
+1399	bench dip on floor
+1400	squat side kick
+1401	muscle-up (on vertical bar)
+1402	l sit
+1403	neck side stretch
+1404	back stretch
+1405	back pec stretch
+1406	hamstring lying stretch
+1407	calf push stretch with hands against wall
+1408	band hip lift
+1409	barbell glute bridge
+1410	barbell lateral lunge
+1411	barbell palms down wrist curl over a bench
+1412	barbell palms up wrist curl over a bench
+1413	cable reverse one arm curl
+1414	dumbbell one arm reverse preacher curl
+1415	dumbbell one arm seated neutral wrist curl
+1416	exercise ball one leg prone lower body rotation
+1417	exercise ball one legged diagonal kick hamstring curl
+1418	hug keens to chest
+1419	iron cross stretch
+1420	kneeling jump squat
+1421	modified push up to lower arms
+1422	pelvic tilt into bridge
+1423	reverse hyper on flat bench
+1424	seated glute stretch
+1425	sled 45 degrees one leg press
+1426	smith seated wrist curl
+1427	straight leg outer hip abductor
+1428	wrist circles
+1429	wide grip pull-up
+1430	chest dip (on dip-pull-up cage)
+1431	assisted standing chin-up
+1432	assisted standing pull-up
+1433	smith front squat (clean grip)
+1434	smith low bar squat
+1435	barbell low bar squat
+1436	barbell high bar squat
+1437	dumbbell finger curls
+1438	kettlebell seated two arm military press
+1439	lever gripless shrug v. 2
+1440	plank arm lifts
+1441	dumbbell over bench one arm reverse wrist curl
+1442	dip hold
+1443	dumbbell lying pronated grip maltese hold
+1444	dumbbell bent arm pullover hold
+1445	dumbbell rdl stretch
+1446	barbell zercher squat hold
+1447	lever calf stretch (plate loaded)
+1448	barbell pullover hold
+1449	dumbbell incline 30 degrees flye hold
+1450	dumbbell flat flye hold
+1451	lever seated dip
+1452	lever seated crunch
+1453	lever seated twist
+1454	lever seated shoulder press
+1455	lever chest press v. 2
+1456	barbell standing close grip military press
+1457	barbell standing wide military press
+1458	ez barbell seated curls
+1459	dumbbell romanian deadlift
+1460	walking lunge
+1461	barbell full squat (back pov)
+1462	barbell full squat (side pov)
+1463	sled 45° leg press (side pov)
+1464	sled 45° leg press (back pov)
+1465	45 degree hyperextension (arms in front of chest) (side pov)
+1466	twist hip lift
+1467	push-up on lower arms
+1468	crab twist toe touch
+1469	lateral side plank (bent leg)
+1470	lateral side plank
+1471	inchworm
+1472	forward jump
+1473	backward jump
+1476	one leg squat
+1478	jack plank
+1479	lever incline chest press v. 2
+1480	biceps stretch behind the back
+1481	bow yoga pose
+1482	cobra yoga pose
+1483	full lotus yoga pose
+1484	locust yoga pose (iron man pose)
+1485	plow yoga pose
+1486	push up (with push up handles)
+1487	shoulder stand yoga pose
+1488	shoulder stretch behind the back
+1489	sissy squat
+1490	standing calf raise (on a staircase)
+1491	supine spinal twist yoga pose
+1492	triceps dip stretch
+1493	wheel pose yoga pose
+1494	butterfly yoga pose
+1495	oblique crunch v. 2
+1496	sledge hammer
+1497	barbell reverse band bench press
+1498	band decline sit up
+1499	band behind neck shoulder press
+1500	band upright row (under two feet)
+1501	band side plank row with partner
+1502	band pushdown
+1503	band pull apart
+1504	band skull crusher
+1505	band calf raise v. 3
+1506	band ez barbell close grip curl
+1507	band hip flexion
+1508	band lateral raise v. 2
+1509	barbell bench squat (with chains)
+1510	crossover reverse lunge
+1511	hamstring stretch
+1512	all fours squad stretch
+1513	band good morning
+1514	barbell quarter squat
+1515	barbell clean deadlift
+1516	barbell clean from blocks
+1517	barbell clean pull
+1518	barbell decline bench lunge
+1519	smith good morning off pins
+1520	barbell hang clean
+1521	barbell hang clean below the knees
+1522	barbell hang snatch
+1523	barbell hang snatch below the knees
+1524	barbell heaving snatch balance
+1525	barbell jerk dip squat
+1526	barbell muscle snatch
+1527	barbell olympic squat
+1528	barbell power clean from blocks
+1529	barbell power jerk
+1530	barbell power snatch
+1531	barbell power snatch from blocks
+1532	barbell romanian deadlift from deficit
+1533	barbell snatch
+1534	barbell snatch balance
+1535	barbell snatch deadlift
+1536	barbell snatch from blocks
+1537	barbell split clean
+1538	barbell split jerk
+1539	barbell split jump
+1540	barbell squat to shoulder press
+1541	barbell squat to upright row (thighs)
+1542	barbell stiff leg deadlift on bench
+1543	barbell stiff legged deadlift
+1544	barbell wide stance stiff leg deadlift
+1545	barbell full zercher squat
+1546	bodyweight wall squat
+1547	cable standing leg curl
+1548	chair leg extended stretch
+1549	double leg butt kick
+1550	dumbbell bench one leg squat
+1551	dumbbell decline bench lunge
+1552	dumbbell jumping squat
+1553	dumbbell lateral lunge with bicep curl
+1554	dumbbell split jump
+1555	dumbbell squat v. 2
+1556	dumbbell stiff leg deadlift on bench
+1557	dumbbell walking lunges
+1558	dumbbell wall squat
+1559	exercise ball hip flexor stretch
+1560	exercise ball seated hamstring stretch
+1561	exercise ball seated quad stretch
+1562	exercise ball wall squat
+1563	front back leg raises
+1564	intermediate hip flexor and quad stretch
+1565	kettlebell dead clean
+1566	kettlebell one arm overhead squat (thighs)
+1567	kettlebell open palm clean
+1568	kettlebell one arm swing
+1569	kettlebell one legged deadlift
+1570	knee tuck jump
+1571	lever one leg extension
+1572	lever seated one leg wide squat
+1573	lever seated one leg squat
+1574	lever seated wide squat
+1575	sled 45° narrow stance leg press
+1576	leg up hamstring stretch
+1577	lying hip flexor
+1578	one leg quarter squat
+1579	sled one leg hack squat
+1580	prisoner squat
+1581	bodyweight rear lunge
+1582	reclining big toe pose with rope
+1583	sled reverse hack squat
+1584	rocket jump
+1585	runners stretch
+1586	lever seated one leg curl
+1587	seated wide angle pose sequence
+1588	side to side box shuffle
+1589	single leg butt kick
+1590	lever lying single leg curl
+1591	single leg push off
+1592	single leg stride jump
+1593	sit squat
+1594	smith frankenstein squat
+1595	smith front squat
+1596	smith squat to bench
+1597	smith stiff legged deadlift
+1598	smith zercher squat
+1599	standing hamstring and calf stretch with strap
+1600	standing long jump
+1601	standing straight leg hamstring contract relax on exercise ball
+1602	transverse step up
+1603	weighted exercise ball wall squat
+1604	world greatest stretch
+1605	cable triceps pushdown (sz bar)
+1606	cable reverse grip triceps pushdown (sz bar)
+1607	cable biceps curl (sz bar)
+1608	cable standing reverse curl (sz bar)
+1609	cable one arm side triceps pushdown
+1610	barbell behind back finger curl
+1611	dumbbell behind back finger curl
+1612	swimmer hips
+1614	lever preacher curl v. 2
+1615	lever hammer grip preacher curl
+1616	lever reverse grip preacher curl
+1617	dumbbell decline one arm hammer press
+1618	dumbbell incline hammer press on exercise ball
+1619	dumbbell incline one arm hammer press
+1620	dumbbell incline one arm hammer press on exercise ball
+1621	dumbbell one arm hammer press on exercise ball
+1622	dumbbell one arm reverse grip press
+1623	dumbbell palms in incline bench press
+1624	dumbbell reverse bench press
+1625	smith machine decline close grip bench press
+1626	smith machine reverse decline close grip bench press
+1627	ez barbell close grip preacher curl
+1628	ez barbell spider curl
+1629	barbell standing wide grip biceps curl
+1630	cable close grip curl
+1631	cable concentration curl
+1632	cable drag curl
+1633	cable one arm preacher curl
+1634	cable lying bicep curl
+1635	cable one arm reverse preacher curl
+1636	cable overhead curl
+1637	cable overhead curl on exercise ball
+1638	cable pulldown bicep curl
+1639	cable rope hammer preacher curl
+1640	cable rope one arm hammer preacher curl
+1641	cable seated curl
+1642	cable seated one arm concentration curl
+1643	cable seated overhead curl
+1644	cable squatting curl
+1645	cable two arm curl on incline bench
+1646	dumbbell alternate hammer preacher curl
+1647	dumbbell alternate preacher curl
+1648	dumbbell alternate seated hammer curl
+1649	dumbbell alternating bicep curl with leg raised on exercise ball
+1650	dumbbell alternating seated bicep curl on exercise ball
+1651	dumbbell bicep curl lunge with bowling motion
+1652	dumbbell bicep curl on exercise ball with leg raised
+1653	dumbbell bicep curl with stork stance
+1654	dumbbell biceps curl reverse
+1655	dumbbell biceps curl squat
+1656	dumbbell biceps curl v sit on bosu ball
+1657	dumbbell cross body hammer curl v. 2
+1658	dumbbell lunge with bicep curl
+1659	dumbbell hammer curl on exercise ball
+1660	dumbbell kneeling bicep curl exercise ball
+1661	dumbbell lying supine biceps curl
+1662	dumbbell lying wide curl
+1663	dumbbell one arm hammer preacher curl
+1664	dumbbell high curl
+1665	dumbbell one arm prone curl
+1666	dumbbell one arm prone hammer curl
+1667	dumbbell one arm reverse spider curl
+1668	dumbbell one arm seated bicep curl on exercise ball
+1669	dumbbell one arm seated hammer curl
+1670	dumbbell one arm standing curl
+1671	dumbbell one arm standing hammer curl
+1672	dumbbell one arm zottman preacher curl
+1673	dumbbell preacher curl over exercise ball
+1674	dumbbell prone incline hammer curl
+1675	dumbbell reverse spider curl
+1676	dumbbell seated alternate hammer curl on exercise ball
+1677	dumbbell seated bicep curl
+1678	dumbbell seated hammer curl
+1679	dumbbell seated one arm bicep curl on exercise ball with leg raised
+1680	dumbbell standing one arm curl over incline bench
+1681	dumbbell two arm seated hammer curl on exercise ball
+1682	ez bar seated close grip concentration curl
+1683	smith machine bicep curl
+1684	dumbbell step up single leg balance with bicep curl
+1685	squat to overhead reach
+1686	squat to overhead reach with twist
+1687	posterior step to overhead reach
+1688	lunge with twist
+1689	push and pull bodyweight
+1692	sagittal plane lunge with overhead medicine ball press
+1693	medicine ball single leg deadlift
+1694	dumbbell overhead side lunge
+1695	stability ball single leg squat
+1696	transverse plane dumbbell lunge
+1697	medicine ball reverse wood chop squat
+1698	forward hops
+1699	medicine ball rotational throw
+1700	dumbbell push press
+1701	medicine ball close grip push up
+1702	single leg foot touch
+1703	single leg transverse bend
+1704	medicine ball single leg wood chop
+1705	squat on bosu ball
+1706	stability ball front plank
+1707	prone twist on stability ball
+1708	assisted lying calves stretch
+1709	assisted lying glutes stretch
+1710	assisted lying gluteus and piriformis stretch
+1711	assisted oblique glute minimus and medius stretch
+1712	assisted side lying adductor stretch
+1713	assisted prone lying quads stretch
+1714	assisted prone rectus femoris stretch
+1715	assisted oblique and latissimus dorsi stretch on stability ball
+1716	assisted seated pectoralis major stretch with stability ball
+1717	cable squat row (with rope attachment)
+1718	barbell seated close grip behind neck triceps extension
+1719	barbell incline close grip bench press
+1720	barbell lying back of the head tricep extension
+1721	barbell reverse grip skullcrusher
+1722	cable high pulley overhead tricep extension
+1723	cable one arm tricep pushdown
+1724	cable rope high pulley overhead tricep extension
+1725	cable rope incline tricep extension
+1726	cable rope lying on floor tricep extension
+1727	cable standing reverse grip one arm overhead tricep extension
+1728	cable two arm tricep kickback
+1729	dumbbell lying alternate extension
+1730	dumbbell seated bent over alternate kickback
+1731	dumbbell close grip press
+1732	dumbbell forward lunge triceps extension
+1733	dumbbell incline two arm extension
+1734	dumbbell kickbacks on exercise ball
+1735	dumbbell lying single extension
+1736	dumbbell one arm french press on exercise ball
+1737	dumbbell seated bent over triceps extension
+1738	dumbbell seated reverse grip one arm overhead tricep extension
+1739	dumbbell standing alternating tricep kickback
+1740	dumbbell standing bent over one arm triceps extension
+1741	dumbbell standing bent over two arm triceps extension
+1742	dumbbell tricep kickback with stork stance
+1743	dumbbell twisting bench press
+1744	exercise ball dip
+1745	exercise ball seated triceps stretch
+1746	exercise ball supine triceps extension
+1747	ez bar french press on exercise ball
+1748	ez bar lying close grip triceps extension behind head
+1749	ez bar standing french press
+1750	medicine ball supine chest throw
+1751	barbell pin presses
+1752	smith machine incline tricep extension
+1753	three bench dip
+1754	weighted three bench dips
+1755	weighted tricep dips
+1756	barbell single leg deadlift
+1757	dumbbell single leg deadlift
+1758	assisted sit-up
+1759	single leg squat (pistol) male
+1760	dumbbell goblet squat
+1761	hanging oblique knee raise
+1762	single leg squat with support (pistol)
+1763	shoulder grip pull-up
+1764	hanging leg hip raise
+1765	dumbbell upright row (back pov)
+1766	self assisted inverse leg curl
+1767	weighted triceps dip on high parallel bars
+1769	bodyweight side lying biceps curl
+1770	biceps leg concentration curl
+1771	bodyweight kneeling triceps extension
+1772	elbow lift - reverse push-up
+1773	one arm towel row
+1774	side bridge hip abduction
+1775	side plank hip adduction
+1776	lying single straight leg hip extension
+1777	above head chest stretch
+1778	assisted standing chest stretch
+1779	assisted seated chest stretch
+1780	bent arm chest stretch
+1781	corner wall chest stretch
+1782	reverse chest stretch
+1783	standing chest stretch (with training wall bars)
+1784	assisted pulling backs chest stretch
+1785	kneeling chest stretch
+1786	assisted trunk flex chest stretch
+1787	straight arms backward chest stretch
+1788	over head straight arm stretch
+1789	assisted straight arms lying stretch (chest)
+1790	assisted pulling arms in prone position chest stretch
+1791	trap and neck stretch
+1792	wrap around shoulder stretch
+1793	cross over shoulder stretch
+1794	reach forward upper back stretch
+1795	reaching upper back stretch
+1796	standing reach up back rotation stretch
+1797	reach up back stretch
+1798	lying whole body stretch
+1799	two handed hang back stretch (with training wall bars)
+1800	cable suspension back stretch
+1801	one arm lat stretch
+1802	side lat stretch
+1803	sitting lower trunk extensor stretch
+1804	seated lower trunk extensor lateral flexor stretch
+1805	sitting bent over back stretch
+1806	sitting side reach stretch
+1807	sitting cross legged reach forward stretch
+1808	reclining lower trunk extensor stretch
+1809	sitting feet together reach forward stretch
+1810	lying knee to chest stretch
+1811	standing knee to chest stretch
+1812	kneeling back rotation stretch
+1813	standing back rotation stretch
+1814	elbow flexor stretch
+1815	forearm pronator stretch
+1816	extension of arms in vertical stretch
+1817	arms stretch on a support
+1818	supination bar suspension stretch
+1819	suspension in pulley machine in supination stretch
+1820	ez bar preacher arms stretch
+1821	elbow extension and supination pronation forearm stretch
+1822	wrist ulnar deviator and extensor stretch
+1823	wrist radial deviator and extensor stretch
+1824	wrist radial deviator and flexor stretch
+1825	wrist ulnar deviator and flexor stretch
+1826	finger flexor stretch
+1827	finger extensor stretch
+1828	reaching down triceps stretch
+1829	triceps stretch against wall
+1830	elbow extensor anconeus stretch
+1831	rotating neck stretch
+1832	diagonal flexion neck stretch
+1833	neck extension stretch
+1834	neck protraction stretch
+1835	sitting neck flexion stretch
+1836	forward flexion neck stretch
+1837	neck extensor stretch
+1838	neck extensor and rotational stretch
+1839	neck flexor stretch
+1840	neck flexor and rotational stretch
+1841	lying neck extensor stretch
+1842	lying neck extension stretch
+1843	assisted rotating neck stretch
+1844	extension and inclination neck stretch
+1845	decline bent leg reverse crunch
+1848	calves stretch static position
+1850	wrist flexor stretch
+1851	incline push press
+1852	leg raise hip lift
+1854	leg raise slightly bent knee
+1855	leg raise hip lift with head up
+1856	lever lying leg raise (bent knee)
+1857	lever total abdominal crunch
+1858	lever decline sit up
+1859	cable kneeling triceps extension v. 2
+1860	hyperextension v. 2
+1861	cable curl with multipurpose v bar
+1862	lever cable shoulder press
+1863	lever cable rear pulldown
+1864	extra decline sit up
+1865	hammer grip pull up on dip cage
+1866	wide grip pull up on dip cage
+1867	lever seated hip adduction v. 2
+1868	barbell low bar squat (with rack)
+1869	lever seated hip abduction v. 2
+1870	lever lateral pulldown (plate loaded)
+1871	lever triceps dip (plate loaded)
+1872	lever preacher curl (plate loaded)
+1873	lever leg extension (plate loaded)
+1874	lever alternate leg extension (plate loaded)
+1875	lever squat (plate loaded)
+1876	lever lateral raise (plate loaded)
+1877	standing hip out aductor stretch
+1878	standing leg cross abductor stretch
+1879	standing leg resting hip stretch
+1880	leaning abductor stretch
+1881	standing leg under abductor stretch
+1882	lying abductor stretch
+1883	exercise ball lying abductor stretch
+1884	lying leg hang abductor stretch
+1885	standing toe up achilles stretch
+1886	single heel drop achilles stretch
+1887	standing heel back achilles stretch
+1888	standing achilles stretch
+1889	sitting toe pull achilles stretch
+1890	crouching heel back achilles stretch
+1891	toe squat stretch
+1892	kneeling heel down achilles stretch
+1893	squatting achilles stretch
+1894	standing wide knees adductor stretch
+1895	standing rotational hip stretch
+1896	standing raised leg hip adductor stretch
+1897	standing leg up adductor stretch
+1898	kneeling leg out adductor stretch
+1899	side lunge adductor stretch
+1900	standing bent knee hip adductor stretch
+1901	kneeling face down adductor stretch
+1902	sitting wide leg adductor stretch
+1903	hip abduction with flexion in front stretch
+1904	standing wide leg adductor stretch
+1905	lying leaning against the wall stretch
+1906	abduction of one leg flexion stretch
+1907	assisted lying adductors stretch
+1908	standing toe down hamstring stretch
+1909	standing toe up hamstring stretch
+1910	standing leg up hamstring stretch
+1911	raised leg knee flexor stretch
+1912	standing high leg bent knee hamstring stretch
+1913	kneeling toe up hamstring stretch
+1914	seated knee flexor and hip adductor stretch
+1915	seated knee flexor stretch
+1916	standing reach down hamstring stretch
+1917	standing reach down hamstring crossed legs stretch
+1918	seated hip external rotator and hip extensor stretch
+1919	seated hip stretch with opposite leg from behind
+1920	plantar flexion stretch
+1921	recumbent knee flexor stretch
+1922	recumbent knee flexor stretch with towel
+1923	assisted lying hamstring stretch
+1924	standing toe up calf stretch
+1925	single heel drop calf stretch
+1926	plantar flexor and foot everter stretch
+1927	plantar flexor and foot inverter stretch
+1928	tibial flexion stretch on wall bar
+1929	tibial stretch with semi flexed knee
+1930	crouching heel back calf stretch
+1931	hip and knee flexion squatting stretch
+1932	assisted lying hip stretch in supine position
+1933	seated knee up rotation stretch
+1934	seated knee up extended rotation stretch
+1935	lying cross over knee pull up stretch
+1936	lying cross over knee pull down stretch
+1937	seated bent knee to chest buttock stretch
+1938	seated hip stretch with slightly bent leg
+1939	recumbent hip external rotator and hip extensor stretch
+1940	sitting foot to chest buttocks stretch
+1941	standing hip adduction stretch
+1942	standing iliotibial stretch
+1943	pigeon hip stretch
+1944	hip external rotator stretch
+1946	standing leg tuck hip stretch
+1947	standing outer hip stretch
+1948	sitting rotational hip stretch
+1949	standing hip flexor stretch
+1951	sitting one leg external stretch
+1952	assisted one leg extension
+1953	supported one leg standing hip flexor and knee extensor stretch
+1954	quadriceps stretch on box
+1955	single lean back quadriceps stretch
+1956	double lean back quadriceps stretch
+1957	standing shin stretch
+1958	standing toe extensor stretch
+1959	raised foot shin stretch
+1960	double kneeling shin stretch
+1961	squatting toe stretch
+1962	seated toe extensor stretch
+1963	seated toe extensor and foot everter stretch
+1964	seated toe extensor and foot inverter stretch
+1965	seated toe flexor stretch
+1966	seated toe flexor and foot everter stretch
+1967	seated toe flexor and foot inverter stretch
+1968	standing toe flexor stretch
+1969	mobilization of ankle stretch
+1970	standing upright shoulders stretch
+1971	reverse shoulder stretch
+1972	sitting shoulders stretch on bench
+1973	assisted sitting reverse shoulder stretch
+1974	standing reverse shoulder stretch
+1975	seated shoulder flexor depressor retractor stretch
+1976	one arm shoulder flexor stretch
+1977	adduction of arm in back stretch
+1978	shoulder extensor adductor and retractor stretch
+1979	shoulder adductor elevator and protractor stretch
+1980	across chest shoulder stretch
+1981	bent arm shoulder stretch
+1982	rotation shoulder stretch
+1983	reaching up shoulder stretch
+1984	rotator cuff stretch
+1985	elbow out rotator stretch
+1986	arm up rotator stretch
+1987	arm down rotator stretch
+1988	kneeling one arm cross body stretch
+1989	depression in parallel bars stretch
+1990	external shoulder rotation stretch
+1991	internal shoulder rotation stretch
+1992	sled full hack squat
+2071	single leg hip thrusts
+2072	hip thrusts
+2087	shoulder adductor protractor and elevator stretch
+2088	shoulder stretch with towel behind the back
+2089	finger stretch
+2090	palms out forearm stretch
+2091	fingers down forearm stretch
+2092	wall flexors stretch
+2093	seated wrist ulnar deviator and flexor stretch
+2094	thumb stretch
+2095	finger extension stretch
+2096	flexion finger stretch
+2097	separation finger stretch
+2098	adduction hand with elbow extended stretch
+2099	recumbent hip external rotator and hip extensor stretch (crossed leg)
+2100	seated quadriceps stretch
+2101	front cross over shin stretch
+2102	sitting toe pull calf stretch
+2103	separation between fingers stretch
+2104	leaning heel back achilles stretch
+2105	lower trunk flexor stretch
+2106	cat stretch v. 2
+2107	cow stretch
+2108	standing lean back stomach stretch
+2109	kneeling abdominal stretch
+2110	standing abs rotation stretch
+2111	rotating stomach stretch
+2112	hip extension supported from back
+2113	standing lower trunk lateral flexor stretch
+2114	seated lower trunk lateral flexor stretch
+2115	hip extension on knees
+2116	lying knee roll over stretch
+2117	standing lateral side stretch
+2118	sitting lateral side stretch
+2119	standing side stretch
+2120	standing side stretch with stick
+2121	lateral bend lying down
+2122	assisted side bent
+2123	assisted obliques stretch
+2124	lateral bend on floor by kneeling
+2125	lateral stretch on floor lying down
+2127	weighted captain's chair leg raise
+2130	weighted decline crunch
+2133	farmers walk
+2135	weighted front plank
+2136	dumbbell cuban press v. 2
+2137	dumbbell arnold press
+2138	stationary bike run v. 3
+2139	hands bike
+2140	walk wave machine
+2141	walk elliptical cross trainer
+2142	ski ergometer
+2143	dumbbell standing around world
+2144	cable seated chest press
+2146	lever hip thrust
+2147	lever hip thrust with resistance band
+2148	lever single leg hip thrust
+2149	resistance band bent leg kickback (kneeling)
+2150	resistance band clam
+2151	resistance band external rotation
+2152	resistance band front plank with kicked leg
+2153	resistance band full squat
+2154	resistance band glute bridge
+2155	resistance band kneeling side plank
+2157	resistance band lying leg raise
+2158	resistance band one leg glute bridge with straight leg
+2159	resistance band one leg glute bridge
+2161	resistance band one leg kickback
+2162	resistance band plank march
+2163	resistance band reverse hyperextension
+2164	resistance band side plank
+2165	resistance band side walk
+2166	resistance band supine hip bridge march
+2186	ez barbell decline triceps extension
+2187	barbell reverse close-grip bench press
+2188	dumbbell seated triceps extension
+2189	dumbbells seated triceps extension
+2192	elliptical machine walk
+2193	bicycle recline walk
+2197	run on treadmill
+2198	lever triceps extension v. 3
+2200	roll hip thrust
+2202	roller hip stretch
+2203	roller seated shoulder flexor depresor retractor
+2204	roller body saw
+2205	roller hip lat stretch
+2206	roller reverse crunch
+2207	roller side lat stretch
+2208	roller back stretch
+2209	roller seated single leg shoulder flexor depresor retractor
+2224	sled 45 degrees leg press
+2234	dumbbell standing lateral raise
+2249	cable triceps pushdown (v bar)
+2258	walking
+2259	walking on treadmill
+2265	lever seated row v. 2
+2266	lever back extension v. 2
+2267	lever seated leg press
+2268	lever seated crunch (hands pad)
+2269	ab roller crunch
+2271	left hook. boxing
+2272	boxing jab
+2273	boxing right cross
+2274	boxing right uppercut
+2275	boxing left uppercut
+2276	lever lying crunch
+2277	lever chest press v. 4
+2278	lever decline chest press v. 2
+2279	stationary bike run v. 4
+2282	lever neck extension (plate loaded)
+2283	lever neck left side flexion (plate loaded)
+2284	lever neck right side flexion (plate loaded)
+2285	lever pullover
+2286	lever hip extension v. 2
+2287	lever alternate leg press
+2288	lever gripper hands
+2289	lever calf press
+2290	dumbbell bulgarian split squat
+2291	cable wide grip lat pulldown
+2292	dumbbell rear delt raise
+2293	dumbbell standing zottman preacher curl
+2294	dumbbell zottman preacher curl
+2296	stability ball rollout
+2297	stability ball crunch (full range hands behind head)
+2298	inverted row on bench
+2300	inverted row bent knees
+2301	rear leg hook kick
+2302	front leg hook kick
+2303	front groin kick
+2304	rear axe kick
+2305	front snap kick
+2306	spin hook kick
+2307	side kick
+2308	roundhouse kick
+2309	heel push kick
+2310	spin back kick
+2311	walking on stepmill
+2312	lying elbow to knee
+2314	lever lying crunch v. 2
+2315	lever rotary calf
+2317	dumbbell seated bent arm lateral raise
+2318	lever shoulder press v. 3
+2321	dumbbell standing inner biceps curl v. 2
+2323	dumbbells sumo squat
+2324	cable straight legs pull through (with rope)
+2325	dumbbell pronated to neutral grip row
+2326	dumbbell pronated grip row
+2327	dumbbell reverse grip row (female)
+2328	narrow push-up on exercise ball
+2329	spine twist
+2330	cable lat pulldown full range of motion
+2331	cycle cross trainer
+2333	arm slingers hanging straight legs
+2334	sled lying calf press
+2335	lever seated calf press
+2336	barbell chest bench press forearms (form check)
+2337	dumbbell chest fly arms (form check)
+2338	chest bench press butt (form check)
+2339	chest bench press grip width (form check)
+2340	chest bench press shoulders (form check)
+2341	chest bench press arms (form check)
+2342	chest bench press elbows (form check)
+2343	bent over row back (form check)
+2344	crunch back (form check)
+2345	sled hack squat legs (form check)
+2346	bench dip back arms (form check)
+2347	front plank butt (form check)
+2348	preacher curl wrists (form check)
+2349	side plank butt (form check)
+2350	push up start position (form check)
+2351	push up end position (form check)
+2352	biceps curl arms body (form check)
+2353	concentration curl arms (form check)
+2354	deadlift back (form check)
+2355	arm slingers hanging bent knee legs
+2357	deadlift hips (form check)
+2358	plank butt (form check)
+2359	barbell squat knees end position (form check)
+2360	squat knees middle position (form check)
+2361	barbell squat hips (form check)
+2362	squat back (form check)
+2363	wide-grip chest dip on high parallel bars
+2364	assisted wide-grip chest dip (kneeling)
+2365	dumbbells straight arm pullover v. 2
+2367	dumbbell rear lunge from step
+2368	split squats
+2371	weighted russian twist v. 2
+2375	single leg squat with support
+2381	dumbbell one arm shoulder press v. 3
+2393	dumbbell one arm bent over row
+2394	floor hyperextension
+2395	air bike v. 2
+2396	cable lying biceps curl v. 2
+2397	dumbbell scott press
+2398	close-grip push-up (on knees)
+2399	cable seated twist
+2400	inverse leg curl (on pull-up cable machine)
+2401	dumbbell biceps curl (with arm blaster)
+2402	dumbbell hammer curls (with arm blaster)
+2403	dumbbell alternate biceps curl (with arm blaster)
+2404	ez-bar biceps curl (with arm blaster)
+2405	cable triceps pushdown (v-bar) (with arm blaster)
+2406	cable reverse grip triceps pushdown (sz-bar) (with arm blaster)
+2407	barbell biceps curl (with arm blaster)
+2408	weighted lying neck extension (with head harness)
+2409	weighted lying neck flexion (with head harness)
+2410	weighted standing neck extension (with head harness)
+2411	cable seated neck extension (with head harness)
+2412	cable seated neck flexion (with head harness)
+2413	barbell wide grip drag curl
+2414	barbell standing concentration curl
+2415	dumbbell single arm leaning lateral raise
+2417	resistance band duck walk
+2418	resistance band bent leg side kick (kneeling)
+2419	resistance band leg lift
+2420	resistance band air bike
+2423	resistance band floor hyperextension
+2424	resistance band lunge
+2425	resistance band calf raise
+2429	frog crunch
+2431	dumbbell sumo squat off benches
+2432	ez-bar close-grip bench press
+2434	cable seated twist on floor
+2458	wall ball
+2459	tire flip
+2461	side lying clam
+2462	chest dip on straight bar
+2463	resistance band toe touch
+2464	cable thibaudeau kayak row
+2465	resistance band jumping jack
+2466	bridge - mountain climber (cross body)
+2468	dumbbell lateral step up
+2469	exercise ball frog crunch
+2470	dumbbell lying on floor rear delt raise
+2471	glute bridge two legs on floor
+2473	glute bridge one leg on bench
+2474	glute bridge one leg on floor (straight leg)
+2475	glute bridge one leg on floor (bent knee)
+2485	dumbbell hammer curl v. 3
+2487	dumbbell rear delt fly
+2500	dumbbell incline rear fly
+2509	barbell reverse grip incline row
+2511	dumbbell reverse grip incline row
+2515	cable front raise v. 2
+2523	decline twisting sit up
+2525	vibrate plate standing
+2526	vibrate plate plank
+2527	vibrate plate lunge
+2544	cable wide grip rear pulldown behind neck v. 2
+2555	resistance band glute bridge v. 2
+2560	bench full squat
+2561	side up jump top bench
+2562	side jump step up
+2563	power sled pull row
+2564	jack plank on medicine ball
+2566	dumbbell bent arm pullover with knees bent
+2567	seated piriformis stretch
+2569	cossack squats
+2570	bent leg circle kick (kneeling)
+2571	rocking frog stretch
+2572	roll overs into v sits
+2589	dumbbell lying triceps extension v. 2
+2611	lever horizontal one leg press
+2612	jump rope
+2616	cable lateral pulldown with v-bar
+2656	cable one arm biceps curl v. 2
+2658	elliptical machine skiing
+2659	lever incline chest press (plate loaded)
+2660	lever preacher curl (plate loaded) v. 2
+2661	cable seated row with v bar
+2662	lever high row (plate loaded) v. 2
+2663	lever high row (plate loaded) v. 3
+2664	lever seated row (plate loaded)
+2665	lever lateral wide pulldown
+2666	lever seated calf raise (plate loaded) v. 2
+2671	smith narrow row v. 2
+2683	barbell reverse wrist curl v. 2
+2689	cable one arm front raise
+2690	dumbbell one arm lateral raise v. 2
+2705	dumbbell lying pronation on floor
+2706	dumbbell lying supination on floor
+2707	strongman log lift
+2708	strongman mas wrestling
+2709	strongman arm over arm
+2710	strongman truck pull
+2711	strongman duck walk
+2712	strongman sandbag walk
+2713	strongman iron block press
+2714	strongman iceland cross
+2715	strongman timber carry
+2716	strongman circle of conan
+2717	strongman crucifix hold
+2718	strongman front hold
+2719	strongman viking press
+2720	strongman squats with platform
+2721	strongman loading
+2722	strongman hood stones
+2723	strongman wheelbarrow
+2724	strongman atlas stones
+2725	strongman power stairs
+2726	strongman hercules hold
+2727	strongman shield carry
+2728	strongman front chest squat
+2729	strongman deadlift
+2730	strongman tire flip
+2731	strongman weight for height
+2732	strongman dumbbell one arm clean and jerk
+2733	strongman apollons axle
+2734	strongman barbell farmers walk
+2735	strongman yoke walk
+2736	lever reverse grip lateral pulldown
+2737	standing hip extension (straight leg)
+2738	dumbbell lying triceps extension on floor
+2740	wide push up (wall)
+2741	ez-barbell standing wide grip biceps curl
+2742	lever hip thrust (with stepbox) v. 2
+2743	lever hip thrust v. 2
+2744	cable standing hip thrust
+2745	smith reverse hyperextension
+2746	lever abduction squat
+2747	lever adduction thrust
+2748	lever kneeling reverse hyperextension
+2749	lever assisted leg press
+2750	dumbbell single leg deadlift with wall support
+2751	kettlebell dumbbell sumo squat off stepbox
+2752	split squat v. 2
+2753	kettlebell resistance band full squat from deficit
+2754	weighted hip thrusts
+2755	cable hip abduction (toe out)
+2756	cable hip abduction (toe in)
+2757	frog hip thrust
+2758	cable stand up
+2760	resistance band hip thrust
+2761	ankle dorsal flexion
+2762	ankle plantar flexion
+2763	elbow extension
+2764	elbow flexion
+2765	forearm pronation
+2766	forearm supination
+2767	hip abduction
+2768	hip adduction
+2769	hip extension
+2770	hip flexion
+2771	hip lateral rotation (external rotation)
+2772	hip medial rotation (internal rotation)
+2773	knee extension
+2774	knee flexion
+2775	shoulder abduction
+2776	shoulder adduction
+2777	shoulder extension
+2778	shoulder flexion
+2779	shoulder lateral rotation (external rotation)
+2780	shoulder medial rotation (internal rotation)
+2781	shoulder transverse abduction
+2782	shoulder transverse adduction
+2783	shoulder transverse extension
+2784	shoulder transverse flexion
+2785	spine (lumbar) extension
+2786	spine (lumbar) flexion
+2787	spine (lumbar) lateral flexion
+2788	spine (lumbar) rotation
+2789	wrist adduction
+2790	wrist extension
+2791	wrist flexion
+2792	plank jump
+2793	plank walk up
+2795	dumbbell step up lunge
+2796	dumbbell step-up lunge
+2797	barbell squat jump step rear lunge v. 2
+2798	barbell squat jump step rear lunge
+2799	barbell sitted alternate leg raise
+2800	barbell sitted alternate leg raise (female)
+2801	twisted leg raise (female)
+2802	twisted leg raise
+2803	dumbbell supported squat
+2804	dumbbell supported squat v. 2
+2805	dumbbell single leg deadlift with stepbox support
+2806	dumbbell single leg deadlift with stepbox support v. 2
+2807	dumbbell sumo pull through v. 2
+2808	dumbbell sumo pull through
+2809	barbell split squat v. 3
+2810	barbell split squat v. 2
+2811	barbell leg twist press
+2812	dumbbell step-up split squat
+2814	one arm twisted clean and press
+2815	v up down (with stability ball)
+2828	battling ropes side raise
+2830	power sled rear lunge
+2831	pike push up (on bench)
+2834	suspender weighted inverted row
+2835	cable narrow chair stand up
+2836	cable stiff leg deadlift from stepbox
+2837	cable rear lunge from stepbox
+2838	bicycle
+2839	chest lift with rotation
+2840	control balance
+2841	corkscrew
+2842	crab
+2843	double leg stretch
+2844	floor hyperextension v. 2
+2845	hip twist supported arms
+2846	hundred
+2848	leg pull side
+2849	leg pull
+2850	leg raise (bent knee)
+2851	lying double leg kick
+2852	lying leg lift side
+2853	lying neck pull
+2854	lying single leg circle
+2855	lying single leg kick
+2856	rocker with open legs
+2857	rocking
+2858	roll up v. 2
+2859	rolling back
+2860	rollover
+2861	saw
+2862	scissors
+2863	shoulder bridge
+2864	side bend
+2866	side twist
+2868	spine twist v. 2
+2869	swan dive
+2870	swimming
+2871	teaser
+2872	single leg stretch (bent knee) v. 2
+2873	spine stretch forward v. 2
+2874	leg pull front supported
+2875	side kick kneeling
+2876	boomerang
+2877	seal
+2878	prone press swan
+2879	mermaid
+2880	swimming all fours
+2887	cable hanging leg raise
+2889	starfish crunch (advanced)
+2890	front plank to push up
+2891	flutter kicks (hands under hips head up)
+2892	scissors (beginner)
+2894	front plank with arm lift
+2895	front plank with arm lift (push up position)
+2897	front plank with arm and leg lift (push up position)
+2899	side plank (beginner)
+2900	ez barbell standing preacher curl
+2901	power sled biceps curl
+2902	power sled rear lunge row
+2903	power sled rear lunge v. 2
+2904	power sled rear batwing
+2905	power sled rear fly
+2906	power sled rear drag
+2907	power sled backward push
+2908	power sled anti rotation forward walk
+2909	power sled high pull
+2910	dumbbell suitcase carry
+2911	dumbbell high low carry
+2912	trap bar farmers carry
+2913	dumbbell overhead carry
+2914	barbell overhead carry
+2915	barbell zercher carry
+2916	kettlebell goblet carry
+2917	dumbbell farmers carry
+2918	barbell suitcase carry
+2919	smith hex press
+2920	single leg bodyweight deadlift with arm and leg extended
+2921	pike push up
+2922	bodyweight standing biceps curl
+2924	cable side lying lateral raise
+2925	dumbbell single leg step up
+2926	x band side walk
+2927	kettlebell kneeling one arm bottoms up press
+2928	barbell overhead shrug
+2929	kneeling battling ropes
+2930	resistance band pullapart (supination at 90 degrees)
+2931	shoulder flexion back to wall
+2932	kettlebell kneeling one arm shoulder press
+2933	rear lunge with battling ropes
+2934	kettlebell half kneeling shoulder press
+2935	half kneeling pvc pec mobilization stretch
+2936	rocking ankle stretch
+2937	stability ball rounded rollout
+2938	band upper body resistance dead bug
+2939	kettlebell around head rotation
+2940	prone single arm trap raise
+2941	forearm wall slide
+2942	kettlebell angled press
+2943	resistance band spider crawls
+2944	seal push up
+2945	scapular slide back to wall
+2946	single arm scapula push up
+2947	roll anterior calf foam rolling
+2948	roll pec foam rolling
+2949	roll lat foam rolling
+2950	lever belt squat
+2951	lever horizontal leg press
+2952	smith kneeling rear kick (with partner)
+2954	cable standing reverse grip curl (straight bar)
+2956	dumbbell goblet split squat front foot elevated
+2957	dumbbell split squat front foot elevated
+2960	dumbbell split squat
+2961	plank push up row
+2962	lever seated hammer grip shoulder press
+2963	captains chair straight leg raise
+2964	barbell glute bridge (hands on bar)
+2966	dumbbell front squat
+2968	dumbbell thruster
+2969	dumbbell thruster v. 2
+2970	band thruster
+2972	side lunge
+2974	lever one arm chest press (plate loaded)
+2976	landmine squat and press
+2978	elbow up and down dynamic plank
+2980	dumbbell renegade row
+2982	dumbbell alternating floor press
+2984	pistol squat to box
+2986	weighted hammer grip pull up on dip cage
+2987	weighted close grip chin-up on dip cage
+2988	squat mobility
+2989	squat mobility complex
+2990	barbell walk calves activation
+2991	rollball seated single leg shoulder flexor depressor retractor
+2992	calf self massage with barbell
+2993	kettlebell goblet squat mobility
+2994	self anterior calf foam rolling
+2996	band single arm shoulder press
+2997	band assisted pull up v. 3
+2998	seated ankle stretch
+2999	resistance band standing back achilles stretch
+3000	resistance band standing forward achilles stretch
+3001	squats knee position
+3002	single arm push up (on knees)
+3004	briskly walking
+3006	resistance band seated hip abduction
+3007	resistance band leg extension
+3009	stair up
+3010	ez bar lying bent arms pullover
+3011	incline scapula push up
+3012	scapula dips
+3013	low glute bridge on floor
+3016	curl-up
+3017	barbell pendlay row
+3018	standing calf raise
+3019	bench pull-ups
+3021	scapula push-up
+3023	band lying hip internal rotation v. 2
+3030	barbell split squat
+3034	bent leg kickback (kneeling)
+3035	bent leg side kick (kneeling)
+3037	butt kicks
+3040	cable bar high pulley overhead tricep extension
+3048	cable hip abduction v. 2
+3068	cable standing biceps curl (with rope)
+3075	dumbbell close grip press v. 2
+3083	dumbbell seated curl v. 2
+3084	dumbbell single arm preacher curl
+3086	elbow to knee twists
+3088	frog hops
+3091	high knee skips
+3092	high knee squat
+3094	jumping jack
+3095	lateral bound
+3096	lever alternating narrow grip seated row (plate loaded)
+3102	lever narrow grip seated row (plate loaded)
+3108	plyo jacks
+3109	skater
+3110	smith hip thrust
+3113	split jacks
+3114	straight leg kickback (kneeling)
+3116	band fixed back underhand pulldown
+3117	band fixed back close grip pulldown
+3119	potty squat
+3120	standing calf raise with support
+3121	band seated straight back row
+3122	resistance band seated shoulder press
+3123	resistance band seated biceps curl
+3124	resistance band seated chest press
+3125	resistance band foot external rotation
+3126	resistance band foot plantar flexion
+3127	resistance band foot eversion
+3128	resistance band foot inversion
+3129	scapula retraction protraction
+3130	scapula elevation depression
+3132	potty squat with support
+3141	bird dog v. 2
+3142	smith sumo squat
+3144	resistance band seated straight back row
+3145	push-up plus
+3147	pelvic tilt
+3149	chin tuck
+3150	assisted chin tuck
+3153	side kick burpee
+3156	bodyweight standing close-grip one arm row
+3158	bodyweight standing close-grip row
+3161	bodyweight standing one arm row (with towel)
+3162	bodyweight standing one arm row
+3165	bodyweight standing row (with towel)
+3166	bodyweight standing row
+3167	bodyweight squatting row (with towel)
+3168	bodyweight squatting row
+3171	boxing right hook
+3174	barbell bench press (knees at 90 degrees)
+3175	dumbbell fly (knees at 90 degrees)
+3176	dumbbell straight arm pullover (knees at 90 degrees)
+3178	stability ball reverse hyperextension (off a bench)
+3180	incline reverse hyperextension
+3181	bodyweight frog pump
+3182	weighted frog pump
+3183	barbell hang clean below the knees v. 2
+3184	barbell squat (with hanging band technique)
+3185	barbell bench press (with hanging band technique)
+3186	barbell military press (with hanging band technique)
+3187	kettlebell goblet squat jump
+3188	dumbbell straight arm pullover (with hanging band technique)
+3193	glute-ham raise
+3194	frankenstein squat
+3195	lever lying two-one leg curl
+3196	quick feet run
+3197	prancing
+3198	zigzag hops
+3199	skips
+3200	lever bent-over row with v-bar
+3201	quarter sit-up
+3202	half sit-up (male)
+3203	prisoner half sit-up (male)
+3204	arms overhead full sit-up (male)
+3211	kneeling push-up (male)
+3212	basic toe touch (male)
+3213	side-to-side toe touch (male)
+3214	arms apart circular toe touch (male)
+3215	hands reversed clasped circular toe touch (male)
+3216	chest tap push-up (male)
+3217	modified hindu push-up (male)
+3218	hands clasped circular toe touch (male)
+3219	scissor jumps (male)
+3220	astride jumps (male)
+3221	half knee bends (male)
+3222	semi squat jump (male)
+3223	star jump (male)
+3224	jack jump (male)
+3225	floor t raise
+3226	prone cobra palms under thighs
+3227	swimmer kicks
+3228	lying back extension
+3229	lying back extension with press
+3230	prone cobra hands interlocked
+3231	two toe touch (male)
+3232	cable standing rear delt horizontal row (with rope)
+3233	cable seated supine grip row
+3234	hyght dumbbell fly
+3235	cable assisted inverse leg curl
+3236	resistance band hip thrusts on knees (female)
+3237	landmine lateral raise
+3238	kneeling plank
+3239	kneeling plank tap shoulder (male)
+3240	exercise ball on the wall calf raise (tennis ball between knees)
+3241	exercise ball on the wall calf raise (tennis ball between ankles)
+3242	lying lower back stretch (bent knee)
+3243	lying lower back stretch
+3244	abdominal stretch
+3245	feet and ankles side to side stretch
+3248	front toe touching
+3249	two front toe touching
+3250	side toe touching
+3251	side two front toe touching
+3253	standing side bend
+3254	standing two side bend
+3256	standing two side bend (bent arm)
+3257	standing one arm circling
+3258	standing arms circling
+3259	standing alternate arms circling
+3260	standing arms flinging
+3263	lying full leg raise
+3264	side plank leg raise
+3265	kneeling push up to child pose
+3266	elbow push up
+3268	lying leg raise to side
+3269	run and hop
+3270	run and jack jump
+3271	run and half knee bend
+3272	run and semi squat jump
+3279	floor crunch feet on bench
+3280	floor twisting crunch feet on bench
+3281	smith full squat
+3282	weighted floor crunch feet on bench
+3283	weighted floor twisting crunch feet on bench
+3286	weighted muscle up
+3287	elbow dips
+3288	korean dips
+3289	impossible dips
+3290	weighted one hand pull up
+3291	stalder press
+3292	elevator
+3293	archer pull up
+3294	archer push up
+3295	front lever reps
+3296	front lever
+3297	back lever
+3298	straddle planche
+3299	full planche
+3300	lean planche
+3301	frog planche
+3302	handstand
+3303	flag
+3304	skin the cat
+3305	barbell thruster
+3306	strongman fingal's fingers
+3307	strongman keg toss
+3308	barbell weighted deadlift
+3309	barbell weighted front chest squat
+3310	barbell weighted bench press
+3311	barbell front squat (from blocks)
+3312	weighted muscle up (on bar)
+3313	weighted straight bar dip
+3314	straddle maltese
+3315	full maltese
+3316	barbell weightlifting complex
+3317	strongman car flip
+3318	swing 360
+3319	dumbbell lying on floor hammer press
+3320	dumbbell hammer grip incline bench two arm row
+3321	resistance band rear fly
+3322	kettlebell deadlift
+3323	kettlebell half turkish get up
+3324	band alternate incline chest press with twist
+3325	band alternate low row with twist
+3326	band alternate lat pulldown with twist
+3327	full planche push-up
+3328	barbell complex stiff leg deadlift clean step
+3329	roman chair sit up
+3330	oblique crunches with bent knee leg lift
+3331	oblique crunches with straight leg lift
+3332	weighted stability ball crunch (full range)
+3333	dumbbell one arm wide grip bench press
+3334	dumbbell one arm floor fly
+3335	dumbbell glute bridge
+3336	dumbbell v up
+3337	dumbbell side bridge
+3338	dumbbell single stiff leg deadlift
+3339	dumbbell one arm lunge
+3340	dumbbell stiff leg deadlift v. 2
+3341	dumbbell lunge v. 2
+3342	cable y raise
+3343	lever lateral raise v. 2
+3344	lever crossovers
+3345	hand spring wrist curl
+3347	dumbbell curl to press
+3348	incline shoulder tap
+3349	cable front squat
+3350	cable lateral lunge
+3351	cable lunge
+3352	cable kneeling pull through
+3353	cable one arm high pulley overhead tricep extension
+3354	cable front squat v. 2
+3355	cable lateral lunge v. 2
+3356	cable forward lunge
+3357	cable seated on floor row with rope
+3358	cable parallel grip lat pulldown on floor
+3359	cable standing chest press
+3360	bear crawl
+3361	skater hops
+3362	cable lying close press
+3363	cable standing close press
+3364	cable seating close press
+3365	hawaiian squat
+3366	shrimp squat
+3367	skater squat
+3368	dumbbell swing
+3369	battling ropes alternate arms squat
+3370	battling ropes alternate arms jump squat
+3371	battling ropes side to side arms
+3372	battling ropes alternate arms side lunge
+3373	battling ropes inside circle
+3374	battling ropes outside circle
+3375	battling ropes fly
+3376	battling ropes jumping jack
+3377	battling ropes russian twist
+3378	battling ropes split jump
+3379	battling ropes high waves
+3380	battling ropes low waves
+3381	inverted row under table
+3382	inverted row bent knee under table
+3383	pike push up (on bench) v. 2
+3384	battling ropes power slam
+3385	lever seated leg press v. 2
+3386	lever seated leg extension v. 2
+3387	dips between chairs
+3388	inverted row between chairs
+3389	sit up with chair assisted
+3390	calf raise from deficit with chair supported
+3391	bent over twist
+3392	narrow squat from deficit
+3393	lying leg hip raise on floor
+3394	glute march
+3395	sliding leg curl on floor with towel
+3396	flexion and extension hip stretch
+3397	dumbbell full swing
+3398	dumbbell front rack lunge
+3399	barbell front rack lunge
+3400	dumbbell clean and press
+3401	pike push up (between benches)
+3402	pike push up (between chairs)
+3403	standing y raise
+3404	standing t raise
+3405	standing w raise
+3407	standing low body rotation
+3408	standing upper body rotation
+3409	standing phelps
+3410	standing wring the towel
+3411	standing hip circle
+3412	lying glute squeeze
+3413	lying shoulder sweep
+3414	lying upper body rotation
+3415	assisted inverse leg curl
+3416	standing shoulder circling
+3417	kneeling one arm reach roll lift
+3418	l-pull-up
+3419	l-sit on floor
+3420	v-sit on floor
+3422	medicine ball crunch
+3428	dumbbell front raise v. 3
+3433	swimmer kicks v. 2 (male)
+3435	single leg hip bridge (straight leg)
+3436	superman
+3438	decline leg hip raise
+3439	medicine ball backward throw
+3440	split jump to box
+3441	seated flexion and extension neck
+3442	medicine ball standing overhead throw
+3443	dip on floor with chair
+3444	step up on chair
+3448	dumbbell side lunge v. 3
+3449	dumbbell russian twist
+3452	dumbbell svend press
+3454	dumbbell superman
+3457	burpee with push up
+3458	side split
+3459	pulse up
+3460	side plank hip adduction (bent knee)
+3461	warming up in lunge (one)
+3462	warming up in lunge (two)
+3463	warming up in lunge (three)
+3464	warming up in lunge (four)
+3465	warming up in lunge (five)
+3466	warming up in lunge (six)
+3467	warming up in lunge (seven)
+3468	front hamstring stretch
+3469	downward facing dog
+3470	forward lunge (male)
+3471	warrior pose
+3472	lying leg tuck hip stretch
+3473	standing balance outer hip stretch
+3474	lying leg tuck hip stretch with overhead hands
+3475	lying leg tuck hip back stretch
+3476	lying leg tuck hip twist stretch
+3477	lying leg tuck hip back to right stretch
+3478	lying leg tuck hip twist to left stretch
+3479	alternate heel touch side kick squat
+3480	alternate sprinter lunge
+3481	split sprinter low lunge
+3482	split sprinter high lunge
+3483	around the world superman hold
+3484	elbow to knee sit up
+3485	inverted row with bent knee between chairs
+3486	inverted chin curl with bent knee between chairs
+3487	pull up with bent knee between chairs
+3488	cobra push up
+3489	kneeling cobra push up
+3490	decline kneeling push up on box
+3491	decline push up against wall
+3492	kneeling rotational push up
+3493	single leg low box squat
+3494	single leg heel touch squat
+3495	lying floor row with bent knee
+3496	lying straight leg marches
+3497	sliding floor pulldown on towel
+3498	sliding floor bridge curl on towel
+3499	self assisted inverted pullover
+3500	full squat mobility
+3501	front plank with leg lift
+3502	back forward leg swings
+3503	elbow to knee side plank crunch
+3504	standing balance quadriceps stretch
+3505	camel pose
+3506	bodyweight row in doorway
+3507	self assisted inverse leg curl v. 2
+3508	resistance band seated single leg curl
+3509	seated in out leg raise on floor
+3510	crunchy frog on floor
+3511	resistance band bird dog
+3512	resistance band upper body dead bug
+3513	resistance band shoulder stretch behind the back
+3514	single leg sliding floor bridge curl on towel
+3515	oblique v up on floor
+3516	shoulder backbend stretch
+3517	spine backbend stretch
+3518	band seated leg extension
+3522	kettlebell single leg glute bridge pullover
+3523	glute bridge two legs on bench (male)
+3524	band horizontal pallof press with resistance band squat
+3525	landmine kneeling one arm shoulder press
+3526	kneeling t spine mobility
+3527	downward facing dog toe touch
+3528	downward facing dog spine mobility
+3529	landmine stand up high knee
+3530	barbell banded squat
+3531	alternate punching
+3532	boxer shuffle
+3533	quads
+3534	bodyweight standing pulse calf raise
+3535	bodyweight pulse squat
+3536	elevated inverted row between 3 chairs
+3537	elevated inverted underhand grip row between 3 chairs
+3538	inverted underhand grip row between chairs
+3539	lying t spine mobility stretching
+3540	kneeling t spine mobility stretching
+3541	dumbbell incline y-raise
+3542	dumbbell incline t-raise
+3543	bodyweight drop jump squat
+3544	bodyweight incline side plank
+3545	dumbbell incline alternate press
+3546	dumbbell seated alternate shoulder
+3547	dumbbell seated biceps curl to shoulder press
+3548	dumbbell single arm overhead carry
+3550	seated pull up between chairs
+3551	side shuttle
+3552	quick feet v. 2
+3553	rotational push up
+3554	bottle hammer curl
+3555	power push aways
+3556	high knee run
+3557	kneeling wide hand push up
+3558	lying biceps curl with towel
+3559	superman row with towel
+3560	dumbbell standing alternate hammer curl and press
+3561	glute bridge march
+3562	barbell glute bridge two legs on bench (male)
+3563	cable one arm pulldown
+3564	seated shoulder flexor depressor retractor stretch (bent knee)
+3565	bridge pose yoga stretch
+3566	roll upper back
+3567	roll recumbent hip external rotator and hip extensor stretch (crossed leg)
+3568	roll ball piriformis release
+3569	roll ball pectoral release
+3570	roll ball upper trapezius release
+3571	kettlebell full swing
+3572	kettlebell strict press
+3573	kettlebell sots press
+3574	kettlebell forward lunge
+3575	kettlebell backward lunge
+3576	kettlebell farmers carry
+3577	kettlebell lunge clean and press
+3578	kettlebell slingshot
+3579	kettlebell deck squat
+3580	kettlebell deep push up
+3581	lunge with leg lift
+3582	lunge with jump
+3583	single leg bridge with hip flexion
+3584	side bridge with arm leg swing
+3585	single leg deadlift with knee lift
+3586	scissors (advanced)
+3587	weighted single leg lift
+3588	quickly swing arms in place
+3589	quickly trot in place
+3590	alternate lying floor leg raise
+3591	band twist
+3593	barbell squat
+3606	leg extension crunch (with stability ball)
+3616	sled 45 degrees narrow stance leg press
+3617	sled 45 degrees wide stance leg press
+3621	twisting crunch (straight arms)
+3622	v up
+3623	vertical leg raise (on parallel bars) v. 3
+3630	standing hamstrings and back stretch
+3631	sitting sumo mobility stretch
+3632	sitting sumo right twist stretch
+3633	sitting sumo left twist stretch
+3634	sitting sumo with arms up mobility stretch
+3635	dumbbell contralateral forward lunge
+3636	high knee against wall
+3637	wheel run
+3638	push to run
+3639	bent knee lying twist (male)
+3640	knee touch crunch
+3641	weighted kneeling step with swing
+3642	weighted stretch lunge
+3643	weighted cossack squats (male)
+3644	weighted lunge with swing
+3645	single leg bridge with outstretched leg
+3650	jump box
+3651	dumbbell rdl death march
+3652	trap bar split stance rdl
+3653	band assisted sprinter run
+3654	barbell lying row on rack
+3655	walking high knees lunge
+3656	short stride run
+3657	static position lying back with pad
+3658	static position seated back with pad
+3659	static position standing
+3660	static position lying front
+3661	static position seated back
+3662	pike-to-cobra push-up
+3663	reverse plank with leg lift
+3664	dumbbell side plank with rear fly
+3665	power point plank
+3666	walking on incline treadmill
+3667	side lying hip adduction (male)
+3668	dumbbell lying on floor chest press
+3669	standing archer
+3670	weighted decline sit-up
+3671	ski step
+3672	back and forth step
+3673	standing pose (form check) front view
+3674	standing pose (form check) side view
+3675	side to side jump rope
+3676	skip jump rope
+3677	high knee jump rope
+3678	high jump rope
+3679	sit-up with arms on chest
+3680	kettlebell overhand grip swing
+3681	dumbbell squeeze bench press
+3682	dumbbell incline alternate bicep curl
+3683	dumbbell goblet curtsey lunge
+3684	dumbbell external rotation
+3685	dumbbell chest supported lateral raises
+3686	dumbbell kneeling hold to stand
+3687	dumbbell drag bicep curl
+3688	dumbbell seated reverse grip biceps curl
+3689	dumbbell seated one arm front raise
+3690	dumbbell seated on exercise ball shoulder press
+3691	dumbbell goblet split squat
+3692	dumbbell goblet box squat
+3693	dumbbell bench supported external rotation
+3694	dumbbell incline alternate reverse fly
+3695	dumbbell alternate bench press (high start)
+3696	dumbbell bent over alternate rear delt fly
+3697	cable kneeling rear delt row (with rope) (male)
+3698	inchworm v. 2
+3699	shoulder tap
+3700	tuck jump v. 2
+3701	high knee sprints
+3702	forward pulse lunge with hands overhead
+3703	frogger
+3704	double jump squat
+3705	squat thrust
+3706	squat tuck jump
+3707	dumbbell press squat (thighs)
+3708	cardio lunge
+3709	dumbbell overhead squat
+3710	dumbbell split squat front foot elevated with bosu ball
+3711	single leg step up v. 2
+3712	standing single leg calf raise with support
+3713	dumbbell standing single leg calf raise v. 2
+3714	single leg stand
+3715	single leg stand on bosu ball
+3716	split squat with roll
+3718	split lateral squat with roll
+3719	cable standing high cross triceps extension
+3720	stair jump
+3721	barbell bent over wide grip row
+3722	barbell incline lying rear delt raise
+3723	barbell curtsey lunge
+3724	barbell floor chest press
+3725	barbell overhead lunge
+3726	barbell seated front raise
+3727	barbell front bench squat
+3728	barbell front step up
+3729	barbell chest press on stability ball
+3730	barbell behind the back shrug
+3731	barbell sumo romanian deadlift
+3732	kettlebell goblet curtsey lunge
+3733	kettlebell straight leg deadlift
+3734	kettlebell kickstand one leg deadlift
+3735	kettlebell pullover 3 month position
+3736	kettlebell standing bottoms up one arm shoulder press
+3737	kettlebell seated one arm military press
+3738	kettlebell one arm bench press
+3739	kettlebell bottom up one arm bench press
+3740	kettlebell lateral raise
+3741	lateral raise with towel
+3742	sliding leg curl on floor with towel v. 2
+3743	bulgarian split squat with chair
+3744	rear delt fly with bed sheet
+3745	overhead triceps extension with bed sheet
+3746	rear delt row with bed sheet
+3747	assisted pistol squat with bed sheet
+3748	biceps curl with bed sheet
+3749	inverted row with bed sheet
+3750	front plank side hop
+3751	reverse push up
+3752	lying double legs biceps curl with towel
+3757	band high fly
+3758	lever standing chest press
+3759	lever seated good morning
+3760	lever seated crunch v. 2
+3761	dumbbell seated alternate biceps curl
+3764	dumbbell incline biceps curl v. 2
+3765	jump step up
+3767	dumbbell single leg squat v. 2
+3768	lever seated horizontal leg press
+3769	curtsey squat
+3770	band squat with single arm row
+3771	band deadlift with single arm row
+3772	band high knee lunge with single arm row
+3773	band single stiff leg deadlift with single arm row
+3774	band squat with horizontal pallof hold
+3775	band split squat with horizontal pallof hold
+3776	band side step with horizontal pallof hold
+3777	band front plank with single arm pulldown
+3778	band upper body lying air bike
+3779	band skier
+3780	band standing chest press
+3781	band split jump with single arm row
+3782	band jump lunge with single arm row
+3783	dumbbell archer
+3784	cross arms push up
+3785	incline push-up (on box)
+3786	resistance band squat with single arm row
+3787	resistance band deadlift with single arm row
+3788	resistance band high knee lunge with single arm row
+3789	resistance band single stiff leg deadlift with single arm row
+3790	resistance band side step with horizontal pallof hold
+3791	resistance band front plank with single arm pulldown
+3792	resistance band upper body lying air bike
+3793	resistance band split jump with single arm row
+3794	resistance band jump lunge with single arm row
+3795	resistance band skier
+3796	resistance band squat with horizontal pallof hold
+3797	resistance band split squat with horizontal pallof hold
+3798	resistance band punch
+3799	dumbbell bent over reverse row
+3812	elevated push up
+3813	starfish crunch (beginner)
+3814	front plank toe tap
+3821	crunch (arms straight)
+3822	pulse row
+3823	decline shoulder tap
+3824	pseudo planche push up
+3825	mid air lateral raises with switching palms
+3826	lying around the world
+3827	lying floor hyperextension
+3828	bent over row with towel
+3829	lying floor hyperextension with towel
+3830	lying double legs hammer curl with towel
+3831	lying single leg reverse biceps curl with towel
+3832	handboard slope hang
+3833	handboard open hand grip
+3834	handboard half crimp
+3835	handboard hang with 90 degree elbow
+3836	handboard hang with 135 degree elbow
+3838	crunch (on bench)
+3841	band side bend
+3845	band straight back seated row
+3847	band twist (up down)
+3848	seated row with towel
+3850	two legs reverse biceps curl with towel v. 2
+3851	two legs hammer curl with towel v. 2
+3852	plank lateral raise
+3853	resistance band standing hip abduction
+3854	front plank walkout
+3855	standing back extension and flexion
+3856	resistance band smith squat
+3857	resistance band cable squat
+3858	resistance band bent over row
+3859	cable bent over row
+3860	weighted plate bent over row
+3861	stability ball body saw
+3862	resistance band long jump
+3863	bulgarian jump squat
+3864	kettlebell burpee
+3865	sprinter crunch
+3866	resistance band anti rotation dead bug
+3867	duck walk
+3868	cable fly with chest supported
+3869	cable seated chest fly
+3870	frog reverse hyperextension (on a bench)
+3871	barbell front chest squat with resistance band
+3872	heel drops
+3873	barbell hip thrust with resistance band
+3874	smith kneeling hip thrust
+3875	resistance band 45 degrees hyperextension
+3876	weighted squat jump with plate
+3877	medicine ball squat jump
+3878	resistance band jump squat
+3879	dumbbell poliquin lateral raise
+3880	cable leaning lateral raise
+3881	lever seated full crunch
+3882	lever seated left side crunch
+3883	lever seated right side crunch
+3885	double under jump rope
+3886	dumbbell complex push up row clean and press
+3887	jump box over
+3888	dumbbell one arm snatch
+3889	frog sit up
+3890	hanging knees to elbows
+3891	hanging toes to bar
+3892	jump on fit box
+3893	assault bike run
+3894	dumbbell stiff leg deadlift v. 3
+3896	band seated row
+3899	band bent over row
+3903	resistance band one leg kickback (bent position)
+3904	pike press (between benches)
+3905	arm circles
+3906	bodyweight kneeling push up row
+3908	bodyweight windmill
+3910	weighted push up with vest
+3911	dumbbell low fly
+3912	cable bent over one arm lateral raise
+3913	dumbbell one arm front raise
+3914	cable rear delt row
+3915	decline pike press (between benches)
+3916	handstand shoulder press with wall (between benches)
+3917	barbell reverse grip floor press
+3918	landmine single leg landmine rdl
+3919	landmine rear lunge
+3920	cable triceps pushdown on floor
+3921	landmine kneeling squeeze press
+3922	side push up with towel
+3923	landmine floor one arm chest fly
+3924	floor fly with towels
+3925	cable seated floor one arm concentration curl
+3926	side lying leg circle
+3927	squat tip toe
+3928	bodyweight single leg deadlift
+3929	standing side leg raise
+3930	plank jack
+3935	decline push up (kneeling)
+3939	band overhead triceps extension
+3942	romanian chair sit up v. 2
+3943	cable seated rear delt fly with chest support
+3944	seated alternate crunch
+3945	smith single arm bent over row
+3946	dumbbell seated upright alternate squeeze press
+3947	hands release push up
+3948	air squat
+3950	crawl to crab
+3951	cross twisting sit up
+3952	high knees lunge
+3954	front to side plank
+3956	twist step stretch
+3958	side step front plank
+3959	forward step front plank
+3960	pike to cobra
+3961	forward to side to rear lunge
+3962	seated flutter kick
+3963	dumbbell single spider curl with chest support
+3964	twist push up
+3965	side bear crawl
+3966	static lunge kick
+3967	dumbbell incline around the world
+3968	dumbbell flat around the world
+3969	tuck up
+3970	jack burpee with push up
+3971	band bent over rear lateral raise
+3972	dumbbell alternate shoulder press
+3973	dumbbell single leg calf raise v. 2
+3977	push up toe touch
+3978	seated side to side leg raise crunch on floor
+3979	cross body push up
+3980	dumbbell incline front raise with chest support
+3981	finger push up
+3982	leg lift to chest front plank
+3983	one arm front plank
+3984	push up pike toe touch
+3985	push up hand by hand
+3986	ez bar front twist raise
+3987	barbell incline wrist curl with chest support
+3988	barbell incline reverse grip spider curl with chest support
+3989	ez bar incline front raise
+3990	ez bar seated close grip shoulder press
+3991	barbell bent over wide alternate row plus
+3992	barbell bent over wide row plus
+3993	dumbbell push up front raise
+3994	neck circle stretch
+3995	back slaps wrap around stretch
+3996	circles arm
+3997	standing side bend (bent arm)
+3999	standing air bike
+4000	static lunge
+4001	alternate leg raise with head up
+4002	v up double crunch
+4003	v up with clap
+4004	place jog
+4006	backward abdominal stretch
+4007	90 degree heel touch
+4008	straight leg sit up
+4009	long arm crunch
+4010	cable kneeling shoulder press
+4011	cable bent over row with bar
+4012	cable incline cross rear fly
+4013	cable lying cross lateral raise
+4014	cable standing front raise variation
+4015	dumbbell incline close grip press variation
+4016	barbell seated shrug
+4017	dumbbell standing single spider curl
+4018	lying leg hip raise on floor v. 2
+4019	reverse crunch v. 2
+4020	criss cross leg raises
+4022	seated 8 leg crunch
+4023	front plank to toe tap
+4024	resistance band standing overhead warming up
+4025	resistance band standing down warming up
+4026	resistance band standing front warming up
+4027	resistance band standing back warming up
+4028	resistance band squatting front warming up
+4029	band hip adduction
+4030	dumbbell bar grip sumo squat
+4031	band hip abduction
+4033	band standing leg curl
+4034	band standing hip extension
+4035	band bent over hip extension
+4036	resistance band leg curl
+4038	landmine one arm bent over row
+4039	landmine one arm bent over bench row
+4040	landmine rear lunge v. 2
+4041	dumbbell russian twist (on stability ball)
+4042	cable seated cross arm twist
+4043	inverted shrug (on parallel bars)
+4044	single leg glute bridge with knee to chest
+4045	kettlebell lateral lunge
+4046	kettlebell sumo deadlift
+4047	kettlebell dead bug
+4048	dumbbell ipsilateral split squat
+4049	inverted shrug
+4050	resistance band hip thrusts
+4051	side lying leg raise
+4052	battling ropes half kneeling
+4053	dumbbell seated gittleson shrug
+4054	dumbbell one arm triceps extension on stability ball
+4055	dumbbell seated lateral raise on stability ball
+4056	dead bug with stability ball
+4057	kettlebell turkish get up to hand
+4058	leg raise dragon flag
+4059	kettlebell split squat
+4060	bird dog push up
+4061	barbell banded bench squat
+4062	lever lying banded t bar row
+4063	band biceps curl
+4064	barbell squat with chains
+4065	dumbbell standing alternate arnold press
+4066	dumbbell seated bent over alternate rear delt fly
+4067	dumbbell alternate arnold press
+4068	barbell bench press with 3 board
+4069	barbell bench press with 2 board
+4070	barbell bench press with 1 board
+4071	dumbbell incline one arm front raise with chest support
+4072	bodyweight single leg wall squat
+4073	band low chest fly
+4074	band low chest press
+4075	band chest fly
+4076	band cross body one arm chest press
+4077	band low alternate chest press
+4078	band alternate low chest fly
+4079	band standing alternate chest press
+4080	band kneeling crunch
+4081	band reverse crunch
+4082	band overhead side bend
+4083	band upper crunch
+4084	band horizontal biceps curl
+4085	band kneeling preacher curl
+4086	band standard biceps curl
+4087	band 45 degrees biceps curl
+4088	band cross chest biceps curl
+4089	kettlebell sumo squat
+4090	landmine sumo squat
+4091	twist superman
+4092	weighted seated triceps extension
+4093	wheel rollout with wall support
+4094	suspender forward lunge with rear fly
+4095	crunch with leg lift
+4096	wall press heel tap
+4097	reverse crunch to dead bug
+4098	kettlebell side lunge
+4099	medicine ball half kneeling chest push
+4100	sled wide hack squat
+4101	weighted straight leg toe touch crunch
+4102	weighted chin up
+4103	trap bar standing shrug
+4104	trap bar bent over row
+4105	trap bar deadlift from deficit
+4106	cable split stance horizontal pallof press
+4107	barbell sumo deadlift from blocks
+4108	dumbbell standing arnold press
+4109	resistance band adduction split squat
+4110	dumbbell seated zottman curl
+4111	cable seated horizontal shrug
+4112	battling ropes seated
+4113	landmine romanian deadlift
+4114	resistance band bent over rear delt fly
+4115	cable overhead tricep extension straight bar
+4116	barbell reeves deadlift
+4117	kneeling scapular push up
+4118	prisoner jump squat
+4119	power sled triceps extension
+4120	dumbbell seated one arm arnold press
+4121	single arm push up on medicine ball
+4122	cable one arm reverse fly
+4123	kettlebell single front squat
+4124	dead bug with medicine ball
+4125	dumbbell face down lying shoulder press
+4126	barbell deadstop row with rack
+4127	weighted dead bug
+4128	weighted counterbalanced squat
+4129	weighted counterbalanced skater squat
+4130	ez bar california skullcrusher
+4131	battling ropes alternating waves with kneeling get up
+4132	kettlebell sumo deadlift with high pull
+4133	kettlebell suitcase deadlift
+4134	kettlebell single leg step up
+4135	band split squat
+4136	band cross abduction
+4137	band squat twist
+4138	band close grip biceps curl
+4139	band overhead triceps extension v. 2
+4140	band overhead single arm triceps extension
+4141	band overhead single arm triceps extension v. 2
+4142	band lying reverse grip pressdown
+4143	band triceps kickback
+4144	band bent over lat pulldown
+4145	band close grip row
+4146	band standing single arm twist row
+4147	band narrow grip high row
+4148	band narrow grip high row v. 2
+4149	dumbbell floor fly
+4150	dumbbell one arm low fly
+4151	dumbbell lying floor skullcrusher
+4152	dumbbell close grip curl
+4153	one side archer push up
+4154	weighted seated neutral wrist curl
+4155	weighted seated calf raise
+4156	lying leg hip side raise on floor
+4157	dumbbell seated front and back tate press
+4158	weighted side crunch
+4159	kick through push up
+4160	squat hold calf raise
+4161	dumbbell rear lunge front raise
+4162	push up to knee tap
+4163	cable one arm wrist curl
+4164	dumbbell devils press
+4166	trap bar jump squat
+4167	kettlebell banded swing
+4168	jump pistol squat box
+4169	jumping pistol squat
+4170	bear plank
+4171	smith rack pull
+4172	bodyweight bent over rear delt fly
+4173	barbell banded romanian deadlift
+4174	lever reverse shoulder press (plate loaded)
+4175	weighted standing shoulder press
+4176	shrug (on parallel bars)
+4177	hanging scapular shrug
+4178	barbell elevated heel squat
+4179	smith banded full squat
+4180	cable seated pullover
+4181	weighted hang chin up
+4182	resistance band rear delt row
+4183	dumbbell seated cuban press
+4184	dumbbell banded bench press
+4185	weighted overhead press step up
+4186	resistance band overhead squat
+4187	ez bar legs side pull in sit up
+4188	ez bar reverse crunch
+4189	ez bar kneeling rollout
+4190	ez bar up down twist
+4191	dumbbell partials lateral raise
+4192	knuckle push up
+4193	cable half kneeling pallof press
+4194	cable half kneeling external rotation
+4195	resistance band half kneeling face pull
+4196	cable half kneeling adductor pallof press
+4197	cable pallof press with glute bridge
+4198	depth jump to hurdle hop
+4199	barbell deadlift against chains
+4200	fly against chains
+4201	barbell bench press against chains
+4202	landmine resistance band one arm shoulder press
+4203	barbell banded sumo deadlift
+4204	resistance band assisted nordic hamstring curl
+4205	band assisted dip
+4206	band assisted chin up (from knee)
+4207	chin up around the bar
+4208	2 to 1 jump box
+4209	1 to 2 jump box
+4210	kettlebell split snatch
+4211	dumbbell 4 ways lateral raise
+4212	one leg star balance
+4213	lever banded chest press
+4214	lever low row (plate loaded)
+4215	lever one arm low row (plate loaded)
+4216	climbing monkey bars
+4217	cable wide neutral grip pulldown
+4218	safety bar front squat
+4219	safety bar elevated heel squat
+4220	tiger tail forearm
+4221	tiger tail hamstring
+4222	tiger tail neck
+4223	tiger tail peroneal
+4224	cable lying pallof press
+4225	cable lying upright row
+4226	cable lying shrug
+4227	cable lying front raise
+4228	cable half kneeling push pull
+4229	assault run
+4230	kettlebell bottoms up to knee turkish get up
+4231	weighted seated supination
+4232	weighted seated reverse wrist curl
+4233	weighted seated one arm wrist curl
+4234	weighted seated one arm reverse wrist curl
+4235	dumbbell seated bent over rear delt row
+4236	dumbbell incline two front raise with chest support
+4237	dumbbell seated close grip press
+4238	dumbbell seated lateral to front raise
+4239	dumbbell one arm reverse fly (with support) v. 2
+4240	resistance band horizontal pallof press
+4241	resistance band shuttle
+4242	broad jump to vertical
+4243	medicine ball overhead throw
+4244	kettlebell overhead carry
+4245	single leg board jump
+4246	landmine front squat
+4247	landmine romanian deadlift v. 2
+4248	dumbbell straight arm crunch
+4249	dumbbell straight leg russian twist
+4250	dumbbell v up v. 2
+4251	dumbbell straight arm twisting sit up
+4252	weighted crunch v. 2
+4253	medicine ball crunch v. 2
+4254	single leg vertical jump
+4255	straight leg hip bridge
+4256	stepdown squat
+4257	shuffle
+4258	backwards run
+4259	walking on elliptical machine v. 7
+4278	circles knee stretch v. 2
+4279	boat stretch
+4280	ceiling look stretch v. 2
+4282	feet and ankles stretch
+4283	feet and ankles rotation stretch
+4286	hip circles stretch
+4287	knee raise
+4288	middle back stretch
+4290	dumbbell static lunge
+4291	dumbbell single leg glute bridge
+4292	dumbbell lying hamstring curl
+4293	dumbbell straight legs deadlift
+4294	bodyweight overhead squat
+4295	dumbbell walking lunge
+4296	crossover kneeling hip flexor stretch
+4299	quadriceps lying stretch
+4300	quadriceps stretch
+4307	seated twist (straight arm)
+4309	single leg stretch (bent knee)
+4310	single straight leg stretch
+4312	slopes towards stretch
+4314	spinal stretch (on stability ball)
+4315	spine stretch forward
+4318	dumbbell pullover on floor
+4322	standing side bend (bent arm) v. 2
+4326	dumbbell bent arm pullover
+4327	sled vertical leg press
+4328	standing scissors
+4329	push with chair
+4330	reverse crunch kick
+4331	crunch single leg lift
+4332	crunch hold
+4333	bench reverse crunch circle
+4334	side plank oblique crunch
+4335	dumbbell side bend v. 2
+4336	lever biceps curl
+4338	barbell spider curl
+4339	barbell pullover v. 2
+4340	barbell wide pullover
+4341	dumbbell alternate front raise
+4342	dumbbell twisted fly
+4343	dumbbell one arm triceps extension
+4344	barbell incline triceps extension skull crusher
+4345	cable incline close grip curl
+4346	bodyweight standing military press
+4347	lever standing leg curl
+4348	abdominal 4 points
+4349	barbell single leg squat
+4350	cable lying regular grip curl
+4351	cable incline skull crusher
+4352	bench dip on floor v. 2
+4353	cable lying triceps extension (with rope)
+4354	alternate oblique crunch
+4355	cable triceps pushdown (v bar) v. 2
+4356	cable horizontal pallof press v. 2
+4357	band biceps curl v. 2
+4358	band kneeling lat pulldown
+4359	band overhead triceps extension v. 3
+4360	bench dip with legs on bench
+4361	bodyweight shrug
+4362	barbell squat 2 sec hold
+4363	counterbalanced skater squat
+4364	single leg dip on floor
+4365	animal resting yoga pose
+4366	standing side crunch
+4367	cable bent over reverse grip row
+4368	cable bent over row with rope attachment
+4369	bodyweight standing biceps curl v. 2
+4370	smith seated calf raise
+4371	lever incline one arm chest press (plate loaded)
+4372	crocodile yoga pose
+4373	hanging deadbug
+4374	cable standing alternate low fly
+4375	medicine ball around head rotation
+4376	handstand walk
+4377	dumbbell hang clean and jerk
+4378	lever reverse grip high row (plate loaded)
+4379	resistance band inverted row
+4380	standing leg slide with towel
+4381	legs up the wall yoga pose
+4382	barbell front rack lunge v. 2
+4383	medicine ball step behind rotational throw
+4384	body saw plank
+4385	hip roll plank
+4386	leg extension plank
+4387	prayer squat yoga pose
+4388	prisoner get up
+4389	dumbbell push jerk
+4390	barbell front rack rear lunge
+4391	cable low row with rope attachment
+4392	rowing boat yoga pose
+4393	kettlebell russian twist
+4394	alternate shoulder flexion back to wall
+4395	shoulder circle
+4396	kettlebell side bend v. 2
+4397	barbell front rack split squat
+4398	resistance band squat
+4399	standing seal yoga pose
+4400	kettlebell step up
+4401	barbell knee raise step up
+4402	straight angle yoga pose
+4403	kettlebells sumo deadlift
+4404	swaying palm tree yoga pose
+4405	the eagle yoga pose
+4406	tiger yoga pose
+4407	tiger tail tricep
+4408	kettlebell upright row
+4409	barbell front rack walking lunge
+4410	warrior ii yoga pose
+4411	barbell seated high front raise
+4412	resistance band pullapart (pronated at 90 degrees)
+4414	barbell bench press with band suspended kettlebell
+4415	band resisted chin up
+4416	sliding leg bird dog
+4417	sumo squat floor touch
+4419	lying leg raise (modified)
+4420	marching on spot
+4421	cable donkey kickback
+4422	ez bar drag bicep curl
+4423	barbell lying close grip underhand row on rack
+4424	barbell lying close grip overhand row on rack
+4425	dumbbell lying close grip parallel row on rack
+4426	dumbbell lying wide grip row on rack
+4428	power sled push
+4429	weighted lying side neck raise
+4430	weighted side lying side neck raise
+4431	weighted lying neck side to side
+4432	weighted lying neck head twist
+4435	high knee squat v. 2
+4436	alternating step out
+4437	alternating hamstring curl with punches
+4438	jack step
+4439	dumbbell power clean and jerk
+4440	kettlebell step up v. 2
+4441	kettlebell front rack walking lunge
+4442	assisted bulgarian split squat
+4443	dumbbell assisted bulgarian split squat
+4444	kettlebell assisted bulgarian split squat
+4445	resistance band seated face pull
+4446	kettlebell half kneeling one arm bottoms up press
+4447	resistance band elevated glute bridge
+4448	barbell resistance band hip thrust
+4449	dumbbell hang clean
+4450	suspender wide grip inverted row
+4451	suspension wide grip inverted row on floor
+4452	band bent over wide grip row
+4453	band one arm standing wide grip low row
+4454	band seated wide grip row
+4455	45 degrees back extension
+4456	glute ham raise v. 2
+4457	dumbbell side bridge with bent leg
+4458	side bridge with straight legs
+4459	lying ab press
+4462	roll ball foot
+4463	roll ball peroneus
+4464	roll ball tibialis anterior
+4465	roll ball calf
+4466	roll ball popliteal
+4467	roll ball tibialis posterior
+4468	roll ball rectus femoris
+4469	roll ball lateral vastus
+4470	roll ball adductors
+4471	roll ball tensor fasciae latae
+4472	roll ball gluteus medius
+4473	roll ball piriformis
+4474	roll ball piriformis v. 2
+4475	roll ball iliospsoas
+4476	roll ball psoas abdominal region
+4477	roll ball iliacus abdominal region
+4478	roll ball external oblique
+4479	roll ball rectus abdominis
+4480	roll ball erector spinae
+4481	roll ball lumbar diagonal
+4482	roll ball diaphragm
+4483	roll ball pectoralis major sternal
+4484	roll ball pectoralis major clavicular
+4485	roll ball infraspinatus
+4486	roll ball infraspinatus v. 2
+4487	roll ball scapula levator
+4488	roll ball scapula levator v. 2
+4489	roll ball rhomboid
+4490	roll ball trapezius upper
+4491	roll ball trapezius lower
+4492	roll ball trapezius lower v. 2
+4493	roll ball latissimus dorsi
+4494	roll ball forearm flexors
+4495	roll ball forearm supinator
+4496	roll ball forearm extensors
+4497	roll ball forearm pronator
+4498	roll ball bicep brachii
+4499	bodyweight full squat with overhead press
+4500	bodyweight front plank to downward dog
+4506	kneeling shoulder tap
+4509	chin to chest stretch
+4510	calves stretch
+4511	bridge pose setu bandhasana
+4512	adductor stretch
+4515	back pec stretch v. 2
+4516	band warm up shoulder stretch
+4518	kettlebell single arm thruster
+4521	kettlebell press up
+4523	kettlebell single leg deadlift
+4524	kettlebell side squat step
+4527	kettlebell single arm swing
+4528	kettlebell farmers walk
+4530	kettlebell single arm clean
+4531	kettlebell single arm clean and press
+4532	kettlebell snatch
+4533	kettlebell forward lunge and press
+4534	kettlebell standing slingshots
+4535	kettlebell single arm sit up
+4536	kettlebell rear delt row
+4538	kettlebell bent arm pullover with knees bent
+4539	diamond press
+4540	dumbbell one arm thruster
+4541	kettlebell one arm thruster
+4542	kettlebell clean and jerk
+4543	kettlebell one arm clean
+4544	band incline bench press
+4545	cable bent over single arm kickback
+4546	smith drag curl
+4547	good morning squat
+4548	burpee squat
+4552	diagonal lunge
+4553	thoracic bridge
+4554	seated glute stretch v. 2
+4555	dynamic 90 90 hip twist
+4556	push through reach
+4557	couch stretch
+4558	child to cobra pose
+4559	kneeling lat stretch on bench
+4560	body extension
+4561	bodyweight elevated heel squat
+4562	dumbbell cossack squats
+4563	dumbbell squat hold calf raise
+4564	dumbbell squat lunges jump complex
+4565	dumbbell step up with knee raise
+4566	cable neutral grip kickback
+4567	cable bent over single arm neutral grip kickback with rope attachment
+4568	resistance band pull apart
+4569	resistance band one arm bent over row
+4570	resistance band bent over neutral grip row
+4571	resistance band push up
+4572	dumbbell half kneeling lift and chop
+4573	band half kneeling chop
+4574	dumbbell standing biceps curl to shoulder press
+4575	band standing single arm row
+4576	band standing straight arm pulldown
+4577	dumbbell half kneeling military press
+4578	cable bent over neutral grip kickback with rope attachment
+4579	bodyweight step up on stepbox
+4580	cat cow stretch
+4581	boxing block
+4582	boxing jab (with boxing bag)
+4583	boxing right cross (with boxing bag)
+4584	boxing right hook (with boxing bag)
+4585	front groin kick kickboxing (with boxing bag)
+4586	front kick kickboxing (with boxing bag)
+4587	front snap kick kickboxing (with boxing bag)
+4588	hook kick kickboxing (with boxing bag)
+4589	boxing jab (with partner)
+4590	boxing left uppercut (with partner)
+4591	boxing right cross (with partner)
+4592	boxing right hook (with partner)
+4593	boxing right uppercut (with partner)
+4594	front kick kickboxing (with partner)
+4595	front knee kick kickboxing (with partner)
+4596	front snap kick kickboxing (with partner)
+4597	hook kick kickboxing (with partner)
+4598	roll tensor fasciae latae
+4599	roll iliopsoas
+4600	roll ball lower back
+4601	open book stretch
+4602	pvc external rotation
+4603	pvc front rack stretch
+4604	pvc good morning
+4605	pvc hip hinge
+4606	pvc overhead squat
+4607	pvc pass through
+4608	shin box switch
+4609	lying side to side knee
+4611	roll ball deltoid posterior
+4612	bodyweight standing around the world (wall supported)
+4613	bodyweight standing military press (wall supported)
+4615	hip swirls
+4616	leg front kick
+4617	single arm push up (wall supported)
+4618	band deadlift
+4619	band standing hammer curl
+4620	twisting crunch
+4621	dumbbell close grip shoulder press sit up
+4622	dumbbell front plank arm raise
+4623	weighted seated tuck crunch on floor
+4624	dumbbell crunch up
+4625	dumbbell russian twist close grip shoulder press sit up
+4626	dumbbell seated tuck crunch on floor
+4627	dumbbell front plank arm leg raise
+4628	dumbbell seated tuck twisting crunch on floor
+4629	dumbbell renegade row to squat
+4630	side to side leg swings
+4631	scorpion stretch
+4633	world's greatest stretch
+4634	high knee to butt kick
+4646	russian twist with hands on chest
+4653	standing single leg high knee to butt kick (with support)
+4658	kneeling shoulder tap push up
+4663	backhand raise
+4665	overhead clap
+4667	bodyweight overhead triceps extension
+4669	kneeling hip thrust
+4671	dynamic back stretch
+4672	elbows back stretch
+4673	hip extension stretch
+4674	hip flexor stretch (rear foot elevated)
+4675	plyo side lunge stretch
+4677	band kneeling single leg kick
+4678	band swing
+4679	band split squat v. 2
+4680	band standing triceps extension
+4681	band lying alternate leg press
+4682	band bent over rear delt fly
+4683	band squat v. 2
+4684	band kneeling incline press
+4685	band standing side bend
+4686	band standing behind head military press
+4687	resistance band hammer curl
+4688	resistance band triceps pushdown
+4689	resistance band split squat
+4690	leg over knee glute bridge
+4691	kneeling side leg to kick
+4692	bent knee back to side kick
+4693	kneeling leg half circle
+4694	band overhead triceps extension v. 4
+4695	band standing single arm upright row
+4696	band down to up twist
+4697	band skier v. 2
+4698	band bent over row v. 3
+4699	band air bike
+4700	band side bend press
+4701	band single leg reverse hyperextension
+4702	alternating superman
+4703	bodyweight full squat with overhead press (version 2)
+4706	jump step jump
+4709	basketball shot jump
+4711	criss cross jack
+4714	air squat (version 2)
+4715	alternating superman v. 2
+4716	assisted chin up (low bar position)
+4717	assisted commando pull up
+4718	band assisted chin up
+4719	band assisted dip (version 2)
+4720	band kneeling crunch v. 2
+4721	bar biceps curl
+4722	bodyweight kneeling sissy squat
+4723	bodyweight standing sissy squat
+4724	chin up (in squatting position)
+4725	chin up (isometric and negative)
+4726	commando pull up
+4727	crunch (arms on chest)
+4728	dumbbell bench dip
+4729	dumbbell bench dip with legs elevated
+4730	dumbbell bent over single arm row v. 2
+4731	dumbbell bridge bench press
+4732	dumbbell cossack squat v. 2
+4733	dumbbell decline lying leg curl
+4734	dumbbell decline overhead sit up
+4735	dumbbell decline sit up
+4736	dumbbell deep push up and renegade row
+4737	dumbbell floor wiper
+4738	dumbbell goblet squat and biceps curl
+4739	dumbbell hang power clean
+4740	dumbbell hang power clean and jerk
+4741	dumbbell head supported row
+4742	dumbbell hip thrust
+4743	dumbbell incline biceps curl v. 3
+4744	dumbbell incline head supported row
+4745	dumbbell kneeling arnold press
+4746	dumbbell low windmill
+4747	dumbbell lying woodchop
+4748	dumbbell overhead sit up
+4749	dumbbell rdl and bent over row
+4750	dumbbell russian twist with legs floor off
+4751	dumbbell glute bridge v. 2
+4752	dumbbell side bench squat
+4753	dumbbell side lunge with shoulder press
+4754	dumbbell side squat
+4755	dumbbell single leg hip thrust
+4756	dumbbell sit up
+4757	dumbbell staggered stance romanian deadlift
+4758	dumbbell step back lunge and row
+4760	elevated standing calf raise
+4761	elevated standing single leg calf raise
+4762	glute ham developer hip extension
+4763	glute ham developer sit up and russian twist
+4764	glute ham hyperextension twist
+4765	glute ham single leg hyperextension
+4766	hanging flutter kick
+4767	hanging knee circle raise
+4768	incline alternate flutter kicks
+4769	inverted row slide
+4770	inverted wide row
+4771	jump split with hands on hip
+4772	kneeling straight leg kickback v. 2
+4773	narrow seated chin up
+4775	push up and triceps dip on parallel bars
+4776	resistance band kneeling woodchop
+4777	reverse back extension on floor
+4778	reverse crunch v. 3
+4779	reverse flutter kick on floor (hand under head)
+4780	seated chin up (low bar position)
+4781	seated chin up
+4782	seated commando pull up
+4783	seated pull up (legs elevated)
+4784	seated pull up (low bar position)
+4785	seated pull up
+4786	side bench squat
+4787	side crunch with hands on chest
+4788	side split squat
+4789	side squat
+4790	single leg bench squat
+4791	single leg glute bridge (arms on chest)
+4792	single leg hip thrust v. 2
+4793	single leg hip thrust jump
+4794	single leg jumping glute bridge
+4795	single leg step up on bench
+4796	standing single leg calf raise balance
+4797	supported squat
+4798	suspender alternate superman
+4799	suspender rollout v. 2
+4800	table top bridge
+4801	table top bridge rotation
+4802	toe walk
+4803	triceps press (high bar position)
+4804	triceps press (low bar position)
+4805	wide air squat
+4806	wide seated pull up
+4807	wide to narrow push up
+4808	lying leg raise v. 2
+4810	standing side bend v. 2
+4811	side plank v. 3
+4812	side crunch v. 3
+4816	dumbbell goblet 2 sec hold squat
+4817	kettlebell good morning
+4818	ring elevated row
+4819	ring leg curl
+4820	ring reverse ab rollout
+4821	dumbbell single leg step up on bench
+4822	dumbbell rdl to jump shrug
+4824	diagonal punch
+4825	superman chest stretch
+4826	alternate leg raise
+4829	jump skip rope
+4830	push up in child pose
+4831	sliding floor pulldown on towel v. 2
+4832	lying rear lateral raise
+4833	dumbbell standing single arm arnold press
+4834	dumbbell alternate chest press on stability ball
+4835	dumbbell rotational grip bench press
+4836	dumbbell reverse grip squeeze bench press
+4837	dumbbell single arm bent over row
+4838	cable unilateral bicep curl
+4839	banded lower body dead bug
+4840	straight leg dead bug
+4841	barbell band assisted deadlift
+4842	trap bar banded deadlift
+4843	depth jump to broad jump
+4844	depth jump
+4845	kettlebell lying on floor chest press
+4846	kettlebell lying on floor single arm bottoms up chest press
+4847	weighted plate standing high front raise
+4848	barbell pin front squat
+4849	banded glute ham raise v. 2
+4850	barbell single leg good morning
+4851	barbell pin good morning
+4852	dumbbell alternate lateral raise
+4853	dumbbell lateral lunge
+4854	barbell sitting on floor oblique twist
+4855	bodyweight standing oblique twist
+4856	barbell pin close grip bench press
+4857	barbell behind the back push press
+4858	lateral walk push up
+4859	push up to side plank v. 2
+4860	push up with knee drive
+4861	kettlebell romanian deadlift
+4862	barbell standing snatch grip shrug
+4863	side plank leg lift
+4864	barbell sumo deadlift from deficit
+4865	dumbbell overhead walking lunge
+4866	barbell z press
+4867	butterfly yoga flaps
+4870	hip clam shell
+4871	dumbbell 6 ways raise
+4875	bodyweight standing back stretch
+4876	prayer push
+4880	lying criss cross legs
+4881	bridge hip abduction
+4882	side lying scissors
+4883	lying air cycles
+4884	side lying outward knee kick
+4885	lying incline hip raise
+4886	lying flat hip raise
+4887	dumbbells glute bridge v. 2
+4888	dumbbell standing high windmill
+4889	dumbbell power clean
+4890	glute ham raise with extended arms
+4891	hanging half windmill
+4892	elevated single leg squat
+4893	kneeling half triceps extension
+4894	staggered leg side bridge
+4895	standing calf raise circle
+4896	kneeling straight leg side kick
+4897	reverse sliding leg curl on floor with towel
+4898	kick side jump
+4899	lever bent over wide row (plate loaded)
+4900	elevated seated calf raise
+4901	dumbbell standing windmill
+4902	elevated single leg hip thrust
+4903	resistance band seated leg curl
+4904	toe jump
+4905	banded glute ham raise v. 3
+4906	long lever decline sit up
+4907	side plank with raised leg v. 2
+4908	dumbbell over bench reverse wrist curl with mat
+4909	side to wide squat
+4910	dumbbell bent arm iso hold
+4911	inverted wide to narrow row
+4912	ring leg curl v. 2
+4913	narrow top half pull up
+4914	dumbbell deadlift (neutral grip)
+4916	reverse leg extension
+4917	high bar inverted row
+4918	alternate high hop
+4919	kneeling assisted sliding chin up
+4920	leg assisted ring pull up
+4921	ring high row
+4922	ring chest fly
+4923	ring reverse fly
+4924	long lever lying back extension
+4928	seated calf stretch v. 2
+4929	lying calf stretch
+4930	lunge stretch
+4931	single leg calf stretch
+4932	lying bent knee figure 8
+4933	standing leg circle
+4934	reverse plank v. 2
+4935	around the world superman
+4936	sumo air squat
+4937	45 degree hip extension glute focused
+4938	wrist abduction
+4939	superman row
+4942	stationary arms throw
+4944	standing bent knee figure 8
+4945	chest out hands behind (hold)
+4948	cable kneeling one arm lat pulldown
+4949	bodyweight forward lunge (hinge at hips)
+4950	bodyweight forward lunge (smaller stance upright torso)
+4951	lever pendulum squat (plate loaded)
+4957	lying lat pulldown
+4958	cable overhead single arm triceps extension (rope attachment)
+4959	lunge thighs (form check)
+4960	cable high triceps extension
+4961	dumbbell prone triceps kickback
+4962	barbell box squat
+4963	kettlebell box squat
+4964	jump shrug
+4965	jump box v. 2
+4966	press under
+4967	lateral raise arms (form check)
+4968	quadruped leg curl
+4970	assisted chin up (squat position)
+4971	bodyweight single leg rdl
+4972	decline sit up and russian twist
+4973	dumbbell incline biceps curl (70 degrees)
+4974	inverted row slide on floor
+4975	lying leg raise v. 3
+4976	mountain climber jump
+4977	ring alternate superman
+4978	ring kneeling ab rollout
+4979	ring rollout
+4980	reverse flutter kick on floor (hand under head) v. 2
+4981	barbell close grip biceps curl
+4982	negative dragon flag
+4983	top pull up hold
+4984	kneeling modified hindu push up
+4985	band assisted floor glute ham raise
+4986	dumbbell step up v. 2
+4987	lying leg figure eight
+4988	inverse leg curl with bench pads
+4989	v sit cross punch
+4990	knee tuck oblique crunch
+4991	side plank rotation
+4992	opposite crunch
+4994	lying leg cross
+5001	dumbbell seated external shoulder rotation
+5002	dumbbell one arm y elevation
+5003	standing single leg calf raise (on a staircase)
+5004	suspension sumo squat
+5005	band seated underhand grip row
+5006	suspension underhand grip inverted row
+5007	suspension hammer curl
+5008	suspension chin up
+5009	elevated standing calf raise v. 2
+5010	barbell pause decline bench press
+5011	barbell pause incline bench press
+5013	barbell pause bench press
+5014	barbell pause deadlift
+5017	pause squat
+5023	weighted seated leg raise on floor
+5024	resistance band serratus wall slide
+5025	serratus wall slide
+5026	resistance band serratus wall slide with foam roll
+5027	foam roll serratus wall slide
+5028	dumbbell goblet split squat v. 2
+5029	kneeling back rotation
+5030	push up jack
+5031	medicine ball lying leg raise
+5032	leg raise oblique crunch
+5033	cable single arm triceps pushdown (rope attachment)
+5034	landmine one arm bent over row v. 2
+5035	weighted hyperextension
+5036	exercise ball leg curl
+5038	double jump rope
+5039	silent burpee
+5040	lying prone a
+5041	lying prone t
+5042	lying prone w
+5043	lying prone w to t
+5044	lying prone w to y
+5045	reverse plank on elbows
+5046	v sit toe tap
+5047	side bridge with bent leg
+5048	superman w to y
+5049	superman w
+5050	lying alternate toe touch floor
+5051	glute ham twist
+5052	single leg calf raise off step
+5054	crab pose
+5055	dead hang stretch
+5057	kneeling forward hip circles
+5058	kneeling neck stretch
+5059	heel press
+5060	prone cervical extension
+5061	prone cervical extension isometric hold
+5062	lying chin tucks
+5063	seated chin tuck
+5064	dumbbell kneeling hold to stand clean grip
+5065	dumbbell shoulder internal rotation at 90 abduction
+5066	dumbbell squat to overhead press
+5067	dumbbell incline squeeze press
+5068	weighted incline svend press
+5069	kettlebell lunge with twist
+5070	kettlebell rear lunge
+5071	kettlebell single arm overhead lunge
+5072	kettlebell sit up press
+5073	kettlebell sumo squat v. 2
+5074	landmine press
+5075	barbell muscle clean
+5076	dumbbell overhead lunge
+5077	bodyweight svend press
+5078	seated chest clam
+5079	lying floor fly
+5080	palm up palm down rotation
+5081	seated sky look
+5087	cable shoulder 90 degrees external rotation
+5088	cable shoulder internal rotation
+5089	cable shoulder 90 degrees internal rotation
+5090	cable standing row
+5091	barbell reverse grip bench press
+5092	dumbbell single arm underhand front raise
+5093	dumbbell single arm floor press
+5094	landmine single arm press
+5095	dumbbell single arm overhead lunge
+5096	single arm overhead dumbbell squat
+5097	dumbbell single arm alternate decline bench press
+5098	dumbbell single arm alternate fly
+5099	kettlebell unilateral farmers walk
+5101	dumbbell single power clean
+5105	cross jump jack
+5106	alternate toe tap leg lift
+5107	captains chair leg raise
+5108	dumbbell wood chop squat
+5110	triceps dip floor
+5118	cable twist v. 2
+5119	dumbbell deadlift v. 2
+5120	cable kickback v. 2
+5121	dumbbell sumo squat
+5122	barbell clean and jerk
+5123	cable reverse grip pulldown
+5124	side jump twist
+5126	standing ab twist
+5128	seated back squeeze
+5129	seated upper body rotation
+5130	triceps dip floor v. 2
+5131	seated neck tap
+5132	seated pulse back squeeze
+5133	seated behind back raise
+5134	seated ballerina
+5135	seated rotation stretch
+5142	smith hang clean
+5143	power sled drag
+5144	medicine ball chest pass against wall
+5145	posterior neck isometric
+5146	hangback bar stretch
+5147	resistance band assisted front rack stretch
+5148	jumping single leg lunge
+5151	kipping handstand push up
+5152	bodyweight kneeling hold to stand
+5153	side to side hop
+5154	lateral step up
+5155	lateral step up with knee drive
+5156	mountain climber slide with towel
+5157	plank jack on elbows
+5158	plank jack slide with towel
+5159	plank on hands
+5160	incline close grip push up
+5161	medicine ball throw squat with wall
+5162	seated neck stretch
+5165	plank pike slide with towel
+5166	single leg box jump
+5167	single leg glute bridge with external rotation
+5169	standing hip adduction v. 2
+5170	kneeling pulse
+5172	arm crossover
+5173	bodyweight standing fly
+5174	wall pulse
+5178	lever single leg extension (plate loaded)
+5179	cable standing close grip row
+5187	burpee long jump with push up
+5188	power clean thruster
+5190	barbell clean and jerk v. 2
+5192	cluster
+5193	power sled rear drag v. 2
+5194	bodyweight muscle up v. 2
+5195	seated neck side stretch
+5198	single straight leg glute bridge hold
+5201	dumbbell waiter biceps curl
+5202	resistance band kneeling ab crunch
+5203	resistance band standing ab crunch
+5204	resistance band single arm overhead shoulder press
+5205	resistance band overhead shoulder press
+5206	resistance band kneeling ab crunch v. 2
+5213	mountain climber v. 2
+5214	riding outdoor bicycle
+5216	sprint
+5220	extended side angle yoga pose
+5223	smith wide shrug
+5224	barbell wide shrug
+5225	smith back wide shrug
+5226	barbell back wide shrug
+5228	myotatic crunch on bosu ball
+5232	dumbbell deadlift bent over row
+5233	cross body punch in squat position
+5234	wall walks
+5236	bent arms chin up
+5237	single dumbbell decline overhead sit up
+5238	medicine ball lunge with biceps curl
+5239	dumbbell biceps curl with overhead extension on stability ball
+5240	ez barbell deadlift with biceps curl
+5241	old school reverse extensions
+5242	kneeling abdominal draw in
+5243	cable lying triceps extension (low)
+5250	lying bicycle crunch
+5261	dumbbell incline shoulders press
+5265	45 degree bicycle twisting crunch
+5266	air twisting crunch
+5274	lying tuck crunch
+5275	lying toe touch
+5277	bodyweight glute dominant step up
+5278	kneeling staggered push up
+5282	landmine kneeling thruster press
+5284	dumbbell sprinter thrust chest press
+5286	standing hands position (pronation supination neutral)
+5287	barbell full clean
+5297	cable kneeling preacher curl
+5298	dumbbell preacher curl (turned torso)
+5299	lever preacher curl (turned torso)
+5301	kettlebell full squat from deficit
+5302	balance board v. 2
+5303	dumbbell rear delt fly (45 degrees)
+5304	trap bar squat
+5307	landmine one leg stiff leg deadlift
+5308	ez bar russian twist sit up
+5309	ez bar shoulder press sit up
+5310	elevated side lunge
+5311	exercise ball serratus wall slide
+5312	rear lunge from deficit
+5313	dumbbell good morning squat
+5314	dumbbell glute dominant step up
+5315	cable glute dominant step up
+5316	smith bent over narrow pronated grip row
+5317	resistance band pull apart (45 degrees)
+5326	lever multy mode rope lat pulldown
+5327	lever t bar romanian deadlift
+5328	barbell standing shoulders press
+5330	dumbbell pullover v. 2
+5332	svend bench press
+5333	lever trunk rotation
+5334	cross twisting sit up v. 2
+5335	kettlebell swing clean grip front squat overhead press
+5336	kettlebell forward lunge v. 2
+5337	burpee push up mountain climber complex
+5344	v up hold
+5349	lever abduction leg raise
+5369	cable kneeling one arm row
+5370	cable standing one arm hammer curl (with rope)
+5371	roll neck rotation lying on floor
+5372	roll neck decompress lying on floor
+5373	roll forearms standing against wall
+5374	roll biceps lying on floor
+5375	roll triceps side lying on floor
+5376	roll chest opener lying on floor
+5377	roll chest lying on floor
+5378	roll front shoulder and chest lying on floor
+5379	roll posterior shoulder lying on floor
+5380	roll shoulder back rotation lying on floor
+5381	roll rhomboids
+5382	roll middle back lying on floor
+5383	roll lower back (side) lying on floor
+5384	roll thoracic spine lying on floor
+5385	roll shoulder blade reach lying on floor
+5386	roll around the world lying on floor
+5387	roll erector spinae lying on floor
+5388	roll kneeling upper back rotation
+5389	roll pigeon stretch
+5390	roll glutes sitting on floor
+5391	roll glute twist lying on floor
+5392	roll hamstrings and glute sitting on floor
+5393	roll quadriceps (vastus lateralis) lying on floor
+5394	roll tibialis anterior
+5395	roll tibialis anterior (single leg) lying on floor
+5396	roll peroneal side lying on floor
+5397	roll peroneal (single leg) side lying on floor
+5398	roll foot
+5399	stick assisted isometric core
+5400	stick lat stretch
+5401	stick shoulders stretch
+5402	stick lunge with overhead raise stretch
+5403	stick standing twist stretch
+5404	stick pass around stretch
+5405	stick side bend stretch
+5406	stick side to front bend stretch
+5407	stick overhead full sumo squat stretch
+5408	stick twist lunge stretch
+5445	standing abdominal vacuum
+5447	lever pronated grip seated row (plate loaded)
+5448	lever pronated grip seated scapular retraction shrug (plate loaded)
+5449	dumbbell standing drag curl v. 2
+5450	ez bar 21s
+5451	barbell kas glute bridge
+5458	dumbbell standing single arm cross raise
+5460	explosive push up
+5466	front plank with arm and leg lift (form check)
+5469	dumbbell 21s
+5470	cable medius kickback
+5471	rounded back extension
+5472	lying bent legs raise
+5473	shoulder width neutral grip pull up
+5474	supinated narrow grip pull up
+5476	barbell staggered stance hip thrust
+5477	vertical leg raise (on parallel bars) v. 2
+5478	high knee lunge on bosu ball
+5479	close grip pull up
+5480	resistance band seated calf stretch
+5481	seated foot slide
+5482	single leg hopping
+5483	weighted seated calf raise v. 2
+5484	weighted seated single calf raise v. 2
+5496	kettlebell elevated goblet squat
+5497	dumbbell plank pass through
+5498	weighted plate overhead march
+5513	bench dip on stability ball
+5514	twist crunch (legs up)
+5515	decline sit up v. 3
+5516	lever hack squat
+5517	supinated grip inverted row
+5518	cable kneeling leaning forward one arm row
+5522	ring pull up
+5524	cable standing one arm face pull
+5526	hip circle with hula hoop
+5527	lever seated bent over rear delt fly
+5528	cable standing crossover overhead tricep extension
+5529	weighted full squat with overhead press
+5537	high knee tap
+5553	cable seated lats focused row
+5554	dumbbell kas glute bridge
+5555	bodyweight good morning
+5556	negative push up
+5557	standing chest stretch against door
+5576	lever one arm incline chest press (plate loaded)
+5577	barbell paused sumo deadlift
+5579	ez bar seated wrist curl
+5581	cable kneeling single lat pulldown
+5582	rear shift lunge from deficit
+5583	lever ab coaster crunch
+5598	inchworm and mountain climbers
+5606	dumbbell prone rear delt swing
+5607	band face pull
+5608	band standing chest press v. 2
+5609	cable standing face pull
+5623	biceps curl front step
+5628	landmine hack squat
+5630	bodyweight narrow stance squat
+5631	dumbbell standing bent arm lateral raise
+5632	barbell shoulder grip upright row
+5633	barbell narrow stance squat v. 2
+5634	dumbbell narrow stance squat
+5635	dumbbell bent arm lateral raise
+5636	landmine kneeling one arm shoulder press v. 2
+5637	incline push up (on bench)
+5649	hollow rock
+5656	cable standing face pull (with rope)
+5657	cable side bend v. 2
+5658	cable seated face pull (with rope)
+5659	barbell anderson squat
+5660	barbell pin chest press
+5661	dumbbell bent over row with chest support
+5662	barbell power shrug
+5663	barbell behind the back deadlift
+5664	cable seated leg extension
+5665	dumbbell bent over face pull
+5666	dumbbell high pull
+5667	dumbbell z press
+5668	barbell standing shoulder pin press
+5669	barbell strict curl
+5670	barbell zercher deadlift
+5671	bodyweight single leg kas glute bridge
+5672	bodyweight b stance good morning
+5680	side mountain climber
+5684	crossed arms front leg kick
+5695	lean forward stretch
+5696	cheat curl
+5697	dumbbell lying row on rack
+5698	dumbbell walking calf raise
+5699	45 degrees side bend
+5700	bodyweight walking calf raise
+5701	barbell pin squat
+5702	barbell deadlift from deficit
+5703	cable incline biceps curl
+5704	barbell hang power clean
+5705	barbell clean high pull
+5706	barbell jefferson deadlift
+5737	suspension fly
+5738	suspension chest press
+5741	cable kneeling crunch v. 2
+5745	plyo squat
+5754	dumbbell hip thrust v. 2
+5774	single leg thrusts
+5784	lever reverse vertical hack squat
+5800	bodyweight lying prone ys
+5801	band assisted muscle up
+5803	reverse hyperextension on bench
+5805	wide glute pulse bridge
+5810	kicks leg bent
+5813	45 degree hyperextension (arms in front of chest)
+5814	cable low chest press
+5815	lever one arm side chest press
+5816	dumbbell one arm side lying bench press
+5817	dumbbell side lying external rotation (on a bench)
+5818	weighted full can exercise
+5819	dumbbell empty can exercise
+5820	dumbbell prone full can exercise
+5821	cable kneeling shoulder 90 degrees external rotation press
+5822	prone y raise
+5823	barbell walking lunge
+5825	smith rear lunge v. 2
+5837	resistance band pull through
+5843	lever incline fly
+5844	single arm side straight arm lat pulldown
+5846	cross standing crunch
+5853	barbell incline rear delt row
+5854	kettlebell standing calf raise
+5855	kettlebell clean and press
+5856	kettlebell concentration curl
+5857	kettlebell biceps curl
+5858	kettlebell floor fly
+5859	kettlebell front raise
+5860	kettlebell overhead triceps extension
+5861	kettlebell lying triceps extension skull crusher
+5862	kettlebell wrist curl
+5863	kettlebell standing one arm extension
+5864	bodyweight swing
+5865	wide stance jump squat to narrow stance jump squat
+5866	decline diamond push up
+5867	kettlebell bent over alternate twist row
+5873	ez barbell lying triceps extension
+5874	cable high pulley straight bar overhead triceps extension
+5876	suspension triceps extension
+5879	kettlebell side plank
+5880	kettlebell calf raise and front squat
+5881	crab walk
+5882	bodyweight wood chop squat
+5883	barbell curl press extension
+5884	dumbbell curl press extension
+5885	lotus pose breathing
+5886	kettlebell rotational deadlift
+5887	3 leg dog pose
+5888	chaturanga pose
+5889	corpse pose savasana
+5890	double pigeon pose
+5891	high lunge
+5892	lizard pose
+5894	meditation
+5895	mindful breathing meditation
+5896	mountain pose
+5897	puppy pose
+5898	pyramid pose
+5899	revolved chair
+5900	revolved side angle pose
+5901	revolved triangle pose
+5902	standing figure four pose
+5903	standing half bend
+5904	thread the needle pose
+5905	tiger curl pose
+5906	twisted leg lunge pose
+5907	warrior iii pose
+5908	revolved head to knee pose
+5910	weighted chain sumo deadlift
+5911	safety bar good morning
+5912	barbell weighted chains sumo deadlift
+5913	reverse warrior pose
+5914	four limbed staff
+5915	3 leg chaturanga pose
+5916	cable seated high pulley overhead tricep extension
+5917	happy baby pose
+5921	dumbbell hammer preacher curl
+5938	russian twist chop
+5943	cable single arm neutral grip front raise
+5944	dumbbell single arm neutral grip front raise
+5963	vertical sit up
+5965	1 2 stick drill
+5966	jump twist
+5967	agility ball drill
+5968	burpee twist
+5969	dot drill
+5970	heel to toe walk
+5971	l drill
+5972	ladder drill
+5973	lateral ladder drill
+5974	plyometric agility drill
+5975	single leg balance cross punch
+5976	t drill
+5977	tight rope walk
+5978	toy soldier dynamic stretch
+5979	x drill
+5980	sun salutation a
+5981	sun salutation b
+5982	half sun salutation
+5983	vinyasa
+5984	123 back drill
+5985	balloon drill
+5986	cone drill
+5988	bottle weighted deadlift
+5989	figure run
+5990	high hurdle jump to sprint and cut
+5991	partner shuffle
+5997	lay down push up
+5998	side lying hip adduction (left)
+6000	single leg bridge with outstretched leg (left)
+6001	single straight leg glute bridge hold (left)
+6002	lying toe tap
+6005	lying crunch (straight legs)
+6006	half squat side reach
+6007	low lunge
+6008	low lunge (left)
+6010	celebratory knee drives
+6011	side step rear delt row
+6013	front leg kick
+6014	arm raise step in place
+6016	twisting crunch v. 2
+6017	stepback pulldown
+6019	lying hyperextension hold
+6024	lying alternate frog kick
+6025	lying frog kick
+6026	side plank pull
+6027	punch step forward
+6032	cable low seated row with v bar
+6033	ab tuck
+6034	barbell deadlift from blocks
+6035	cable rear delt row (parallel bar)
+6036	cable straight arm pulldown v. 2
+6038	smith donkey kick
+6041	bottle weighted romanian deadlift
+6042	bottle weighted single leg romanian deadlift
+6043	bottle weighted swing
+6044	bottle weighted front squat
+6045	bottle weighted sumo squat
+6046	bottle weighted split squat
+6047	bottle weighted forward lunge
+6048	bottle weighted rear lunge
+6049	bottle weighted straight legs deadlift
+6050	bottle weighted glute bridge
+6051	bottle weighted kneeling squat
+6052	bottle weighted overhead crunch
+6053	bottle weighted frog crunch
+6054	bottle weighted side bend
+6055	bottle weighted russian twist
+6056	bottle weighted squatting alternate waves
+6057	bottle weighted lying chest press
+6058	bottle weighted svend press
+6059	bottle weighted bent over row
+6060	bottle weighted pullover
+6061	bottle weighted bent over reverse fly
+6063	bottle weighted concentration curl
+6064	bottle weighted reverse grip concentration curl
+6065	bottle weighted kickback
+6066	bottle weighted two arms kickback
+6067	bottle weighted overhead triceps extension
+6068	bottle weighted alternate biceps curl
+6069	bottle weighted alternate hammer curl
+6070	bottle weighted reverse curl
+6071	bottle weighted upright row
+6072	bottle weighted armpit row
+6073	bottle weighted front raise
+6074	bottle weighted lateral raise
+6075	bottle weighted alternate front raise
+6076	bottle weighted shoulder press
+6077	bottle weighted halo
+6092	spider plank
+6094	front leg lift under knee tap
+6097	back kick overhead press
+6098	swim leg circle
+6100	bodyweight skipping
+6103	jackknife
+6108	bodyweight lying legs curl
+6120	pavanamuktasana yoga pose
+6121	ardha matsyendrasana yoga pose
+6123	dumbbell unilateral scapula raise
+6136	dumbbell bent over scapula row
+6137	bodyweight standing scapula row
+6138	namaskarasana yoga pose
+6139	squat mobility twist
+6140	dumbbell seated external rotation
+6141	dumbbell standing driver
+6142	dumbbell seated reverse arnold press
+6143	dumbbell seated single arm front raise
+6144	dumbbell straight arm crunch v. 2
+6145	dumbbell reverse hyperextension on bench
+6146	dumbbell bent over row against wall
+6147	dumbbell alternate hammer strict curl
+6148	dumbbell seated alternate overhead triceps extension
+6149	dumbbell seated drag curl
+6150	dumbbell seated double concentration curl
+6151	dumbbell reverse push up
+6152	dumbbell one arm snatch (left)
+6156	kettlebell bent over row
+6158	dumbbell seated single arm overhead triceps extension
+6159	dumbbell seated single arm overhead triceps extension (left)
+6160	dumbbell frog hip thrust
+6161	dumbbell lying leg curl
+6162	dumbbell incline low fly
+6193	kettlebell cossack squat
+6194	kettlebell shrug
+6195	band standing reverse curl
+6207	side plank leg lift (left)
+6208	side plank with raised leg v. 2 (left)
+6209	kneeling straight leg kickback v. 2 (left)
+6210	elbow to knee side plank crunch (left)
+6211	bicycle crunch
+6214	lying scissors cross
+6215	dumbbell rollout
+6218	dumbbell incline twist press
+6219	cable standing single arm fly
+6220	suspender row
+6221	dumbbell standing french press
+6222	suspender squat jump
+6231	knee push up chest pullback
+6232	suspender biceps curl
+6234	ring arm curl
+6237	ring one arm biceps curl
+6252	ring face pull
+6259	ring single arm rear delt row
+6262	barbell standing wrist curl
+6263	barbell standing wrist reverse curl
+6264	dumbbell prone alternate hammer curl
+6265	dumbbell standing alternate reverse curl
+6266	cable seated overhead curl (sz bar)
+6267	dumbbell standing arms rotate
+6268	ez barbell standing single arm neutral wrist curl
+6269	cable standing wrist roll
+6270	barbell larsen press
+6271	barbell close grip larsen press
+6272	dumbbell larsen press
+6288	dolphin pose
+6290	chaturanga dandasana (four limbed staff pose)
+6291	warrior pose ii
+6292	frog pose mandukasana
+6293	peacock pose mayurasana
+6294	half frog pose ardha bhekasana
+6295	sage marichi i pose marichyasana
+6296	bird of paradise pose svarga dvijasana
+6297	wheel pose urdhva dhanurasana
+6298	one legged upward bow pose eka pada urdhva dhanurasana
+6299	dragonfly pose maksikanagasana
+6300	half boat pose ardha navasana
+6301	eagle pose garudasana
+6302	two legged inverted staff pose dwi pada viparita dandasana
+6303	camel pose ustrasana
+6304	dancer pose natarajasana
+6316	basic to cross donkey kick
+6318	single curtsy lunge
+6327	bodyweight low split squat
+6328	dumbbell low split squat
+6329	barbell low split squat
+6335	side kick through
+6336	bodyweight slow to explosive squats
+6341	humble warrior pose
+6344	holding squat
+6350	lying prone y raise
+6354	lever outdoor seated leg press
+6355	lever outdoor seated chest press
+6356	lever outdoor seated lat pulldown
+6358	ez barbell standing wrist curl
+6359	dumbbell standing wrist curl
+6360	cable standing wrist curl
+6361	ez barbell standing wrist reverse curl
+6362	dumbbell standing wrist reverse curl
+6363	cable standing wrist reverse curl
+6364	ez barbell seated wrist reverse curl
+6365	ez barbell standing back wrist curl
+6366	dumbbell standing back wrist curl
+6367	cable standing back wrist curl v. 2
+6392	cable lateral pulldown with mag grip
+6406	ez barbell preacher curl
+6418	resistance band reverse crunch
+6419	resistance band reverse crunch v. 2
+6423	bodyweight triceps extension from plank position
+6424	dumbbell good morning
+6425	kettlebell good morning v. 2
+6428	90 degree heel touch v. 2
+6435	heel glute bridge
+6437	resistance band shoulder adduction
+6438	bent over shoulder pendulum
+6439	resistance band standing single arm shoulder flexion
+6440	resistance band standing single arm lateral shoulder extension
+6441	resistance band standing external rotation
+6442	bear plank kickback
+6443	half seated leg circle
+6444	yoga vajrasana thunderbolt diamond pose
+6464	bodyweight frog hip thrust
+6465	smith frog hip thrust
+6466	side plank bent leg lift
+6485	weighted plate standing lateral raise
+6486	band bent over rear lateral raise v. 2
+6510	cable single arm high row
+6511	cable single arm high scapular row
+6512	cable single arm low scapular row
+6513	lever bent over row (with chest support)
+6514	lever bent over neutral grip row (with chest support)
+6515	lever bent over single arm neutral grip row (with chest support)
+6516	lever bent over wide grip row (with chest support)
+6517	lever bent over single arm wide grip row (with chest support)
+6523	lever linear hack squat
+6537	push up pull
+6539	armless prayer stretch
+6540	big turn back stretch
+6541	bodyweight bench squat
+6542	cable kneeling high to low fly
+6543	cable front raise (rope attachment)
+6544	cable goblet squat
+6545	handstand hold on wall
+6546	landmine single leg hip thrust
+6547	hanging hollow hold
+6548	decline knee raise
+6549	weighted plate standing around the world
+6550	incline push up on a smith bar
+6551	bodyweight reverse lunge with overhead reach
+6552	cable romanian deadlift
+6553	landmine single leg romanian deadlift
+6554	glute ham sit up
+6555	ab mat sit up
+6558	dumbbell banded wall sit
+6559	weighted plate tibialis anterior curl
+6560	90 to 90 stretch
+6561	lever ab swing
+6570	glute bridge walk
+6584	barbell feet flat bench press
+6599	bear crawl low hip
+6600	bodyweight supported squat
+6601	lever glute press
+6606	smith curtsey lunge
+6607	band lateral walk
+6618	low lunge yoga pose anjaneyasana i
+6632	diagonal reach on chair
+6648	cable high pull with rope attachment
+6692	barbell deadlift (side pov)
+6693	cable kneeling side crunch
+6698	weight plate standing biceps curl
+6705	supine windshield wipers
+6733	lever good morning on the hack squat machine
+6734	sled angled single leg press
+6735	dumbbell banded hip thrust
+6737	resistance band side plank glute raise
+6738	resistance band reverse hyper with stability ball on flat bench
+6739	cable kneeling hip abduction
+6741	resistance band kneeling leg half circle on bench
+6742	cable donkey diagonal kickback
+6744	resistance band side walk squat
+6745	cable seated foot eversion
+6746	cable seated foot inversion
+6747	kneeling glute press
+6748	kneeling single hamstring curl
+6749	seated hip external rotation
+6750	standing balance hip rotation
+6751	side lying diagonal backward leg raise
+6752	lying rectus abdominis activation crunch
+6753	lying scalene muscles activation
+6754	bodyweight lying shoulder external rotation
+6755	cable kneeling shoulder external rotation
+6756	cable kneeling shoulder internal rotation
+6757	dumbbell standing single arm biceps curl
+6758	dumbbell over the bench supination
+6759	seated tibialis anterior press
+6760	cable kneeling twist
+6761	half pigeon hip stretch
+6762	diagonal bend hold
+6763	seated forearms stretch
+6764	forward bend back stretch
+6765	neck stretch with hand assisted
+6766	roll ball posterior tibialis (single leg) side lying on floor
+6767	roll ball side lying scalene muscles activation
+6768	roll ball side lying scalene muscles activation (side pov)
+6769	roll ball lying semispinalis capitis muscle activation
+6770	kneeling sartorius stretch
+6771	kneeling iliopsoas stretch
+6772	standing peroneus muscles stretch
+6773	standing tibialis anterior stretch
+6774	seated rhomboid stretch
+6775	standing foot muscles activation
+6776	cable standing single delt row
+6785	band seated hip abduction v. 2
+6786	faber test
+6787	hip external rotation test
+6788	hip internal rotation test
+6789	leg length test
+6790	shoulder external rotation test
+6791	shoulder internal rotation test
+6792	shoulder level test
+6793	posterior chain flexibility test
+6794	thomas test
+6795	thomas frontal test
+6796	smith sumo chair squat
+6797	barbell bench lateral step up
+6798	resistance band standing balance glute kickback
+6799	dumbbell lying oblique v up
+6800	dumbbell military press russian twist with legs floor off
+6801	dumbbell seated military press in out leg raise on floor
+6802	dumbbell seated military hold alternate leg raise on floor
+6803	side and front in out
+6804	plank alternate anti gravity pull up
+6805	dumbbell alternate v up
+6806	dumbbell military press russian twist with legs floor off v. 2
+6809	dumbbell overhead sit up with legs on bench
+6810	band lying bent knee raise
+6811	stick subscapularis muscle relax
+6812	roll ball seated pectineus activation
+6813	barbell bench press (side pov)
+6820	kettlebell incline fly
+6833	kettlebell seated lateral raise
+6878	sitting yoga pose siddhasana
+6879	supported headstand yoga pose sirsasana
+6880	forearms stand yoga pose pincha mayurasana
+6881	lever cross lat pulldown
+6890	dumbbell z press v. 2
+6891	dumbbell alternate z press
+6901	cow yoga pose bitilasana
+6902	cow face yoga pose gomukhasana
+6910	deep push up on parallel bars
+6913	sitting scapular adduction
+6914	sitting scapular adduction v. 2
+6944	swimming crawl style
+6958	lateral hurdle jump
+6959	band assisted push up
+6961	uneven pull up
+6964	dumbbell standing t spine press
+6982	wrist full push up
+6986	downward dog push up against wall
+7019	stability ball rollout on knees
+7054	dumbbell standing hands torsion
+7055	weight plate standing hands torsion
+7056	dumbbell standing reverse curl rotate
+7107	lever seated single leg press v. 2
+7108	lever seated leg extension v. 3
+7113	dumbbell straight arm pullover v. 2
+7114	ez barbell standing upright row
+7129	bodyweight lying alternate legs curl
+7154	side shuffle high knee
+7155	cable seated reverse shrug
+7175	inline skating
+7176	lever seated calf press v. 2
+7177	lever seated single calf press
+7194	criss cross stepback hops
+7198	resistance band glute bridge abduction
+7199	resistance band lying bent knee hip abduction
+7200	resistance band seated bent knee abduction
+7201	resistance band lying leg raise v. 2
+7202	resistance band side lunge
+7203	resistance band squat step out
+7204	resistance band standing balance glute kickback v. 2
+7205	resistance band squat jump
+7206	resistance band lateral step and squat
+7207	resistance band bulgarian squat
+7208	resistance band kneeling back kick
+7209	resistance band kneeling leg half circle
+7210	resistance band plank jack
+7211	resistance band lying hyperextension abduction
+7212	resistance band air bike v. 2
+7213	side lying internal rotation
+7216	opposite arm and leg raise against wall
+7217	floor t raise v. 2
+7228	ring wide pull up
+7229	kettlebell plank pass through
+7230	kettlebell gorilla row
+7231	dumbbell incline single arm y raise
+7232	standing scapular rotation
+7233	standing scapular rotation (front pov)
+7234	dumbbell standing scapular external rotation
+7235	dumbbell standing scapular external rotation (front pov)
+7237	barbell hook grip deadlift
+7251	hanging front lever raise
+7252	dumbbell incline powell raise
+7255	seated frog half to full sit up
+7263	sitting uppercut on chair
+7274	suspension trainer pike
+7275	suspension trainer front plank
+7276	bottle weighted gorilla row
+7277	resistance band hip thrusts on knees
+7278	suspension trainer lat stretch
+7279	suspension trainer squat power pull
+7281	resistance band leg kickback
+7282	resistance band walk
+7287	trap bar overhead press
+7294	lying pelvic tilt
+7306	standing side neck stretch
+7310	seated hamstring stretch with chair
+7326	dumbbell reverse lunge from deficit
+7327	lever leg extension (inward toes)
+7328	dumbbell hyperextension
+7329	dumbbell jefferson curl
+7341	hopping pendulum
+7342	wide plank side tap
+7374	smith sumo deadlift
+7384	lever hip thrust (plate loaded)
+7385	pull up (negative)
+7389	wall plank
+7411	weighted full squat from deficit
+7412	reverse lunge high knee forward lunge
+7413	elevated two legs hip thrust
+7414	crunch against wall
+7415	planche dip on parallel bars
+7416	cable standing neutral grip fly
+7417	overhead sit up with legs on bench
+7418	staggered leg glute bridge
+7419	straight leg glute bridge
+7449	dumbbell standing front and lateral raise
+7455	single leg lateral hop
+7463	spider mountain climber
+7469	dumbbell goblet squat with calf raise
+7499	double plank jack to 4 mountain climber
+7512	ring archer pull up
+7517	ring one arm pull up
+7538	lying floor slide
+7543	forward backward hop
+7547	dumbbell goblet sumo squat
+7548	kettlebell swing to goblet squat
+7549	dumbbell goblet bulgarian split squat
+7550	dumbbell bulgarian split squat from deficit
+7551	bodyweight heel elevated bulgarian split squat
+7552	barbell zercher bulgarian split squat
+7553	doorway chest stretch
+7554	parallel bars bent knee inverted row
+7555	jumping jack high knee
+7556	squat jack
+7557	wall sit (narrow stance)
+7558	wall sit from deficit
+7559	dumbbell goblet wall sit
+7560	bodyweight single leg squat
+7561	bodyweight single leg squat with support
+7562	seated quadriceps stretch v. 2
+7563	kettlebell swing clean grip front squat
+7564	cable split stance single arm row
+7565	barbell bent arm pullover v. 2
+7566	dumbbell hack squat
+7577	bodyweight heel elevated squat
+7578	cable front squat with v bar
+7581	kettlebell contralateral reverse lunge
+7582	kettlebell ipsilateral reverse lunge
+7583	cable neutral grip lat pulldown
+7584	cable kneeling high low anti rotation chop
+7585	twist turn lift
+7586	cable ipsilateral glute dominant step up
+7587	cable single arm high row with chest support
+7588	weighted front raise hold
+7589	cable kneeling glute kickback
+7590	dumbbell glute dominant bulgarian split squat
+7591	cable lying face pull
+7592	cable incline rear delt fly with back support
+7593	sled glute dominant leg press
+7597	cable high row with chest support
+7598	dumbbell contralateral glute dominant bulgarian split squat
+7619	jack burpee v. 2
+7620	barbell banded bench press
+7621	barbell pin bench press conventional grip
+7622	lying single leg hamstring stretch against wall
+7623	single arm lat stretch against wall
+7624	flying lizard yoga pose utthan pristhasana
+7625	dumbbell bent over curl
+7626	landmine squat
+7627	landmine overhead rear lunge
+7648	dumbbell ipsilateral single leg stiff leg deadlift
+7693	sitting alternate knee to elbow twist
+7743	cable half kneeling face pull
+7744	cable standing supinated face pull (with rope)
+7745	standing supinated face pull (with towels)
+7746	nordic hamstring curl
+7747	dumbbell prone w raise
+7751	kettlebell swing clean grip front squat v. 2
+7839	dead bug v. 3
+7850	reverse air cycling
+7854	side plank twist arm delt raise
+7859	explosive dynamic plank
+7864	lever overhead triceps extension
+7879	dumbbell incline triceps kickback
+7880	dumbbell kneeling triceps kickback
+7882	plate push
+7883	landmine deadlift
+7884	lever push up with towels
+7892	dumbbell seated triceps extension v. 2
+7895	kneeling rotation torso rear fly to thread through
+7921	cable seated unilateral bicep curl
+7922	cable seated single arm unilateral bicep curl
+7994	dumbbell glute bridge chest press
+7995	dumbbell bent over y raise
+7999	resistance band 45 degree hip extension glute focused
+8002	resistance band wide stance anti rotation chop
+8025	kettlebell wood chop
+8052	kneeling thoracic rotation
+8075	dumbbell single leg hip thrust v. 2
+8076	weighted plate push up
+8083	cable straight leg diagonal kickback
+8084	negative biceps leg concentration curl
+8085	resistance band standing balance hip abduction
+8130	moving child pose
+8141	cable standing crossover
+8142	resistance band lying leg press
+8143	triceps dip on high parallel bars
+8146	lying pelvic floor relaxation and deep breathing
+8162	deep lunge to hamstring stretch
+8188	standing ankle circles v. 2
+8189	wide chin up
+8191	cable standing hip flexion
+8192	dumbbell sumo deadlift
+8193	cable reverse woodchop
+8194	lying knee raise
+8195	sitting side bend on a chair
+8197	sitting swimmer on a chair
+8199	sitting woodchopper on a chair
+8200	sitting prayer chest squeeze on a chair
+8202	sitting alternate abduction twist on a chair
+8203	sitting russian twist on a chair
+8220	deep knee bend
+8221	dumbbell lateral raise plank
+8222	dumbbell underhand renegade row
+8223	dumbbell renegade row on stability ball
+8224	resistance band renegade row
+8225	dumbbell renegade row walk
+8274	biceps curl under table
+8289	side lying chest stretch
+8297	cable straight arm pulldown (with rope attachment)
+8299	cable half kneeling single arm row v. 2
+8303	seated upright twists on a chair
+8311	seated side bend on a chair
+8327	resistance band drag curl
+8331	kettlebell half kneeling halo
+8342	bodyweight standing scapular external rotation
+8343	bodyweight standing t spine press
+8358	hamstring bridge
+8360	resistance band standing shoulder internal rotation
+8361	resistance band standing shoulder external rotation
+8362	resistance band standing single arm lateral raise
+8363	resistance band standing 90 degrees shoulder external rotation
+8364	resistance band overhead shoulder press v. 2
+8365	resistance band pass through
+8366	kettlebell side swing v. 2
+8369	seated over head straight arm stretch
+8371	kettlebell weighted russian twist
+8374	step out from squat
+8375	lever angled leg press
+8399	side floor tap plank
+8423	seated lean back on a chair
+8424	seated cross body punch on a chair
+8431	seated overhead stretch on a chair
+8433	seated forward bend stretch on a chair
+8434	seated forward roll up on a chair
+8479	bosu ball balance counterbalanced skater squat
+8502	dumbbell kneeling opposite shoulder press
+8505	dumbbell kneeling twist down up raise
+8533	kneeling to standing squat
+8536	bodyweight tibialis raise wall supported
+8546	lying prone y to t to w
+8585	mid back elbow squeeze
+8604	lever seated leg curl (plate loaded)
+8608	resistance band sumo squat
+8610	chinese plank
+8611	resistance band seated eversion foot
+8612	resistance band seated inversion foot
+8613	dumbbell preacher swing curl
+8614	cable standing single arm horizontal triceps extension
+8615	seated alternate dynamic chest stretch on a chair
+8616	seated elbow chest fly on a chair
+8617	seated external rotation on a chair
+8618	seated chest press on a chair
+8619	seated arm crossover on a chair
+8620	seated decline chest press on a chair
+8621	seated pec dec on a chair
+8622	seated incline chest press on a chair
+8633	seated shoulder press on a chair
+8634	seated rotating boxing rolls on a chair
+8652	seated shoulder tap on a chair
+8653	seated open up and under swing on a chair
+8654	seated overhead triceps extension on a chair
+8655	seated underhand arm circle on a chair
+8660	sled side leg press
+8661	cable incline y raise with back support
+8662	cable incline close grip shoulder press with v bar
+8663	cable incline y raise wrist straps with back support
+8664	dumbbell curtsey lunge v. 2
+8701	weighted bag walking lunge
+8702	torque tank push
+8703	battling rope pull
+8704	burpee jump box
+8712	lever romanian deadlift (plate loaded)
+8744	seated alternate knee extension on chair
+8750	ring pullover
+8755	split squat heel raise
+8798	barbell lying seal row on rack
+8799	leverage single leg deadlift on hack squat machine
+8800	smith staggered stance romanian deadlift
+8847	lever standing lateral raise
+8873	weighted dumbbell lying knee raise
+8874	resistance band speed step
+8875	cable lying single leg hip flexion
+8876	cable lying hip flexion (reverse squat)
+8877	resistance band fingers extension
+8878	cable 45 degrees reverse fly
+8879	cable half kneeling external rotation press
+8880	cable standing jab
+8881	cable forearm pronation
+8882	neutral wrist roller
+8891	weighted bag good morning
+8892	kettlebell staggered stance deadlift
+8894	knee tuck push up
+8895	45 degrees back extension scapular adduction
+8896	bent over back extension scapular adduction
+8899	cable standing y raise v. 2
+8900	cable standing jab v. 2
+8901	cable single arm lateral raise v. 2
+8916	side to side hop v. 2
+8946	seated single leg raise
+8956	heels squat slide wall
+8971	side lunge stretch v. 2
+8987	half kneeling side lunge
+8990	lever side seated single arm rear delt fly
+8991	barbell zercher back extension
+9002	bird dog plank
+9009	reverse hyperextension on stability ball
+9010	medicine ball crunch on stability ball
+9024	lying abdominal scissors crunch
+9025	sitting woodchopper on stability ball
+9040	sprint against wall
+9041	smith front leg elevated split squat
+9042	smith elevated split squat
+9043	hanging tucked front lever hold
+9044	hanging advanced tucked front lever hold
+9045	hanging front lever hold
+9047	straight hip single leg curl on stability ball
+9048	mountain climber cross kick
+9049	incline hip raise
+9066	4 way single leg hop
+9068	box drop 2 foot land
+9070	pogo jump 2 foot
+9180	stick standing shoulder mobilization in extension
+9181	stick standing shoulder mobilization in external rotation
+9184	stick shoulder mobilization in abduction
+9185	standing alternating shoulder flexion with rope
+9187	stick standing front raise
+9213	dumbbell lying straight arm press on floor
+9246	wide stance thoracic rotation
+9248	forward backward shuffle
+9272	sitting floor tibialis raise
+9304	cable neutral grip wide pulldown v. 3
+9310	standing isometric hold calf raise
+9311	isometric hold wide hand push up
+9312	high bar incline push up
+9313	ring isometric hold reverse ab rollout
+9314	45 degree hip extension glute focused v. 2
+9315	elevated split squat
+9316	ring elevated pike push up from deficit
+9317	seated isometric hold pull up
+9318	lying floor negative dragon flag
+9319	lying floor negative half dragon flag
+9320	isometric hold close grip chin up
+9321	lying floor horizontal flutter kick
+9322	lying floor single leg negative dragon flag
+9323	wide bench air squat
+9324	long lever standing hip extension
+9325	isometric hold push up
+9359	single leg hamstring bridge
+9385	smith jm bench press
+9387	lever angled single leg press
+9398	lever standing pec fly
+9408	repeated small jumps
+9409	standing bent knee calf raise with a chair support
+9410	barbell standing bent knee calf raise from deficit
+9411	standing bent knee alternating calf raise with a chair support
+9451	lying floor 6 inch hold
+9484	dumbbell romanian deadlift to squat
+9485	kettlebell romanian deadlift to squat
+9486	dish hold
+9487	sitting floor leg raise
+9488	pike stand
+9489	hanging side lean
+9490	step up on box
+9491	cable side lying single arm lateral raise
+9492	cable lying upright row (sz bar)
+9493	lever belt sumo squat
+9494	lever belt romanian deadlift
+9503	suspender rear delt row
+9509	lever sitting toe raise
+9510	partner assisted pull up
+9511	box assisted pull up
+9512	box single leg assisted pull up
+9513	countermovement jump arms pull
+9514	countermovement jump arms on hip
+9515	dumbbell sitting good morning
+9516	barbell elevated heel clean grip squat
+9517	weighted kettlebell dead bug
+9518	kettlebell pullover dead bug
+9601	bodyweight patrick step
+9602	bodyweight patrick step from stepbox
+9603	bodyweight poliquin step
+9604	bodyweight poliquin step from stepbox
+9605	bodyweight peterson step from stepbox
+9606	box drop jump
+9607	isometric mid thighs pull
+9608	walking backward on a treadmill
+9609	kettlebell deadlift v. 2
+9610	weighted plate overhead forward lunge
+9611	bodyweight overhead forward lunge
+9612	dumbbell step over box
+9653	standing torso twist arms swing
+9676	lever lying knee flexion
+9677	plank side jump
+9679	hopping high knee tap
+9690	dumbbell elevated heel front squat
+9691	bodyweight elevated heel front squat
+9692	kettlebell alternating arm thruster
+9693	dumbbell alternating arm thruster
+9694	barbell half kneeling shoulders press
+9695	landmine half kneeling shoulders press
+9696	barbell frog stance deadlift
+9697	kettlebell bottoms up single arm overhead carry
+9698	dumbbell chest supported row
+9699	dumbbell single arm chest supported row
+9700	bodyweight walking low lunge
+9701	long distance lunge (low lunge)
+9702	bodyweight pulse goblet squat
+9703	kettlebell z press
+9704	suspender headstand
+9705	cable lying floor front raise
+9803	standing tibialis raise wall supported
+9819	hanging knee raise
+9821	plank leg lift mountain climber
+9848	leverage standing hip thrust
+9849	side plank clamshell
+9862	lever single arm preacher curl (plate loaded)
+9863	cable side lying floor single leg kickback
+9865	lever belt deadlift (v bar)
+9866	lever belt deadlift (straight bar)
+9867	cable 45 degrees reverse grip reverse fly
+9868	cable 45 degrees single arm reverse fly
+9869	cable 45 degrees single arm reverse grip reverse fly
+9870	cable incline single arm y raise with back support
+9871	cable incline single arm y raise wrist straps with back support
+9872	cable lying bench cross lateral raise
+9873	cable lying bench single arm cross lateral raise
+9874	cable lying single arm cross lateral raise
+9875	cable sitting bench single arm twisting row
+9876	lever belt romanian deadlift (straight bar)
+9877	lever belt romanian deadlift (v bar)
+9878	cable zercher squat
+9890	standing pelvic lift
+9927	cable lying incline side leg raise
+9928	cable lying incline single leg kickback
+9929	leverage single leg squat on hack squat machine
+9930	barbell california press
+9931	dumbbell spider curl
+9932	barbell banded weighted plate bench press
+9933	dumbbell seated alternating lateral raise
+9939	power sled pull
+9940	weighted sandbag forward lunge
+9942	standing cross legs core stretch
+9969	lying supine heel slide
+9971	lying supine straight knee raise
+9977	lying supine abdominal breathing
+9980	stick assisted standing shoulder flexion
+9986	standing towel foot crunch
+9988	resistance band kneeling sissy squat
+9989	stick assisted standing shoulder internal rotation
+9990	standing isometric shoulder internal rotation against wall
+9994	ball assisted lying bent knee isometric hip adduction
+9995	isometric wrist extension
+9996	resistance band isometric thumb extension
+9999	plank knee tap

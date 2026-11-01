@@ -62,6 +62,17 @@ sealed interface Pushed {
     data object ChangeStrap : Pushed
 
     data object ChangeServer : Pushed
+
+    /** Connecting openGym (D41) or Dawarich (D42), full screen like the server. */
+    data object OpenGymSetup : Pushed
+
+    data object DawarichSetup : Pushed
+
+    /** One openGym session, by its openGym id. */
+    data class GymSession(val id: String) : Pushed
+
+    /** One Dawarich track of [day] (epoch day), by its Dawarich id. */
+    data class Track(val day: Long, val id: Long) : Pushed
 }
 
 /** Where the app is: the tab, the screens pushed over it, the day shown, and the open sheet or day picker. */
@@ -78,6 +89,9 @@ class Shell {
 
     /** The Fitness tab's training calendar is open. */
     var trainingCalendar by mutableStateOf(false)
+
+    /** A day picked in the training calendar, for Fitness to show; Fitness clears it once taken. */
+    var fitnessPick by mutableStateOf<LocalDate?>(null)
 
     val top: Pushed? get() = stack.lastOrNull()
 

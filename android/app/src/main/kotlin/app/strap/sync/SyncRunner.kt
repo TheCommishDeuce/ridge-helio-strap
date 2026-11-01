@@ -231,6 +231,9 @@ class SyncRunner(private val context: Context, private val store: LocalStore, pr
     /** Brings the phone's own numbers up to date (D34 S3) from what the sync stored; never fails a sync. */
     private suspend fun derive() {
         app().science.catchUp()?.let { log("science: $it") }
+        // openGym's sessions ride along (D41), after the sync rather than in it: an openGym out of
+        // reach (away from home) must not hold the strap's sync up. Never fails a sync.
+        liveScope.launch { app().openGym.pull()?.let { log("openGym: $it") } }
     }
 
     private fun app() = context.applicationContext as app.strap.StrapApp

@@ -61,6 +61,44 @@ class ServerLink(val baseUrl: String, val token: String) {
 }
 
 /**
+ * The base URL of a service Ridge reads from: `https://host[/path]`, no trailing slash. The demo
+ * build also takes `http://127.0.0.1:<port>`. Null for anything else.
+ */
+internal fun serviceUrl(url: String): String? {
+    val u = url.trim().trimEnd('/').let { if ("://" in it) it else "https://$it" }
+    val local = BuildConfig.LOCAL_HTTP && Regex("^http://127\\.0\\.0\\.1(:\\d+)?$").matches(u)
+    if (!(Regex("^https://[^\\s/?#]+(/[^\\s?#]*)?$").matches(u) || local)) return null
+    return u
+}
+
+/** A secret pasted or returned by a service: printable, no spaces, of a sane length. */
+private fun secret(s: String): String? = s.trim().takeIf { Regex("^[\\x21-\\x7E]{16,512}$").matches(it) }
+
+/** The owner's openGym (spec/03 §1): its address and the Bearer token a pairing code turned into. [toString] never shows the token. */
+class OpenGymLink(val baseUrl: String, val token: String) {
+    override fun toString(): String = "OpenGymLink($baseUrl)"
+
+    companion object {
+        fun parse(url: String, token: String): OpenGymLink? {
+            val u = serviceUrl(url) ?: return null
+            return secret(token)?.let { OpenGymLink(u, it) }
+        }
+    }
+}
+
+/** The owner's Dawarich (spec/03 §2): its address and API key. [toString] never shows the key. */
+class DawarichLink(val baseUrl: String, val apiKey: String) {
+    override fun toString(): String = "DawarichLink($baseUrl)"
+
+    companion object {
+        fun parse(url: String, key: String): DawarichLink? {
+            val u = serviceUrl(url) ?: return null
+            return secret(key)?.let { DawarichLink(u, it) }
+        }
+    }
+}
+
+/**
  * Stores the pairing with the auth key encrypted under an Android Keystore AES-GCM key that
  * never leaves the secure hardware. The MAC is not a secret and is stored beside it.
  */
@@ -104,6 +142,32 @@ class KeyVault(context: Context) {
         prefs.edit().remove(KEY_SERVER_URL).remove(KEY_SERVER_TOKEN).apply()
     }
 
+    fun loadOpenGym(): OpenGymLink? = loadLink(KEY_OPENGYM_URL, KEY_OPENGYM_TOKEN, ::OpenGymLink)
+
+    fun saveOpenGym(link: OpenGymLink) = saveLink(KEY_OPENGYM_URL, KEY_OPENGYM_TOKEN, link.baseUrl, link.token)
+
+    fun forgetOpenGym() = forgetLink(KEY_OPENGYM_URL, KEY_OPENGYM_TOKEN)
+
+    fun loadDawarich(): DawarichLink? = loadLink(KEY_DAWARICH_URL, KEY_DAWARICH_KEY, ::DawarichLink)
+
+    fun saveDawarich(link: DawarichLink) = saveLink(KEY_DAWARICH_URL, KEY_DAWARICH_KEY, link.baseUrl, link.apiKey)
+
+    fun forgetDawarich() = forgetLink(KEY_DAWARICH_URL, KEY_DAWARICH_KEY)
+
+    private fun <T> loadLink(urlKey: String, secretKey: String, make: (String, String) -> T): T? {
+        val url = prefs.getString(urlKey, null) ?: return null
+        val sealed = prefs.getString(secretKey, null) ?: return null
+        return open(sealed)?.let { make(url, String(it, Charsets.UTF_8)) }
+    }
+
+    private fun saveLink(urlKey: String, secretKey: String, url: String, secret: String) {
+        prefs.edit().putString(urlKey, url).putString(secretKey, seal(secret.toByteArray(Charsets.UTF_8))).apply()
+    }
+
+    private fun forgetLink(urlKey: String, secretKey: String) {
+        prefs.edit().remove(urlKey).remove(secretKey).apply()
+    }
+
     private fun seal(plain: ByteArray): String {
         val cipher = Cipher.getInstance(TRANSFORMATION)
         cipher.init(Cipher.ENCRYPT_MODE, secretKey())
@@ -143,5 +207,9 @@ class KeyVault(context: Context) {
         const val KEY_SEALED = "sealed_key"
         const val KEY_SERVER_URL = "server_url"
         const val KEY_SERVER_TOKEN = "server_token"
+        const val KEY_OPENGYM_URL = "opengym_url"
+        const val KEY_OPENGYM_TOKEN = "opengym_token"
+        const val KEY_DAWARICH_URL = "dawarich_url"
+        const val KEY_DAWARICH_KEY = "dawarich_key"
     }
 }

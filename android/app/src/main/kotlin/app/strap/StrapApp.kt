@@ -5,6 +5,9 @@ import app.strap.api.ApiClient
 import app.strap.api.BackupServer
 import app.strap.api.LocalReader
 import app.strap.api.Reader
+import app.strap.integrations.Dawarich
+import app.strap.integrations.ExerciseNames
+import app.strap.integrations.OpenGymSync
 import app.strap.pairing.KeyVault
 import app.strap.store.LocalStore
 import app.strap.sync.AlarmKeeper
@@ -23,6 +26,11 @@ class StrapApp : Application() {
     val background: Background by lazy { Background(this) }
     val zones: ZoneLog by lazy { ZoneLog(this) }
 
+    /** The owner's openGym sessions (D41) and Dawarich tracks (D42), when connected in Settings. */
+    val openGym: OpenGymSync by lazy { OpenGymSync(store, vault) }
+    val exerciseNames: ExerciseNames by lazy { ExerciseNames(this) { openGym.customNames() } }
+    val dawarich: Dawarich by lazy { Dawarich(vault) }
+
     /** The backup server, if one is set up (D34: it is optional). */
     val server: () -> BackupServer? = { vault.loadServer()?.let(::ApiClient) }
     val owner: Owner by lazy { Owner(store, server, zones) }
@@ -30,7 +38,7 @@ class StrapApp : Application() {
     val restore: Restore by lazy { Restore(store, server, owner, science).also { r -> science.backfill = r::backfill } }
 
     /** What the screens read: the numbers this phone works out (D34). */
-    fun reader(): Reader = LocalReader(science, store, owner)
+    fun reader(): Reader = LocalReader(science, store, owner, openGym, dawarich)
 
     /** Set up with no server (D34 S5): the phone keeps everything itself. */
     val withoutServer: Boolean get() = store.metaValue(NO_SERVER) == "1"

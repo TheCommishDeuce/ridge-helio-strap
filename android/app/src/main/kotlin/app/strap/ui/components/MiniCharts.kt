@@ -91,7 +91,7 @@ fun BandGauge(value: Double, max: Double, low: Double, high: Double, color: Colo
  * mean as the line, the span's own clock under it. Gaps over 20 minutes break the line.
  */
 @Composable
-fun SpanLine(points: List<Point>, start: Long, end: Long, color: Color) {
+fun SpanLine(points: List<Point>, start: Long, end: Long, color: Color, bands: List<Span> = emptyList(), ticks: List<Long> = emptyList()) {
     val grid = LocalRidgeColors.current.surface3
     Column {
         Spacer(
@@ -107,6 +107,13 @@ fun SpanLine(points: List<Point>, start: Long, end: Long, color: Color) {
                     if (i == 0 || p.t - points[i - 1].t > 20 * 60_000L) line.moveTo(x(p.t), y(near)) else line.lineTo(x(p.t), y(near))
                 }
                 onDrawBehind {
+                    // Bands (an exercise's first to last set) and ticks (a set ticked done) sit behind the line.
+                    for (b in bands) {
+                        val l = x(b.start).coerceIn(0f, size.width)
+                        val r = x(b.end).coerceIn(0f, size.width).coerceAtLeast(l + 2.dp.toPx())
+                        drawRect(color.copy(alpha = 0.10f), Offset(l, 0f), androidx.compose.ui.geometry.Size(r - l, size.height))
+                    }
+                    for (t in ticks) drawLine(color.copy(alpha = 0.45f), Offset(x(t), size.height - 6.dp.toPx()), Offset(x(t), size.height), 2.dp.toPx())
                     for (f in listOf(0.25f, 0.5f, 0.75f)) drawLine(grid, Offset(0f, size.height * f), Offset(size.width, size.height * f), 1.dp.toPx())
                     for (p in points) drawCircle(color.copy(alpha = 0.35f), 1.6.dp.toPx(), Offset(x(p.t), y(p.v)))
                     drawPath(line, color, style = Stroke(2.dp.toPx(), cap = StrokeCap.Round))

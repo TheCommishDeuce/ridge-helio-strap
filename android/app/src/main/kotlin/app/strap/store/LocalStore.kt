@@ -4,6 +4,8 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import app.strap.integrations.GymSession
+import app.strap.integrations.OpenGymFormat
 import org.json.JSONArray
 import org.json.JSONObject
 import strap.protocol.model.Metric
@@ -31,7 +33,7 @@ import java.time.LocalDate
  * live copy (D34). Each raw row carries an outbox flag for the backup to the server. Timestamps
  * are epoch milliseconds, UTC.
  */
-class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null, 5) {
+class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null, 6) {
     override fun onCreate(db: SQLiteDatabase) {
         SCHEMA.forEach(db::execSQL)
     }
@@ -49,6 +51,7 @@ class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null,
         if (oldVersion < 3) DERIVED_SCHEMA.forEach(db::execSQL)
         if (oldVersion < 4) JOURNAL_SCHEMA.forEach(db::execSQL)
         if (oldVersion < 5) RESTORE_SCHEMA.forEach(db::execSQL)
+        if (oldVersion < 6) GYM_SCHEMA.forEach(db::execSQL)
     }
 
     // ── the phone's own derived numbers (D34 S3) ────────────────────────────
@@ -471,6 +474,43 @@ class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null,
         }
     }
 
+    // ── openGym sessions (D41): a read-only copy, replaced whole on every pull ──────────
+
+    /** Replaces every stored session with [sessions]: openGym's state is one document, so edits and deletions follow. */
+    fun replaceGym(sessions: List<GymSession>) = transaction { db ->
+        db.delete("gym_sessions", null, null)
+        sessions.forEach { g ->
+            db.insertWithOnConflict("gym_sessions", null, ContentValues().apply {
+                put("id", g.id)
+                put("start", g.start.toEpochMilli())
+                put("end_ts", g.end.toEpochMilli())
+                put("name", g.name)
+                put("unit", g.unit)
+                put("volume", g.volume)
+                put("entries", OpenGymFormat.toJson(g.entries).toString())
+            }, SQLiteDatabase.CONFLICT_REPLACE)
+        }
+    }
+
+    /** Sessions that started in [from, until), oldest first. */
+    fun gymSessions(from: Instant, until: Instant): List<GymSession> =
+        gym("start >= ? AND start < ? ORDER BY start", from.toEpochMilli().toString(), until.toEpochMilli().toString())
+
+    fun gymSession(id: String): GymSession? = gym("id = ?", id).firstOrNull()
+
+    /** Drops the copy when openGym is disconnected. */
+    fun clearGym() = transaction { db -> db.delete("gym_sessions", null, null) }
+
+    private fun gym(where: String, vararg args: String): List<GymSession> =
+        readableDatabase.rawQuery("SELECT id, start, end_ts, name, unit, volume, entries FROM gym_sessions WHERE $where", args).use { c ->
+            buildList {
+                while (c.moveToNext()) add(GymSession(
+                    c.getString(0), Instant.ofEpochMilli(c.getLong(1)), Instant.ofEpochMilli(c.getLong(2)), c.getString(3), c.getString(4),
+                    c.doubleOrNull(5), OpenGymFormat.entries(org.json.JSONArray(c.getString(6))),
+                ))
+            }
+        }
+
     fun metaValue(key: String): String? = meta(readableDatabase, key)
 
     fun setMetaValue(key: String, value: String) = setMeta(writableDatabase, key, value)
@@ -611,6 +651,12 @@ class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null,
             "pai_total" to "pai_total_device", "odi_events" to "odi_events_device", "odi_score" to "odi_score_device",
             "odi_valid_time" to "odi_valid_time_device", "odi_raw" to "odi_raw_device",
         )
+        /** Added in version 6 (D41): openGym sessions, pulled from the owner's openGym and never backed up. */
+        val GYM_SCHEMA = listOf(
+            "CREATE TABLE gym_sessions(id TEXT PRIMARY KEY, start INTEGER NOT NULL, end_ts INTEGER NOT NULL, name TEXT, unit TEXT NOT NULL, volume REAL, entries TEXT NOT NULL)",
+            "CREATE INDEX gym_sessions_start ON gym_sessions(start)",
+        )
+
         /**
          * Added in version 5 (D34 S5): what a restore from the server brings that the strap never
          * sent this phone. A night's own end and source (an imported night may have no stages), and
@@ -653,7 +699,7 @@ class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null,
                 "pushed INTEGER NOT NULL DEFAULT 0)",
             "CREATE TABLE meta(key TEXT PRIMARY KEY, value TEXT NOT NULL)",
             "CREATE TABLE sync_log(id INTEGER PRIMARY KEY AUTOINCREMENT, at INTEGER NOT NULL, summary TEXT NOT NULL)",
-        ) + DERIVED_SCHEMA + JOURNAL_SCHEMA + RESTORE_SCHEMA.drop(2)
+        ) + DERIVED_SCHEMA + JOURNAL_SCHEMA + RESTORE_SCHEMA.drop(2) + GYM_SCHEMA
 
     }
 }

@@ -47,6 +47,12 @@ up once a night, so a new phone can start from your whole history.
 - **Sync that keeps up**: opening the app syncs when the last sync is over 15 minutes old,
   and optional background sync collects from the strap on an interval you choose (Settings →
   Background sync). With a server, a backup runs once a night while the phone charges on Wi-Fi.
+- **Your own openGym and Dawarich, if you run them** (Settings → Integrations, both
+  optional and read-only): gym sessions logged in [openGym](https://github.com/DuarteSantos8/openGym)
+  appear on Fitness with the strap's heart rate, strain and zones through them, each exercise
+  and set placed where it happened; the day's walks and rides from
+  [Dawarich](https://github.com/Freika/dawarich) appear with their path on a map and the
+  heart rate through them. Ridge itself records no location; the tracks stay in Dawarich.
 - **Days follow you when you travel**: each day starts at midnight wherever you are, and
   its charts and times are shown in that day's own timezone.
 - **Metrics that say why when they can't answer.** A number that lacks the data it needs
@@ -80,7 +86,8 @@ up once a night, so a new phone can start from your whole history.
 - **Getting the strap's auth key needs your Zepp account, once per pairing**, signed in
   with email and password (see [What you need](#what-you-need)).
 - Strap settings other than alarms can be read, not yet changed.
-- No GPS. English only.
+- No GPS of its own: Ridge never records your location. With Dawarich connected it shows the
+  walks and rides Dawarich recorded. English only.
 
 ## What you need
 
@@ -147,6 +154,7 @@ Zepp app; it just stops growing.
 | App | `android/app/` | Jetpack Compose UI, Bluetooth transport, the local store, live steps, backup and restore |
 | Server | `server/` | Optional backup: Python, FastAPI and TimescaleDB; stores what the phone sends and gives it back |
 | Self-hosting | `deploy/` | Docker Compose kit and guide |
+| openGym names | `tools/opengym-names.sh` | Rebuilds the app's exercise-name table from openGym's catalogue |
 | Key tool | `tools/keyfetch/` | One-shot Zepp account → MAC and auth key |
 | History backfill | `tools/zepp-backfill/` | One-off: your pre-Ridge history from the Zepp cloud, filling only gaps |
 

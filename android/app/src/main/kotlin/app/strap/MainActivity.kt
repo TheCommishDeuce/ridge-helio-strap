@@ -51,6 +51,8 @@ import app.strap.ui.isRunning
 import app.strap.ui.activity.StrainScreen
 import app.strap.ui.activity.TrainingCalendarSheet
 import app.strap.ui.activity.WorkoutScreen
+import app.strap.ui.activity.GymSessionScreen
+import app.strap.ui.activity.TrackScreen
 import app.strap.ui.biology.BiologyScreen
 import app.strap.ui.components.CalendarSheet
 import app.strap.ui.journal.JournalLogger
@@ -59,6 +61,8 @@ import app.strap.ui.settings.BackgroundScreen
 import app.strap.ui.settings.ProfileScreen
 import app.strap.ui.settings.SettingsScreen
 import app.strap.ui.setup.ServerStep
+import app.strap.ui.setup.OpenGymStep
+import app.strap.ui.setup.DawarichStep
 import app.strap.ui.setup.SetupFlow
 import app.strap.ui.setup.StrapStep
 import app.strap.ui.shell.BottomBar
@@ -122,6 +126,7 @@ private fun AppShell(app: StrapApp, requestedTab: MutableState<Tab?>) {
     // The phone works every number out itself (D34).
     val api: Reader = remember { app.reader() }
     val version by app.science.version.collectAsState()
+    val gymChanges by app.openGym.changes.collectAsState()
     val colors = LocalMetricColors.current
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -143,6 +148,8 @@ private fun AppShell(app: StrapApp, requestedTab: MutableState<Tab?>) {
     when (top) {
         Pushed.ChangeStrap -> return FullScreen { StrapStep(app, onCancel = shell::pop) { shell.pop() } }
         Pushed.ChangeServer -> return FullScreen { ServerStep(app, onCancel = shell::pop) { app.background.scheduleBackup(true); shell.pop() } }
+        Pushed.OpenGymSetup -> return FullScreen { OpenGymStep(app) { shell.pop() } }
+        Pushed.DawarichSetup -> return FullScreen { DawarichStep(app) { shell.pop() } }
         else -> {}
     }
 
@@ -206,6 +213,8 @@ private fun AppShell(app: StrapApp, requestedTab: MutableState<Tab?>) {
                             onDiagnostics = { shell.push(Pushed.Diagnostics) },
                             onBackground = { shell.push(Pushed.Background) },
                             onProfile = { shell.push(Pushed.Profile) },
+                            onOpenGym = { shell.push(Pushed.OpenGymSetup) },
+                            onDawarich = { shell.push(Pushed.DawarichSetup) },
                         )
                         top == Pushed.Profile -> ProfileScreen(app.owner) { scope.launch { app.science.update(null) } }
                         top == Pushed.Diagnostics -> DiagnosticsScreen(app)
@@ -213,6 +222,8 @@ private fun AppShell(app: StrapApp, requestedTab: MutableState<Tab?>) {
                         top is Pushed.Detail -> MetricDetailScreen(api, top.metric, shell.day)
                         top == Pushed.Strain -> StrainScreen(api, shell.day) { w -> shell.push(Pushed.Workout(w.start.toEpochMilli())) }
                         top is Pushed.Workout -> WorkoutScreen(api, java.time.Instant.ofEpochMilli(top.startMs))
+                        top is Pushed.GymSession -> GymSessionScreen(api, app.exerciseNames, top.id)
+                        top is Pushed.Track -> TrackScreen(api, java.time.LocalDate.ofEpochDay(top.day), top.id) { id -> shell.push(Pushed.Track(top.day, id)) }
                         top == Pushed.Journal -> JournalScreen(api, app.owner) { at -> app.science.update(at) }
                         top == Pushed.Timeline -> shown?.let { TimelineScreen(it, nav, logger) } ?: Loading(today.error)
                         top == Pushed.Recovery -> shown?.let {
@@ -224,7 +235,9 @@ private fun AppShell(app: StrapApp, requestedTab: MutableState<Tab?>) {
                             when (shell.tab) {
                                 Tab.TODAY -> shown?.let { TodayContent(it, nav, logger, liveSteps = live?.steps) } ?: Loading(today.error)
                                 Tab.SLEEP -> SleepScreen(api, shell.day, { shell.day = it }, (sync is SyncState.Finished) to version)
-                                Tab.ACTIVITY -> ActivityScreen(api, (sync is SyncState.Finished) to version) { w -> shell.push(Pushed.Workout(w.start.toEpochMilli())) }
+                                Tab.ACTIVITY -> ActivityScreen(api, Triple(sync is SyncState.Finished, version, gymChanges), onWorkout = { w -> shell.push(Pushed.Workout(w.start.toEpochMilli())) },
+                                    onGym = { g -> shell.push(Pushed.GymSession(g.id)) }, onTrack = { day, id -> shell.push(Pushed.Track(day.toEpochDay(), id)) },
+                                    pick = shell.fitnessPick, onPicked = { shell.fitnessPick = null })
                                 Tab.BIOLOGY -> BiologyScreen(api, app.owner, (sync is SyncState.Finished) to version) { shell.select(Tab.SLEEP) }
                                 Tab.STRAP -> StrapScreen(app, sync)
                             }
@@ -235,7 +248,8 @@ private fun AppShell(app: StrapApp, requestedTab: MutableState<Tab?>) {
         }
     }
     shell.sheet?.let { InfoSheet(it) { shell.sheet = null } }
-    if (shell.trainingCalendar) TrainingCalendarSheet(api, onDismiss = { shell.trainingCalendar = false }) { w ->
+    if (shell.trainingCalendar) TrainingCalendarSheet(api, onDismiss = { shell.trainingCalendar = false },
+        onDay = { d -> shell.trainingCalendar = false; shell.stack.clear(); shell.fitnessPick = d }) { w ->
         shell.trainingCalendar = false
         shell.push(Pushed.Workout(w.start.toEpochMilli()))
     }
@@ -245,7 +259,8 @@ private fun AppShell(app: StrapApp, requestedTab: MutableState<Tab?>) {
 /** The tone a screen's top fades from: its metric's, or none (the Sleep tab has the night palette). */
 private fun screenTone(shell: Shell, colors: MetricColors): MetricTone? = when (val top = shell.top) {
     Pushed.Recovery -> colors.recoveryTone
-    Pushed.Strain, is Pushed.Workout -> colors.strainTone
+    Pushed.Strain, is Pushed.Workout, is Pushed.GymSession -> colors.strainTone
+    is Pushed.Track -> colors.stepsTone
     is Pushed.Detail -> top.metric.tone
     Pushed.Journal -> colors.energyTone
     Pushed.Timeline -> colors.neutralTone

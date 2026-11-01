@@ -51,6 +51,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.strap.api.ApiException
 import app.strap.api.Reader
+import app.strap.integrations.GymSession
+import app.strap.integrations.Track
 import app.strap.ui.Loading
 import app.strap.ui.components.Bar
 import app.strap.ui.components.BandGauge
@@ -92,7 +94,8 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 
-private class FitnessData(val summary: DaySummary, val daily: Map<String, Map<LocalDate, Double>>, val workouts: List<Workout>, val statuses: Map<LocalDate, DayStatus>)
+private class FitnessData(val summary: DaySummary, val daily: Map<String, Map<LocalDate, Double>>, val workouts: List<Workout>, val statuses: Map<LocalDate, DayStatus>,
+    val gym: List<GymSession>)
 
 /** A chart the Fitness tab can pin: a daily metric, how it is drawn and printed. */
 /** [higherBetter]: which way the metric's trend is good (null: neither, as load). */
@@ -125,24 +128,44 @@ private class PinStore(context: Context) {
  * training load and the strap's PAI, the week's steps, charts you pin, and the workouts.
  */
 @Composable
-fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit) {
+fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit, onGym: (GymSession) -> Unit, onTrack: (LocalDate, Long) -> Unit,
+    pick: LocalDate? = null, onPicked: () -> Unit = {}) {
     var data by remember { mutableStateOf<FitnessData?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     val today = LocalDate.now()
     var dayEpoch by rememberSaveable { mutableLongStateOf(today.toEpochDay()) }
+    LaunchedEffect(pick) { pick?.let { dayEpoch = it.toEpochDay(); onPicked() } }
     val day = LocalDate.ofEpochDay(dayEpoch)
+    // The week strip shows the last 7 days, or a week around a day picked further back.
+    val stripEnd = if (day > today.minusDays(7)) today else minOf(day.plusDays(3), today)
+    val first = minOf(today.minusDays(29), stripEnd.minusDays(6))
     val context = LocalContext.current
     val store = remember { PinStore(context) }
     val pins = remember { mutableStateListOf<String>().apply { addAll(store.load()) } }
     var editing by remember { mutableStateOf(false) }
     var open by remember { mutableStateOf<String?>(null) }
+    // Dawarich is read on demand for the shown day (D42); its failure stays in its own card.
+    var tracks by remember { mutableStateOf<List<Track>>(emptyList()) }
+    var tracksError by remember { mutableStateOf<String?>(null) }
+    // Opening Fitness is the other moment to ask openGym (D41); new sessions arrive through refreshKey.
+    LaunchedEffect(Unit) { api.refreshGym() }
+    LaunchedEffect(refreshKey, dayEpoch) {
+        tracks = emptyList()
+        tracksError = null
+        try {
+            tracks = api.tracks(day)
+        } catch (e: ApiException) {
+            tracksError = e.message
+        }
+    }
     LaunchedEffect(refreshKey, dayEpoch) {
         try {
             data = FitnessData(
                 api.summary(day),
-                CHARTS.values.map { it.metric }.distinct().associateWith { m -> api.daily(m, today.minusDays(41), today).associate { it.day to it.value } },
-                api.workouts(today.minusDays(29), today),
-                api.statuses(today.minusDays(6), today),
+                CHARTS.values.map { it.metric }.distinct().associateWith { m -> api.daily(m, minOf(today.minusDays(41), day.minusDays(41)), today).associate { it.day to it.value } },
+                api.workouts(first, today),
+                api.statuses(stripEnd.minusDays(6), stripEnd),
+                api.gymSessions(first, today),
             )
             error = null
         } catch (e: ApiException) {
@@ -154,22 +177,31 @@ fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit) 
     val r = LocalRidgeColors.current
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
     val zone = ZoneId.systemDefault()
-    val byDay = d.workouts.groupBy { it.start.atZone(zone).toLocalDate() }
+    val dayGym = d.gym.filter { it.start.atZone(zone).toLocalDate() == day }.sortedBy { it.start }
+    // A strap workout inside an openGym session is the same training: the session shows it (D41).
+    val byDay = d.workouts.filter { w -> d.gym.none { g -> w.start.isBefore(g.end) && w.start.plusSeconds(w.durationS.toLong()).isAfter(g.start) } }
+        .groupBy { it.start.atZone(zone).toLocalDate() }
     val dayWorkouts = byDay[day].orEmpty()
+    val activeDays = byDay.keys + d.gym.map { it.start.atZone(zone).toLocalDate() }
     val load = d.daily.getValue("cardio_load")
     val range = loadRange(load, day)
     LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { WeekStrip(today, day, byDay.keys, d.statuses) { dayEpoch = it.toEpochDay() } }
+        item { WeekStrip(stripEnd, day, activeDays, d.statuses) { dayEpoch = it.toEpochDay() } }
         item {
             val w = dayWorkouts.firstOrNull()
+            val g = dayGym.firstOrNull()
             val rangeLine = range?.let { " Your 7-day load is ${it.acute.roundToInt()}, ${it.words.lowercase()} (${it.low.roundToInt()}–${it.high.roundToInt()})." } ?: ""
             RidgeCard(spacing = 6.dp) {
                 val status = d.statuses[day]?.takeIf { it != DayStatus.ACTIVE }
-                CardHeader(if (w != null) "Workout done" else status?.label ?: "Rest day",
-                    icon = if (w != null) Icons.AutoMirrored.Rounded.DirectionsRun else status?.icon ?: Icons.AutoMirrored.Rounded.DirectionsWalk,
-                    tone = if (w == null && status != null) status.tone() else c.strainTone)
-                Text((if (w != null) "A ${w.durationS / 60}-minute workout${w.avgHr?.let { " at an average of $it bpm" } ?: ""}." else "No workout recorded on this day.") + rangeLine,
-                    style = RidgeType.body, color = muted)
+                val trained = w != null || g != null
+                CardHeader(if (trained) "Workout done" else status?.label ?: "Rest day",
+                    icon = if (trained) Icons.AutoMirrored.Rounded.DirectionsRun else status?.icon ?: Icons.AutoMirrored.Rounded.DirectionsWalk,
+                    tone = if (!trained && status != null) status.tone() else c.strainTone)
+                Text((when {
+                    g != null -> "${g.name ?: "A gym session"}, ${java.time.Duration.between(g.start, g.end).toMinutes()} minutes in openGym."
+                    w != null -> "A ${w.durationS / 60}-minute workout${w.avgHr?.let { " at an average of $it bpm" } ?: ""}."
+                    else -> "No workout recorded on this day."
+                }) + rangeLine, style = RidgeType.body, color = muted)
             }
         }
         item { SectionTitle("Training load") }
@@ -214,8 +246,15 @@ fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit) 
         }
         item { SectionTitle(day.format(DateTimeFormatter.ofPattern("EEEE d MMM"))) }
         item {
-            if (dayWorkouts.isEmpty()) RidgeCard { Subtle("No workouts recorded by the strap on this day.") }
-            else WorkoutRows(dayWorkouts, onWorkout)
+            if (dayWorkouts.isEmpty() && dayGym.isEmpty()) RidgeCard { Subtle("No workouts recorded on this day.") }
+            if (dayWorkouts.isNotEmpty()) WorkoutRows(dayWorkouts, onWorkout)
+        }
+        if (dayGym.isNotEmpty()) item { GymRows(dayGym, onGym) }
+        if (tracks.isNotEmpty() || tracksError != null) {
+            item { SectionTitle("Walks and rides") }
+            item {
+                tracksError?.let { RidgeCard { Subtle(it) } } ?: TrackRows(tracks) { id -> onTrack(day, id) }
+            }
         }
     }
     if (editing) PinSheet(pins) { editing = false; store.save(pins) }

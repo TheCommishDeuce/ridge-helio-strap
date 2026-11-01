@@ -94,3 +94,10 @@ public fun Science.workoutDetail(start: Instant, durationS: Int): WorkoutDetail?
     return WorkoutDetail(round(trimp, 1), zones.toList(), strainFromLoad(trimp, p95?.takeIf { it != 0.0 }), roundInt(hrmax).toInt(), roundInt(rhr).toInt(),
         minutes.map { (t, v) -> TimedValue(t, v) })
 }
+
+/**
+ * The per-minute heart rate over [start, end) (the same valid minutes [workoutDetail] uses), for a
+ * window that needs no profile: an openGym session or a Dawarich track (D41, D42).
+ */
+public fun Science.heartRate(start: Instant, end: Instant): List<TimedValue> =
+    hrPerMinute(start, end).map { (t, v) -> TimedValue(t, v) }

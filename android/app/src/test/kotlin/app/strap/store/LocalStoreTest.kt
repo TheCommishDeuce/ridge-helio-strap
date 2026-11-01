@@ -191,13 +191,16 @@ class LocalStoreTest : PhoneTest() {
         assertEquals(listOf(58.0), data.samples("hr", at("2026-09-01", "00:00"), at("2026-09-02", "00:00")).map { it.value })
         val night = data.sleepSessions(at("2026-09-01"), at("2026-09-03")).single()
         assertEquals("strap_ble" to at("2026-09-02", "07:00"), night.source to night.end)
-        // The tables of versions 3–5 exist and work.
+        // The tables of versions 3–6 exist and work.
         store.derived.put(Derived(day("2026-09-02"), "rhr_daily", 50.0))
         store.putJournal(LocalStore.JournalRow("j", "caffeine", at("2026-09-02"), 80.0, "mg", null, null, pushed = false, deleted = false))
         store.restoreTotal(JSONObject().put("day", "2026-09-02").put("steps", 1).put("distance_m", JSONObject.NULL).put("calories", JSONObject.NULL)
             .put("source", "strap_0x16").put("read_at", JSONObject.NULL).put("reported_at", 0))
         assertEquals(1, store.journalRows().size)
         assertEquals(50.0, store.derived.get(day("2026-09-02"), "rhr_daily")!!.value)
+        // Version 6: openGym sessions.
+        store.replaceGym(listOf(app.strap.integrations.GymSession("g", at("2026-09-02", "10:00"), at("2026-09-02", "11:00"), "Push", "kg", 100.0, emptyList())))
+        assertEquals("Push", store.gymSession("g")!!.name)
         store.close()
     }
 }

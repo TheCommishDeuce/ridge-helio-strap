@@ -12,7 +12,9 @@ import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.CloudDone
 import androidx.compose.material.icons.outlined.CloudUpload
+import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Sync
@@ -52,7 +54,8 @@ private data class Item(val icon: ImageVector, val title: String, val detail: St
 
 /** The gear (D27): what is set up, a way to change it, and the raw diagnostics only under Advanced. */
 @Composable
-fun SettingsScreen(app: StrapApp, onChangeStrap: () -> Unit, onChangeServer: () -> Unit, onDiagnostics: () -> Unit, onBackground: () -> Unit, onProfile: () -> Unit) {
+fun SettingsScreen(app: StrapApp, onChangeStrap: () -> Unit, onChangeServer: () -> Unit, onDiagnostics: () -> Unit, onBackground: () -> Unit, onProfile: () -> Unit,
+    onOpenGym: () -> Unit, onDawarich: () -> Unit) {
     val links = LocalUriHandler.current
     val sync by app.syncRunner.state.collectAsStateWithLifecycle()
     // Re-read when a sync changes state: it may have finished, or uploaded the outbox.
@@ -93,6 +96,18 @@ fun SettingsScreen(app: StrapApp, onChangeStrap: () -> Unit, onChangeServer: () 
                     }
                 }
             },
+        ))
+        val gym = remember(sync) { app.openGym.status() }
+        val gymLink = remember(sync) { app.vault.loadOpenGym() }
+        val tracks = remember { app.vault.loadDawarich() }
+        Section("Integrations", listOf(
+            Item(Icons.Outlined.FitnessCenter, "openGym", when {
+                gymLink == null -> "Gym sessions with the strap's heart rate"
+                gym?.unpaired == true -> "⚠ Pair again: openGym no longer accepts this phone"
+                gym?.failure != null -> "${host(gymLink.baseUrl)} · ⚠ ${gym.failure}"
+                else -> "${host(gymLink.baseUrl)} · " + (gym?.at?.let { "pulled ${time(it)}" } ?: "not pulled yet")
+            }, onClick = onOpenGym),
+            Item(Icons.Outlined.Map, "Dawarich", tracks?.let { "${host(it.baseUrl)} · walks and rides on Fitness" } ?: "Walks and rides with the strap's heart rate", onClick = onDawarich),
         ))
         Section("You", listOf(
             Item(Icons.Outlined.Person, "Profile", profileSummary(profile, weights), onClick = onProfile),
@@ -144,6 +159,8 @@ private fun profileSummary(p: strap.science.Profile?, weights: List<strap.scienc
     return (parts + listOfNotNull(missing.takeIf { it.isNotEmpty() }?.let { "Missing: " + it.joinToString() })).joinToString(" · ")
         .ifEmpty { "Tell Ridge what the strap cannot measure" }
 }
+
+private fun host(url: String): String = runCatching { URI(url).host }.getOrNull() ?: url
 
 private fun time(at: Instant): String {
     val t = at.atZone(ZoneId.systemDefault())

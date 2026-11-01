@@ -337,7 +337,7 @@ private fun FirstSync(app: StrapApp, onDone: () -> Unit) {
  * edit mode), a 64 dp icon tile, the title and intro, the body, and buttons pinned below.
  */
 @Composable
-private fun Frame(step: Int?, icon: ImageVector, title: String, intro: String, buttons: @Composable ColumnScope.() -> Unit, body: @Composable ColumnScope.() -> Unit) {
+internal fun Frame(step: Int?, icon: ImageVector, title: String, intro: String, buttons: @Composable ColumnScope.() -> Unit, body: @Composable ColumnScope.() -> Unit) {
     val r = LocalRidgeColors.current
     val scheme = MaterialTheme.colorScheme
     Column(Modifier.fillMaxSize().imePadding()) {
@@ -366,7 +366,7 @@ private fun Frame(step: Int?, icon: ImageVector, title: String, intro: String, b
 }
 
 @Composable
-private fun Primary(text: String, enabled: Boolean = true, modifier: Modifier = Modifier.fillMaxWidth(), onClick: () -> Unit) {
+internal fun Primary(text: String, enabled: Boolean = true, modifier: Modifier = Modifier.fillMaxWidth(), onClick: () -> Unit) {
     val r = LocalRidgeColors.current
     Button(
         onClick = onClick, enabled = enabled, modifier = modifier.height(56.dp),
@@ -375,7 +375,7 @@ private fun Primary(text: String, enabled: Boolean = true, modifier: Modifier = 
 }
 
 @Composable
-private fun Buttons(onCancel: (() -> Unit)?, label: String, enabled: Boolean = true, onNext: () -> Unit) {
+internal fun Buttons(onCancel: (() -> Unit)?, label: String, enabled: Boolean = true, onNext: () -> Unit) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         onCancel?.let { OutlinedButton(onClick = it, modifier = Modifier.weight(1f).height(56.dp)) { Text("Cancel", style = RidgeType.cardTitle) } }
         Primary(label, enabled, Modifier.weight(1f), onNext)
@@ -383,7 +383,7 @@ private fun Buttons(onCancel: (() -> Unit)?, label: String, enabled: Boolean = t
 }
 
 @Composable
-private fun DocsLink(text: String, onClick: () -> Unit) {
+internal fun DocsLink(text: String, onClick: () -> Unit) {
     TextButton(onClick = onClick) {
         Text(text, style = RidgeType.label)
         Icon(Icons.AutoMirrored.Rounded.OpenInNew, null, Modifier.padding(start = 6.dp).size(18.dp))

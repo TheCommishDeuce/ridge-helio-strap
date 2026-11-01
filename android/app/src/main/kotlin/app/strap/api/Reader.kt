@@ -11,6 +11,10 @@ import strap.science.Derived
 import strap.science.IllnessCheck
 import strap.science.Workout
 import strap.science.WorkoutDetail
+import app.strap.integrations.GymSession
+import app.strap.integrations.Track
+import strap.science.TimedValue
+import java.time.Instant
 import java.time.LocalDate
 
 /**
@@ -44,4 +48,21 @@ interface Reader {
 
     /** One workout's own load, zones and heart rate; null without a profile or resting HR. */
     suspend fun workoutDetail(workout: Workout): WorkoutDetail?
+
+    /** The same for any window (an openGym session, a Dawarich track); null without a profile or resting HR. */
+    suspend fun windowDetail(start: Instant, end: Instant): WorkoutDetail?
+
+    /** The strap's per-minute heart rate over [start, end), with or without a profile. */
+    suspend fun heartRate(start: Instant, end: Instant): List<TimedValue>
+
+    /** Asks openGym for changes if it has not been asked in the last minutes (D41); a failure shows in Settings. */
+    suspend fun refreshGym()
+
+    /** The openGym sessions that started from [from] through [to], newest first (D41); empty when not connected. */
+    suspend fun gymSessions(from: LocalDate, to: LocalDate): List<GymSession>
+
+    suspend fun gymSession(id: String): GymSession?
+
+    /** The day's walks and rides from Dawarich, oldest first (D42); empty when not connected. Throws [ApiException] when it cannot be reached. */
+    suspend fun tracks(day: LocalDate): List<Track>
 }

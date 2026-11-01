@@ -54,6 +54,11 @@ when Today leaves the screen.
   illness flags, the journal, watermarks, backup flags), `PhoneScience` (keeps the derived
   rows current), `Owner` (the profile, journal and timezones), `Restore`, `KeyVault` (the
   auth key and server token, encrypted under an Android Keystore key) and `PushClient`.
+- `android/app/.../integrations`: the owner's own openGym and Dawarich, read-only and only
+  when connected in Settings (D41, D42; `docs/spec/03-integrations.md`). openGym's sessions
+  are pulled into `gym_sessions` when its revision moves; Dawarich's tracks are fetched for the
+  day shown and kept in memory only. Both lay the strap's per-minute heart rate over their
+  window with the same `workoutDetail` a strap workout uses.
 
 ## The server
 

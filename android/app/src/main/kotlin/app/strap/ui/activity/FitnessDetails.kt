@@ -88,7 +88,7 @@ import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 
 /** Zone colours, rest to zone 5: grey, blue, green, yellow, orange, red (Bevel's). */
-private val ZONE_COLORS = listOf(Color(0xFF9AA3A0), Color(0xFF6FB7E8), Color(0xFF3F9B5E), Color(0xFFE1B12C), Color(0xFFE8792B), Color(0xFFD9433E))
+internal val ZONE_COLORS = listOf(Color(0xFF9AA3A0), Color(0xFF6FB7E8), Color(0xFF3F9B5E), Color(0xFFE1B12C), Color(0xFFE8792B), Color(0xFFD9433E))
 private val ZONE_PCT = listOf(0.5, 0.6, 0.7, 0.8, 0.9)
 
 /** "Rest · < 92", "Zone 1 · 92–109" … by percent of max HR. */
@@ -101,7 +101,7 @@ private fun zoneRows(hrmax: Int?): List<Pair<String, String>> {
 
 /** Minutes per zone as one bar of colours, then each zone's name, bpm range, share and minutes. */
 @Composable
-private fun ZonesTable(minutes: List<Int>, hrmax: Int?, rest: Boolean = true) {
+internal fun ZonesTable(minutes: List<Int>, hrmax: Int?, rest: Boolean = true) {
     val total = minutes.sum().coerceAtLeast(1)
     Row(Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp))) {
         minutes.forEachIndexed { i, m -> if (m > 0) Box(Modifier.weight(m.toFloat()).height(10.dp).background(ZONE_COLORS[i])) }
@@ -326,7 +326,7 @@ internal fun DayMark(status: DayStatus?, workout: Boolean, faded: Float, size: D
 /** The training calendar: a month with what you did each day, its total, and its workouts (each opens its detail). */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TrainingCalendarSheet(api: Reader, onDismiss: () -> Unit, onWorkout: (Workout) -> Unit) {
+fun TrainingCalendarSheet(api: Reader, onDismiss: () -> Unit, onDay: (LocalDate) -> Unit, onWorkout: (Workout) -> Unit) {
     val today = LocalDate.now()
     var month by remember { mutableStateOf(YearMonth.from(today)) }
     var workouts by remember { mutableStateOf<List<Workout>>(emptyList()) }
@@ -361,7 +361,9 @@ fun TrainingCalendarSheet(api: Reader, onDismiss: () -> Unit, onWorkout: (Workou
                     cells.chunked(7).forEach { week ->
                         Row(Modifier.fillMaxWidth()) {
                             week.forEach { d ->
-                                Column(Modifier.weight(1f).padding(vertical = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                // A past day opens on Fitness: its workouts, gym sessions, walks and rides.
+                                Column(Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).let { m -> if (d != null && d <= today) m.clickable { onDay(d) } else m }
+                                    .padding(vertical = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                     if (d != null) {
                                         DayMark(statuses[d], byDay[d] != null, if (d <= today) 0.45f else 0.15f, 20.dp)
                                         Text("${d.dayOfMonth}", style = RidgeType.caption, color = if (d == today) c.strain else MaterialTheme.colorScheme.onSurfaceVariant)
