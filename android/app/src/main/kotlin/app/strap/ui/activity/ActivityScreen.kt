@@ -51,12 +51,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.strap.api.ApiException
 import app.strap.api.Reader
+import app.strap.integrations.Covering
 import app.strap.integrations.GymSession
 import app.strap.integrations.Track
 import app.strap.ui.Loading
 import app.strap.ui.components.Bar
 import app.strap.ui.components.BandGauge
 import app.strap.ui.components.CardHeader
+import app.strap.ui.components.duration
 import app.strap.ui.components.CardValue
 import app.strap.ui.components.ConnectedButtons
 import app.strap.ui.components.DailyBars
@@ -181,10 +183,10 @@ fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit, 
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
     val zone = ZoneId.systemDefault()
     val dayGym = d.gym.filter { it.start.atZone(zone).toLocalDate() == day }.sortedBy { it.start }
-    // A strap workout inside an openGym session is the same training: the session shows it (D41).
-    val byDay = d.workouts.filter { w -> d.gym.none { g -> w.start.isBefore(g.end) && w.start.plusSeconds(w.durationS.toLong()).isAfter(g.start) } }
-        .groupBy { it.start.atZone(zone).toLocalDate() }
-    val dayWorkouts = byDay[day].orEmpty()
+    // A strap workout inside an openGym session or a Dawarich track is that activity (D41, D44).
+    val byDay = Covering.uncovered(d.workouts, Covering.gymWindows(d.gym)).groupBy { it.start.atZone(zone).toLocalDate() }
+    val dayTrained = Covering.trained(tracks, byDay[day].orEmpty())
+    val dayWorkouts = Covering.uncovered(byDay[day].orEmpty(), Covering.trackWindows(tracks))
     val activeDays = byDay.keys + d.gym.map { it.start.atZone(zone).toLocalDate() }
     val load = d.daily.getValue("cardio_load")
     val range = loadRange(load, day)
@@ -193,15 +195,17 @@ fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit, 
         item {
             val w = dayWorkouts.firstOrNull()
             val g = dayGym.firstOrNull()
+            val t = dayTrained.firstOrNull()
             val rangeLine = range?.let { " Your 7-day load is ${it.acute.roundToInt()}, ${it.words.lowercase()} (${it.low.roundToInt()}–${it.high.roundToInt()})." } ?: ""
             RidgeCard(spacing = 6.dp) {
                 val status = d.statuses[day]?.takeIf { it != DayStatus.ACTIVE }
-                val trained = w != null || g != null
+                val trained = w != null || g != null || t != null
                 CardHeader(if (trained) "Workout done" else status?.label ?: "Rest day",
                     icon = if (trained) Icons.AutoMirrored.Rounded.DirectionsRun else status?.icon ?: Icons.AutoMirrored.Rounded.DirectionsWalk,
                     tone = if (!trained && status != null) status.tone() else c.strainTone)
                 Text((when {
                     g != null -> "${g.name ?: "A gym session"}, ${java.time.Duration.between(g.start, g.end).toMinutes()} minutes in openGym."
+                    t != null -> "A ${t.ownM?.let { km(it) + " " } ?: ""}${modeName(t).lowercase()}, ${duration(t.ownS / 60.0)}, from Dawarich."
                     w != null -> "A ${w.durationS / 60}-minute workout${w.avgHr?.let { " at an average of $it bpm" } ?: ""}."
                     else -> "No workout recorded on this day."
                 }) + rangeLine, style = RidgeType.body, color = muted)
@@ -252,7 +256,7 @@ fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit, 
             else SectionTitle(day.format(DateTimeFormatter.ofPattern("EEEE d MMM")))
         }
         item {
-            if (dayWorkouts.isEmpty() && dayGym.isEmpty()) RidgeCard { Subtle("No workouts recorded on this day.") }
+            if (dayWorkouts.isEmpty() && dayGym.isEmpty() && dayTrained.isEmpty()) RidgeCard { Subtle("No workouts recorded on this day.") }
             if (dayWorkouts.isNotEmpty()) WorkoutRows(dayWorkouts, onWorkout)
         }
         if (hidden.isNotEmpty() && actions != null) item {
@@ -270,7 +274,7 @@ fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit, 
         if (tracks.isNotEmpty() || tracksError != null) {
             item { SectionTitle("Walks and rides") }
             item {
-                tracksError?.let { RidgeCard { Subtle(it) } } ?: TrackRows(tracks) { id -> onTrack(day, id) }
+                tracksError?.let { RidgeCard { Subtle(it) } } ?: TrackRows(tracks, held = { t -> Covering.inside(byDay[day].orEmpty(), t.start, t.end).size }) { id -> onTrack(day, id) }
             }
         }
     }

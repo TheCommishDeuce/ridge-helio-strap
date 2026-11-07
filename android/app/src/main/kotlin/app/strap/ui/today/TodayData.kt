@@ -1,5 +1,6 @@
 package app.strap.ui.today
 
+import app.strap.api.ApiException
 import app.strap.api.Reader
 import app.strap.sync.DayStatus
 import app.strap.sync.JournalEntry
@@ -143,6 +144,8 @@ data class TodayData(
     val workouts: List<Workout>,
     /** Active unless the day was marked sick, injured or on a break. */
     val status: DayStatus,
+    /** The day's openGym sessions: each takes in the strap workouts inside it (D44). */
+    val gym: List<app.strap.integrations.GymSession> = emptyList(),
 ) {
     /** The seven strip days, oldest first. */
     val stripDays: List<LocalDate> get() = (6 downTo 0).map { stripEnd.minusDays(it.toLong()) }
@@ -194,6 +197,7 @@ suspend fun loadToday(api: Reader, day: LocalDate): TodayData = coroutineScope {
     val recoveryCall = async { api.daily("recovery_score", stripEnd.minusDays(13), stripEnd) }
     val journalCall = async { api.journal(day, day) }
     val workoutsCall = async { api.workouts(day, day) }
+    val gymCall = async { try { api.gymSessions(day, day) } catch (_: ApiException) { emptyList() } }
     val seriesCall = async { api.daySeries(day, listOf("hr", "stress", "steps")) }
     val spo2Call = async { api.daily("spo2_overnight", day.minusDays(30), day) }
     val loadCall = async { api.daily("cardio_load", day.minusDays(27), day) }
@@ -249,5 +253,6 @@ suspend fun loadToday(api: Reader, day: LocalDate): TodayData = coroutineScope {
         journal = journalCall.await().filter { it.kind != "status" },
         workouts = workoutsCall.await(),
         status = statusCall.await()[day] ?: DayStatus.ACTIVE,
+        gym = gymCall.await(),
     )
 }

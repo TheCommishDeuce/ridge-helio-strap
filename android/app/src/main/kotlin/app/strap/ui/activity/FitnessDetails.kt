@@ -86,6 +86,9 @@ import app.strap.ui.today.workoutLine
 import androidx.compose.ui.graphics.vector.ImageVector
 import strap.science.DaySummary
 import strap.science.Sports
+import app.strap.integrations.Covering
+import app.strap.integrations.GymSession
+import app.strap.integrations.Track
 import strap.science.Workout
 import strap.science.WorkoutDetail
 import strap.science.shown
@@ -131,19 +134,23 @@ internal fun ZonesTable(minutes: List<Int>, hrmax: Int?, rest: Boolean = true) {
  * words, the minutes in each heart-rate zone (moved here from Fitness) and the day's workouts.
  */
 @Composable
-fun StrainScreen(api: Reader, day: LocalDate, onWorkout: (Workout) -> Unit) {
+fun StrainScreen(api: Reader, day: LocalDate, onGym: (GymSession) -> Unit = {}, onTrack: (Long) -> Unit = {}, onWorkout: (Workout) -> Unit) {
     var summary by remember { mutableStateOf<DaySummary?>(null) }
     var workouts by remember { mutableStateOf<List<Workout>>(emptyList()) }
+    var gym by remember { mutableStateOf<List<GymSession>>(emptyList()) }
+    var tracks by remember { mutableStateOf<List<Track>>(emptyList()) }
     var error by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(day) {
         try {
             summary = api.summary(day)
             workouts = api.workouts(day, day)
+            gym = api.gymSessions(day, day).sortedBy { it.start }
             error = null
         } catch (e: ApiException) {
             error = e.message
         }
     }
+    LaunchedEffect(day) { tracks = try { api.tracks(day) } catch (_: ApiException) { emptyList() } }
     val s = summary ?: return Loading(error)
     val c = LocalMetricColors.current
     val strain = s.strain.shown
@@ -198,10 +205,13 @@ fun StrainScreen(api: Reader, day: LocalDate, onWorkout: (Workout) -> Unit) {
                 }
             }
         }
-        if (workouts.isNotEmpty()) {
-            item { SectionTitle("Workouts") }
-            item { WorkoutRows(workouts, onWorkout) }
-        }
+        // The list shows each activity once (D44); the load above still counts every strap workout.
+        val shown = Covering.uncovered(workouts, Covering.gymWindows(gym) + Covering.trackWindows(tracks))
+        val trained = Covering.trained(tracks, Covering.uncovered(workouts, Covering.gymWindows(gym)))
+        if (shown.isNotEmpty() || gym.isNotEmpty() || trained.isNotEmpty()) item { SectionTitle("Workouts") }
+        if (gym.isNotEmpty()) item { GymRows(gym, onGym) }
+        if (trained.isNotEmpty()) item { TrackRows(trained, all = false, held = { t -> Covering.inside(workouts, t.start, t.end).size }) { onTrack(it) } }
+        if (shown.isNotEmpty()) item { WorkoutRows(shown, onWorkout) }
     }
 }
 
@@ -249,8 +259,11 @@ internal fun WorkoutRows(workouts: List<Workout>, onWorkout: (Workout) -> Unit) 
  * the zones behind, minutes per zone, cardio focus, and what it added to the 7-day load.
  */
 @Composable
-fun WorkoutScreen(api: Reader, start: Instant, actions: SessionActions? = null, onGone: () -> Unit = {}) {
+fun WorkoutScreen(api: Reader, start: Instant, actions: SessionActions? = null, onGym: (GymSession) -> Unit = {}, onTrack: (Long) -> Unit = {}, onGone: () -> Unit = {}) {
     var editing by remember { mutableStateOf(false) }
+    // What the owner recorded elsewhere around it (D44): read with the day, Dawarich only on display (D42).
+    var gym by remember { mutableStateOf<List<GymSession>>(emptyList()) }
+    var tracks by remember { mutableStateOf<List<Track>>(emptyList()) }
     var workout by remember { mutableStateOf<Workout?>(null) }
     var detail by remember { mutableStateOf<WorkoutDetail?>(null) }
     var load by remember { mutableStateOf<Map<LocalDate, Double>>(emptyMap()) }
@@ -263,6 +276,10 @@ fun WorkoutScreen(api: Reader, start: Instant, actions: SessionActions? = null, 
             detail = w?.let { api.workoutDetail(it) }
             load = api.daily("cardio_load", day.minusDays(27), day).associate { it.day to it.value }
             error = if (w == null) "This workout is no longer on the phone." else null
+            if (w != null) {
+                gym = api.gymSessions(day, day).filter { Covering.overlaps(w, it.start, it.end) }
+                tracks = try { api.tracks(day).filter { Covering.overlaps(w, it.start, it.end) } } catch (_: ApiException) { emptyList() }
+            }
         } catch (e: ApiException) {
             error = e.message
         }
@@ -299,6 +316,11 @@ fun WorkoutScreen(api: Reader, start: Instant, actions: SessionActions? = null, 
                     TextButton(onClick = { actions.undo(id); onGone() }) { Text("Undo edit") }
                 }
             }
+        }
+        if (gym.isNotEmpty() || tracks.isNotEmpty()) {
+            item { Subtle("Part of what you recorded elsewhere, and shown as it in your lists. Its load, strain and calories still count from this workout.", style = RidgeType.body) }
+            if (gym.isNotEmpty()) item { GymRows(gym, onGym) }
+            if (tracks.isNotEmpty()) item { TrackRows(tracks, all = false) { onTrack(it) } }
         }
         item {
             RidgeCard(spacing = 12.dp) {
@@ -375,19 +397,23 @@ internal fun DayMark(status: DayStatus?, workout: Boolean, faded: Float, size: D
 /** The training calendar: a month with what you did each day, its total, and its workouts (each opens its detail). */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TrainingCalendarSheet(api: Reader, onDismiss: () -> Unit, onDay: (LocalDate) -> Unit, onWorkout: (Workout) -> Unit) {
+fun TrainingCalendarSheet(api: Reader, onDismiss: () -> Unit, onDay: (LocalDate) -> Unit, onGym: (GymSession) -> Unit = {}, onWorkout: (Workout) -> Unit) {
     val today = LocalDate.now()
     var month by remember { mutableStateOf(YearMonth.from(today)) }
-    var workouts by remember { mutableStateOf<List<Workout>>(emptyList()) }
+    var all by remember { mutableStateOf<List<Workout>>(emptyList()) }
+    var gym by remember { mutableStateOf<List<GymSession>>(emptyList()) }
     var statuses by remember { mutableStateOf<Map<LocalDate, DayStatus>>(emptyMap()) }
     LaunchedEffect(month) {
-        workouts = try { api.workouts(month.atDay(1), minOf(month.atEndOfMonth(), today)) } catch (_: ApiException) { emptyList() }
+        all = try { api.workouts(month.atDay(1), minOf(month.atEndOfMonth(), today)) } catch (_: ApiException) { emptyList() }
+        gym = try { api.gymSessions(month.atDay(1), minOf(month.atEndOfMonth(), today)) } catch (_: ApiException) { emptyList() }
         statuses = try { api.statuses(month.atDay(1), month.atEndOfMonth()) } catch (_: ApiException) { emptyMap() }
     }
     val c = LocalMetricColors.current
     val r = LocalRidgeColors.current
     val zone = ZoneId.systemDefault()
-    val byDay = workouts.groupBy { it.start.atZone(zone).toLocalDate() }
+    // A month of Dawarich tracks is not fetched (D42): here only openGym sessions take in the strap's workouts (D44).
+    val workouts = Covering.uncovered(all, Covering.gymWindows(gym))
+    val active = workouts.map { it.start.atZone(zone).toLocalDate() }.toSet() + gym.map { it.start.atZone(zone).toLocalDate() }
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = r.surface1, shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)) {
         LazyColumn(Modifier.padding(horizontal = 16.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(bottom = 16.dp)) {
@@ -414,7 +440,7 @@ fun TrainingCalendarSheet(api: Reader, onDismiss: () -> Unit, onDay: (LocalDate)
                                 Column(Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).let { m -> if (d != null && d <= today) m.clickable { onDay(d) } else m }
                                     .padding(vertical = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                     if (d != null) {
-                                        DayMark(statuses[d], byDay[d] != null, if (d <= today) 0.45f else 0.15f, 20.dp)
+                                        DayMark(statuses[d], d in active, if (d <= today) 0.45f else 0.15f, 20.dp)
                                         Text("${d.dayOfMonth}", style = RidgeType.caption, color = if (d == today) c.strain else MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }
@@ -424,7 +450,10 @@ fun TrainingCalendarSheet(api: Reader, onDismiss: () -> Unit, onDay: (LocalDate)
                     }
                 }
             }
-            item { Subtle("${workouts.size} workouts · ${hm(workouts.sumOf { it.durationS } / 60.0)}", style = RidgeType.body) }
+            val count = workouts.size + gym.size
+            val minutes = workouts.sumOf { it.durationS } / 60.0 + gym.sumOf { java.time.Duration.between(it.start, it.end).seconds } / 60.0
+            item { Subtle("$count ${if (count == 1) "workout" else "workouts"} · ${hm(minutes)}", style = RidgeType.body) }
+            if (gym.isNotEmpty()) item { GymRows(gym, onGym) }
             if (workouts.isNotEmpty()) item { WorkoutRows(workouts, onWorkout) }
         }
     }

@@ -178,6 +178,11 @@ class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null,
 
     fun removeSession(id: String) = writableDatabase.delete("sessions", "id = ?", arrayOf(id))
 
+    /** Which of [starts] the phone already holds as strap workouts. */
+    fun knownWorkouts(starts: List<Instant>): Set<Instant> = if (starts.isEmpty()) emptySet() else readableDatabase.rawQuery(
+        "SELECT start FROM workouts WHERE start IN (${starts.joinToString(",") { "?" }})", starts.map { it.toEpochMilli().toString() }.toTypedArray(),
+    ).use { c -> buildSet { while (c.moveToNext()) add(Instant.ofEpochMilli(c.getLong(0))) } }
+
     /** The strap's workout starting at [start], as recorded, or null when the phone doesn't hold it. */
     fun strapWorkout(start: Instant): Workout? = readableDatabase.rawQuery(
         "SELECT start, sport, duration_s FROM workouts WHERE start = ?", arrayOf(start.toEpochMilli().toString()),

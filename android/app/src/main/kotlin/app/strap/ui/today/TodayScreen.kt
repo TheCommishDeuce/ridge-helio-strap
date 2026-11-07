@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Coffee
 import androidx.compose.material.icons.rounded.CoffeeMaker
@@ -331,7 +332,13 @@ internal fun moments(data: TodayData, nav: TodayNav): List<Moment> {
             add(Moment(s.maxAt, clockOf(s.maxAt, zone), Icons.Rounded.Psychology, c.stressTone, "Stress peak", "Highest of the day",
                 "${s.max.roundToInt()}", nav.stress))
         }
-        data.workouts.forEach { w ->
+        // One activity, one moment (D44): an openGym session takes in the strap workouts inside it.
+        data.gym.forEach { g ->
+            val start = g.start.toEpochMilli()
+            add(Moment(start, clockOf(start, zone), Icons.Rounded.FitnessCenter, c.heartTone, g.name ?: "Gym session",
+                "${java.time.Duration.between(g.start, g.end).toMinutes()} min · openGym", null, nav.activity))
+        }
+        app.strap.integrations.Covering.uncovered(data.workouts, app.strap.integrations.Covering.gymWindows(data.gym)).forEach { w ->
             val start = w.start.toEpochMilli()
             add(Moment(start, clockOf(start, zone), sportIcon(w.sport), c.heartTone, Sports.label(w.sport), workoutLine(w), null, nav.activity))
         }

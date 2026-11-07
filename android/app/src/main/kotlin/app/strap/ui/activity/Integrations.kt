@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.strap.api.ApiException
 import app.strap.api.Reader
+import app.strap.integrations.Covering
 import app.strap.integrations.ExerciseNames
 import app.strap.integrations.GymSession
 import app.strap.integrations.GymSet
@@ -46,6 +47,7 @@ import app.strap.integrations.Track
 import app.strap.ui.Loading
 import app.strap.ui.components.CardFoot
 import app.strap.ui.components.CardHeader
+import app.strap.ui.components.SectionTitle
 import app.strap.ui.components.Gauge
 import app.strap.ui.components.IconCircle
 import app.strap.ui.components.Point
@@ -58,6 +60,7 @@ import app.strap.ui.components.duration
 import app.strap.ui.theme.LocalMetricColors
 import app.strap.ui.theme.RidgeType
 import strap.science.TimedValue
+import strap.science.Workout
 import strap.science.WorkoutDetail
 import java.time.Instant
 import java.time.LocalDate
@@ -84,11 +87,12 @@ internal fun GymRows(sessions: List<GymSession>, onGym: (GymSession) -> Unit) {
 
 /** The day's walks and rides from Dawarich (D42), each opening its map; a last row shows them all together. */
 @Composable
-internal fun TrackRows(tracks: List<Track>, all: Boolean = true, onTrack: (Long) -> Unit) {
+internal fun TrackRows(tracks: List<Track>, all: Boolean = true, held: (Track) -> Int = { 0 }, onTrack: (Long) -> Unit) {
     val tone = LocalMetricColors.current.stepsTone
     RowsCard(tracks.map { t ->
         RowItem(modeIcon(t), modeName(t), listOfNotNull(t.ownM?.let(::km), duration(t.ownS / 60.0),
-            t.split?.carried?.size?.takeIf { it > 0 }?.let { if (it == 1) "1 ride left out" else "$it rides left out" }).joinToString(" · "),
+            t.split?.carried?.size?.takeIf { it > 0 }?.let { if (it == 1) "1 ride left out" else "$it rides left out" },
+            held(t).takeIf { it > 0 }?.let { if (it == 1) "1 strap workout" else "$it strap workouts" }).joinToString(" · "),
             "${clockOf(t.start.toEpochMilli())} · Dawarich", tone.container to tone.accent) { onTrack(t.id) }
     } + listOfNotNull(tracks.takeIf { all && it.size > 1 }?.let {
         RowItem(Icons.Rounded.Map, "All on one map", "${it.size} tracks", "", tone.container to tone.accent) { onTrack(ALL_TRACKS) }
@@ -123,8 +127,9 @@ private fun RowsCard(rows: List<RowItem>) {
  * zones; then the exercises with their sets and the heart rate in the minute each was done.
  */
 @Composable
-fun GymSessionScreen(api: Reader, names: ExerciseNames, id: String) {
+fun GymSessionScreen(api: Reader, names: ExerciseNames, id: String, onWorkout: (Workout) -> Unit = {}) {
     var session by remember { mutableStateOf<GymSession?>(null) }
+    var pieces by remember { mutableStateOf<List<Workout>>(emptyList()) }
     var hr by remember { mutableStateOf<List<TimedValue>>(emptyList()) }
     var detail by remember { mutableStateOf<WorkoutDetail?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -135,6 +140,8 @@ fun GymSessionScreen(api: Reader, names: ExerciseNames, id: String) {
             if (g != null) {
                 hr = api.heartRate(g.start, g.end)
                 detail = api.windowDetail(g.start, g.end)
+                val day = g.start.atZone(ZoneId.systemDefault()).toLocalDate()
+                pieces = Covering.inside(api.workouts(day, day), g.start, g.end)
             }
             error = if (g == null) "This session is no longer in openGym." else null
         } catch (e: ApiException) {
@@ -176,6 +183,7 @@ fun GymSessionScreen(api: Reader, names: ExerciseNames, id: String) {
                 }
             }
         }
+        strapPieces(pieces, onWorkout)
         g.entries.forEach { e ->
             item {
                 RidgeCard(spacing = 6.dp) {
@@ -217,8 +225,9 @@ private fun num(v: Double): String = if (v == v.roundToInt().toDouble()) "${v.ro
  * derives nothing from the path itself.
  */
 @Composable
-fun TrackScreen(api: Reader, day: LocalDate, id: Long, onTrack: (Long) -> Unit) {
+fun TrackScreen(api: Reader, day: LocalDate, id: Long, onWorkout: (Workout) -> Unit = {}, onTrack: (Long) -> Unit) {
     var tracks by remember { mutableStateOf<List<Track>?>(null) }
+    var pieces by remember { mutableStateOf<List<Workout>>(emptyList()) }
     var hr by remember { mutableStateOf<List<TimedValue>>(emptyList()) }
     var detail by remember { mutableStateOf<WorkoutDetail?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -229,6 +238,7 @@ fun TrackScreen(api: Reader, day: LocalDate, id: Long, onTrack: (Long) -> Unit) 
             if (shown.size == 1) {
                 hr = api.heartRate(shown[0].start, shown[0].end)
                 detail = api.windowDetail(shown[0].start, shown[0].end)
+                pieces = Covering.inside(api.workouts(day, day), shown[0].start, shown[0].end)
             }
             error = if (shown.isEmpty()) "This track is no longer in Dawarich." else null
         } catch (e: ApiException) {
@@ -280,6 +290,7 @@ fun TrackScreen(api: Reader, day: LocalDate, id: Long, onTrack: (Long) -> Unit) 
                     }
                 }
             }
+            strapPieces(pieces, onWorkout)
         } else {
             item { TrackRows(ts, all = false, onTrack = onTrack) }
         }
@@ -301,6 +312,14 @@ private fun sourceLine(ts: List<Track>, one: Boolean): String {
 }
 
 // ── shared pieces ───────────────────────────────────────────────────────────
+
+/** The strap's workouts inside an activity recorded elsewhere (D44), each opening its own page to edit or hide. */
+private fun androidx.compose.foundation.lazy.LazyListScope.strapPieces(pieces: List<Workout>, onWorkout: (Workout) -> Unit) {
+    if (pieces.isEmpty()) return
+    item { SectionTitle("On the strap") }
+    item { Subtle("What the strap recorded as workouts in this window. Load, strain and calories count from these.", style = RidgeType.body) }
+    item { WorkoutRows(pieces, onWorkout) }
+}
 
 @Composable
 private fun Header(icon: ImageVector, title: String, start: Instant, end: Instant, source: String) {
@@ -332,10 +351,10 @@ private fun minutes(a: Instant, b: Instant): Double = java.time.Duration.between
 
 private fun bpm(v: Double?): String = v?.takeIf { !it.isNaN() }?.let { "${it.roundToInt()} bpm" } ?: "—"
 
-private fun km(m: Int): String = if (m < 1000) "$m m" else "%.1f km".format(m / 1000.0)
+internal fun km(m: Int): String = if (m < 1000) "$m m" else "%.1f km".format(m / 1000.0)
 
 /** Walk, run or ride by the strap (D42): running steps are a run, walking steps a walk, a recorded workout without steps a ride. */
-private fun modeName(t: Track): String = when (t.moved) {
+internal fun modeName(t: Track): String = when (t.moved) {
     Moved.RAN -> "Run"
     Moved.RODE -> "Ride"
     else -> "Walk"

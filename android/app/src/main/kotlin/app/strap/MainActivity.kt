@@ -92,28 +92,37 @@ class MainActivity : ComponentActivity() {
     /** The tab a widget asked for (D39), taken once by the shell. */
     private val requestedTab = mutableStateOf<Tab?>(null)
 
+    /** The workout a "Workout detected" notification opens (its start, epoch ms). */
+    private val requestedWorkout = mutableStateOf<Long?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val app = application as StrapApp
-        requestedTab.value = tabOf(intent)
-        setContent { StrapTheme { AppShell(app, requestedTab) } }
+        take(intent)
+        setContent { StrapTheme { AppShell(app, requestedTab, requestedWorkout) } }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        take(intent)
+    }
+
+    private fun take(intent: Intent?) {
         requestedTab.value = tabOf(intent)
+        requestedWorkout.value = intent?.getLongExtra(EXTRA_WORKOUT, -1L)?.takeIf { it >= 0 }
     }
 
     companion object {
         const val EXTRA_TAB: String = "tab"
+        const val EXTRA_WORKOUT: String = "workout"
 
         private fun tabOf(intent: Intent?): Tab? = intent?.getStringExtra(EXTRA_TAB)?.let { name -> Tab.entries.firstOrNull { it.name == name } }
     }
 }
 
 @Composable
-private fun AppShell(app: StrapApp, requestedTab: MutableState<Tab?>) {
+private fun AppShell(app: StrapApp, requestedTab: MutableState<Tab?>, requestedWorkout: MutableState<Long?>) {
     // First run (D27, D34): until the strap is paired and a server is set (or declined), only setup shows.
     var setUp by remember { mutableStateOf(app.vault.load() != null && (app.vault.loadServer() != null || app.withoutServer)) }
     if (!setUp) {
@@ -122,6 +131,9 @@ private fun AppShell(app: StrapApp, requestedTab: MutableState<Tab?>) {
     }
     val shell = rememberShell()
     LaunchedEffect(requestedTab.value) { requestedTab.value?.let { shell.select(it); requestedTab.value = null } }
+    LaunchedEffect(requestedWorkout.value) {
+        requestedWorkout.value?.let { shell.select(Tab.ACTIVITY); shell.push(Pushed.Workout(it)); requestedWorkout.value = null }
+    }
     val sync by app.syncRunner.state.collectAsStateWithLifecycle()
     val lastSync = remember(sync) { app.store.lastSync()?.first }
     // The phone works every number out itself (D34).
@@ -244,10 +256,16 @@ private fun AppShell(app: StrapApp, requestedTab: MutableState<Tab?>) {
                         top == Pushed.Diagnostics -> DiagnosticsScreen(app)
                         top == Pushed.Background -> BackgroundScreen(app)
                         top is Pushed.Detail -> MetricDetailScreen(api, top.metric, shell.day)
-                        top == Pushed.Strain -> StrainScreen(api, shell.day) { w -> shell.push(Pushed.Workout(w.start.toEpochMilli())) }
-                        top is Pushed.Workout -> WorkoutScreen(api, java.time.Instant.ofEpochMilli(top.startMs), sessions) { shell.pop() }
-                        top is Pushed.GymSession -> GymSessionScreen(api, app.exerciseNames, top.id)
-                        top is Pushed.Track -> TrackScreen(api, java.time.LocalDate.ofEpochDay(top.day), top.id) { id -> shell.push(Pushed.Track(top.day, id)) }
+                        top == Pushed.Strain -> StrainScreen(api, shell.day, onGym = { g -> shell.push(Pushed.GymSession(g.id)) },
+                            onTrack = { id -> shell.push(Pushed.Track(shell.day.toEpochDay(), id)) }) { w -> shell.push(Pushed.Workout(w.start.toEpochMilli())) }
+                        top is Pushed.Workout -> WorkoutScreen(api, java.time.Instant.ofEpochMilli(top.startMs), sessions,
+                            onGym = { g -> shell.push(Pushed.GymSession(g.id)) },
+                            onTrack = { id -> shell.push(Pushed.Track(java.time.Instant.ofEpochMilli(top.startMs).atZone(java.time.ZoneId.systemDefault()).toLocalDate().toEpochDay(), id)) },
+                        ) { shell.pop() }
+                        top is Pushed.GymSession -> GymSessionScreen(api, app.exerciseNames, top.id) { w -> shell.push(Pushed.Workout(w.start.toEpochMilli())) }
+                        top is Pushed.Track -> TrackScreen(api, java.time.LocalDate.ofEpochDay(top.day), top.id, onWorkout = { w -> shell.push(Pushed.Workout(w.start.toEpochMilli())) }) { id ->
+                            shell.push(Pushed.Track(top.day, id))
+                        }
                         top == Pushed.Journal -> JournalScreen(api, app.owner) { at -> app.science.update(at) }
                         top == Pushed.Timeline -> shown?.let { TimelineScreen(it, nav, logger) } ?: Loading(today.error)
                         top == Pushed.Recovery -> shown?.let {
@@ -273,7 +291,8 @@ private fun AppShell(app: StrapApp, requestedTab: MutableState<Tab?>) {
     }
     shell.sheet?.let { InfoSheet(it) { shell.sheet = null } }
     if (shell.trainingCalendar) TrainingCalendarSheet(api, onDismiss = { shell.trainingCalendar = false },
-        onDay = { d -> shell.trainingCalendar = false; shell.stack.clear(); shell.fitnessPick = d }) { w ->
+        onDay = { d -> shell.trainingCalendar = false; shell.stack.clear(); shell.fitnessPick = d },
+        onGym = { g -> shell.trainingCalendar = false; shell.push(Pushed.GymSession(g.id)) }) { w ->
         shell.trainingCalendar = false
         shell.push(Pushed.Workout(w.start.toEpochMilli()))
     }

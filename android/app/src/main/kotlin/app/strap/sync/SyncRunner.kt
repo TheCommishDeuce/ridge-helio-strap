@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.util.Log
+import app.strap.StrapApp
 import app.strap.ble.AndroidStrapLink
 import app.strap.pairing.KeyVault
 import app.strap.store.LocalStore
@@ -412,7 +413,20 @@ class SyncRunner(private val context: Context, private val store: LocalStore, pr
             val started = System.nanoTime()
             val result = StrapSync(session) { _state.value = SyncState.Running(it) }.run(store.window())
             val battery = link.batteryPercent()
+            val known = store.knownWorkouts(result.workouts.map { it.start })
             store.save(result, battery)
+            val now = Instant.now()
+            val candidates = DetectedWorkouts.toNotify(result.workouts, known, now)
+            // A session just logged in openGym may not be on the phone yet: ask it first, only when there is something to tell.
+            if (candidates.isNotEmpty()) (context.applicationContext as StrapApp).openGym.pull()
+            val logged = if (candidates.isEmpty()) emptyList()
+                else store.gymSessions(now.minus(java.time.Duration.ofDays(2)), now).map { it.start to it.end }
+            val detected = DetectedWorkouts.toNotify(result.workouts, known, now, logged)
+            result.workouts.forEach { w ->
+                log("workout ${w.start} sport ${w.sportType} ${w.durationSec / 60} min subtype ${w.subtype}${if (w.start in known) " known" else ""}" +
+                    if (w in detected) " → notice" else if (w in candidates) " → inside openGym, no notice" else "")
+            }
+            WorkoutNotifier(context).notify(detected)
             battery?.let { _battery.value = LocalStore.Battery(it, result.completedAt) }
             session.services.value?.let { _services.value = it }
             // Keeps zoned alarms right across DST and clock changes; only after a complete
