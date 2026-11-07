@@ -45,9 +45,17 @@ up once a night, so a new phone can start from your whole history.
   habits (resting heart rate, steps, sleep regularity and length, strength training); and a
   journal for caffeine, alcohol and weight. The strap's own PAI (Fitness) and its nightly breathing disturbances (Sleep) are shown as the strap's
   figures, and its HRV (SDNN) through the day has its own chart.
+- **Workouts you can correct**: each workout shows its sport (Climbing, Outdoor cycling,
+  Strength training…). Add a session the strap missed, **edit** one it got wrong (its sport,
+  or stretch it to when you really started and stopped) or **hide** a false detection. The
+  strap's own record is never changed, your changes are backed up, and the day's load and
+  calories follow them.
+- **"Workout detected"**: when the strap recognises a workout by itself, the next sync tells
+  you, with a tap through to check, edit or hide it. No connection is held for it.
 - **Strap**: battery, the strap's own alarms (read, add, edit, delete, each in a timezone
-  you pick, so a 07:00 alarm rings at 07:00 there), and its heart-rate, stress, SpO₂, sleep
-  and workout-detection settings (read-only for now).
+  you pick, so a 07:00 alarm rings at 07:00 there), workout detection on or off and how
+  sensitive it is (written to the strap and read back), and its heart-rate, stress, SpO₂ and
+  sleep settings (read-only for now).
 - **Live steps**: while Today is on screen the step count follows you, once a second while
   you move.
 - **Sync that keeps up**: opening the app syncs when the last sync is over 15 minutes old,
@@ -58,7 +66,9 @@ up once a night, so a new phone can start from your whole history.
   appear on Fitness with the strap's heart rate, strain and zones through them, each exercise
   and set placed where it happened; the day's walks and rides from
   [Dawarich](https://github.com/Freika/dawarich) appear with their path on a map and the
-  heart rate through them. Ridge itself records no location; the tracks stay in Dawarich.
+  heart rate through them. A strap workout during a gym session or a ride is shown as that
+  session or ride, not as a second entry. Ridge itself records no location; the tracks stay
+  in Dawarich.
 - **Days follow you when you travel**: each day starts at midnight wherever you are, and
   its charts and times are shown in that day's own timezone.
 - **Metrics that say why when they can't answer.** A number that lacks the data it needs
@@ -81,7 +91,7 @@ up once a night, so a new phone can start from your whole history.
 
 ## Limitations
 
-- **Android 12 or newer only.** There is no iPhone app.
+- **Android only.** There is no iPhone app.
 - **The Amazfit Helio Strap only.** Confirmed to work on the latest firmware,
   3.27.0.1 (October 2026). Other Zepp OS devices speak a similar protocol but are untested.
 - **Without a server there is no backup.** Everything works on the phone alone, but losing
@@ -91,7 +101,10 @@ up once a night, so a new phone can start from your whole history.
   (the intervals are the shortest gaps), and may hold them back while the phone is idle.
 - **Getting the strap's auth key needs your Zepp account, once per pairing**, signed in
   with email and password (see [What you need](#what-you-need)).
-- Strap settings other than alarms can be read, not yet changed.
+- Strap settings other than alarms and workout detection can be read, not yet changed.
+- **Workout detection is the strap's own.** It can miss a session or cut it short (a ride
+  can come through as two pieces with a gap); you can add or stretch it afterwards, and
+  higher sensitivity may help.
 - No GPS of its own: Ridge never records your location. With Dawarich connected it shows the
   walks and rides Dawarich recorded. English only.
 
@@ -109,7 +122,7 @@ up once a night, so a new phone can start from your whole history.
   logs the Zepp app out; the key is not affected.
 - **A computer with [uv](https://docs.astral.sh/uv/)** to run that script. The Ridge app
   itself never talks to Zepp.
-- **An Android 12+ phone.**
+- **An Android phone.**
 - **Optional: an always-on machine with Docker** for the backup server, reachable from the
   phone over HTTPS.
 - **Optional: your own [openGym](https://github.com/DuarteSantos8/openGym) and
@@ -181,4 +194,5 @@ things are the way they are. To build, test or contribute, see
 AGPL-3.0-or-later (D25): see [`LICENSE`](LICENSE), and [`NOTICE`](NOTICE) for credits and
 bundled files. The protocol knowledge comes from
 [Gadgetbridge](https://codeberg.org/Freeyourgadget/Gadgetbridge), whose work made this
-possible.
+possible. Workout sport names and the summary layout come from
+[OpenStrap](https://github.com/sayed0am/openstrap) (Apache-2.0).
