@@ -75,12 +75,15 @@ public data class SleepSession(
 /** One workout summary (fetch `0x05`). */
 public data class Workout(
     val start: Instant,
+    /** Summary field 3.1; 0 when absent. Before 0.7.1 field 2.3 was read here, which is the timezone. */
     val sportType: Int,
     val durationSec: Int,
     val calories: Int,
     val avgHr: Int,
     val maxHr: Int,
     val minHr: Int,
+    /** Summary field 3.2: 1 when the strap recognised the workout by itself; null when absent. */
+    val subtype: Int? = null,
 )
 
 /** The strap's live since-midnight counters — the authoritative step total (spec/01 §5). */

@@ -127,6 +127,21 @@ class SyncRunner(private val context: Context, private val store: LocalStore, pr
     }
 
     /**
+     * What the Diagnostics probe sends before its config reads, for any other reader: the
+     * services list, then the config capabilities. A read straight after authentication came
+     * back with no settings on the Strap page while the probe decoded them all (issue #4).
+     * Whether config is encrypted, as the strap listed it; null when it sent no services list.
+     */
+    suspend fun configPreamble(s: StrapSession): Boolean? {
+        s.requestServices()
+        val services = s.awaitServices() ?: return null.also { log("config preamble: no services list") }
+        val encrypt = services[Config.ENDPOINT] ?: return null.also { log("config preamble: config not served") }
+        val caps = s.exchange(Config.ENDPOINT, Config.capabilitiesRequest, Config.CAPABILITIES_REPLY, encrypt)
+        log("config capabilities → ${caps?.hex() ?: "no reply"}")
+        return encrypt
+    }
+
+    /**
      * S4 probe, how live steps can be (D34): the cost of a counter read on an open connection,
      * then 60 s of the step service's real-time reporting (`05 01` on, `05 00` off; Gadgetbridge's
      * names, untried on this strap), every frame logged raw. Real-time is a subscription, not a

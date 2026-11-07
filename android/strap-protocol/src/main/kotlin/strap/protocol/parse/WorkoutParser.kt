@@ -28,14 +28,18 @@ public object WorkoutParser {
         val start = Proto.int(meta, 1) ?: return null
         if (start < MIN_START_EPOCH) return null
         val hr = Proto.sub(top, 19)
+        // Field 2 is the record (1 start, 3 timezone), field 3 the type (1 sport, 2 subtype),
+        // per OpenStrap's restatement of Zepp's sport_summary2.proto (spec/01 §7.2).
+        val type = Proto.sub(top, 3)
         return Workout(
             start = Instant.ofEpochSecond(start),
-            sportType = Proto.int(meta, 3)?.toInt() ?: 0,
+            sportType = Proto.int(type, 1)?.toInt() ?: 0,
             durationSec = Proto.int(Proto.sub(top, 7), 1)?.toInt() ?: 0,
             calories = Proto.int(Proto.sub(top, 16), 1)?.toInt() ?: 0,
             avgHr = Proto.int(hr, 1)?.toInt() ?: 0,
             maxHr = Proto.int(hr, 2)?.toInt() ?: 0,
             minHr = Proto.int(hr, 3)?.toInt() ?: 0,
+            subtype = Proto.int(type, 2)?.toInt(),
         )
     }
 }

@@ -20,6 +20,12 @@ Gadgetbridge (https://codeberg.org/Freeyourgadget/Gadgetbridge), AGPL-3.0-or-lat
   docs/spec/01-strap-protocol.md, with test vectors, and copies no Gadgetbridge code (D8).
   Licensing this project under the AGPL keeps it compatible with that lineage.
 
+OpenStrap (https://github.com/sayed0am/openstrap), MIT/Apache-2.0.
+  Energy, biological age, daily load, the sleep headline (DECISIONS D35-D38), the history
+  layouts of D32 and the workout summary's field names follow its documents and models. The
+  strap's sport-code table (strap-science Sports.kt, the codes and their English names) is
+  taken from its Workouts.kt, Copyright the OpenStrap authors, Apache License 2.0.
+
 HelioCore: read as a protocol reference only; no code taken.
 
 huami_token: read as the reference for the Zepp cloud sign-in request that

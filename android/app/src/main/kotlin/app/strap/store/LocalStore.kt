@@ -33,7 +33,7 @@ import java.time.LocalDate
  * live copy (D34). Each raw row carries an outbox flag for the backup to the server. Timestamps
  * are epoch milliseconds, UTC.
  */
-class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null, 6) {
+class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null, 7) {
     override fun onCreate(db: SQLiteDatabase) {
         SCHEMA.forEach(db::execSQL)
     }
@@ -52,6 +52,7 @@ class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null,
         if (oldVersion < 4) JOURNAL_SCHEMA.forEach(db::execSQL)
         if (oldVersion < 5) RESTORE_SCHEMA.forEach(db::execSQL)
         if (oldVersion < 6) GYM_SCHEMA.forEach(db::execSQL)
+        if (oldVersion < 7) SPORT_FIX.forEach(db::execSQL)
     }
 
     // ── the phone's own derived numbers (D34 S3) ────────────────────────────
@@ -651,6 +652,14 @@ class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null,
             "pai_total" to "pai_total_device", "odi_events" to "odi_events_device", "odi_score" to "odi_score_device",
             "odi_valid_time" to "odi_valid_time_device", "odi_raw" to "odi_raw_device",
         )
+        /**
+         * Version 7 (0.7.1, issue #4): every workout stored so far has the timezone as its sport
+         * (summary field 2.3 was read; the sport is 3.1), so none has a known sport. A data fix, not
+         * a schema change. Each goes up again so the server's copy is corrected by the upload itself,
+         * whether or not the server's migration 0004 ran first.
+         */
+        val SPORT_FIX = listOf("UPDATE workouts SET sport = 0, pushed = 0")
+
         /** Added in version 6 (D41): openGym sessions, pulled from the owner's openGym and never backed up. */
         val GYM_SCHEMA = listOf(
             "CREATE TABLE gym_sessions(id TEXT PRIMARY KEY, start INTEGER NOT NULL, end_ts INTEGER NOT NULL, name TEXT, unit TEXT NOT NULL, volume REAL, entries TEXT NOT NULL)",

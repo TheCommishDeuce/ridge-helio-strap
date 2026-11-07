@@ -18,12 +18,17 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.DirectionsBike
 import androidx.compose.material.icons.automirrored.rounded.DirectionsRun
 import androidx.compose.material.icons.automirrored.rounded.DirectionsWalk
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.FitnessCenter
+import androidx.compose.material.icons.rounded.Hiking
+import androidx.compose.material.icons.rounded.Landscape
 import androidx.compose.material.icons.rounded.MonitorHeart
+import androidx.compose.material.icons.rounded.Pool
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -76,7 +81,9 @@ import app.strap.ui.components.color
 import app.strap.ui.components.icon
 import androidx.compose.ui.unit.Dp
 import app.strap.ui.today.workoutLine
+import androidx.compose.ui.graphics.vector.ImageVector
 import strap.science.DaySummary
+import strap.science.Sports
 import strap.science.Workout
 import strap.science.WorkoutDetail
 import strap.science.shown
@@ -196,6 +203,17 @@ fun StrainScreen(api: Reader, day: LocalDate, onWorkout: (Workout) -> Unit) {
     }
 }
 
+/** A workout's icon, by the kind of sport (issue #4); a run's figure when the sport is unknown. */
+internal fun sportIcon(sport: Int): ImageVector = when (Sports.kind(sport)) {
+    Sports.Kind.RUN, Sports.Kind.OTHER -> Icons.AutoMirrored.Rounded.DirectionsRun
+    Sports.Kind.WALK -> Icons.AutoMirrored.Rounded.DirectionsWalk
+    Sports.Kind.HIKE -> Icons.Rounded.Hiking
+    Sports.Kind.RIDE -> Icons.AutoMirrored.Rounded.DirectionsBike
+    Sports.Kind.SWIM -> Icons.Rounded.Pool
+    Sports.Kind.STRENGTH -> Icons.Rounded.FitnessCenter
+    Sports.Kind.CLIMB -> Icons.Rounded.Landscape
+}
+
 /** Workouts as one card of rows; each opens its detail. */
 @Composable
 internal fun WorkoutRows(workouts: List<Workout>, onWorkout: (Workout) -> Unit) {
@@ -205,9 +223,9 @@ internal fun WorkoutRows(workouts: List<Workout>, onWorkout: (Workout) -> Unit) 
         workouts.forEach { w ->
             Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable { onWorkout(w) }.padding(horizontal = 8.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically) {
-                IconCircle(Icons.AutoMirrored.Rounded.DirectionsRun, tone.container, tone.accent, size = 36.dp, iconSize = 18.dp)
+                IconCircle(sportIcon(w.sport), tone.container, tone.accent, size = 36.dp, iconSize = 18.dp)
                 Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                    Text("Workout", style = RidgeType.rowTitle)
+                    Text(Sports.label(w.sport), style = RidgeType.rowTitle)
                     Subtle(workoutLine(w), style = RidgeType.body)
                 }
                 Subtle("${w.start.atZone(ZoneId.systemDefault()).format(fmt)} · ${clockOf(w.start.toEpochMilli())}", style = RidgeType.caption)
@@ -248,9 +266,9 @@ fun WorkoutScreen(api: Reader, start: Instant) {
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                IconCircle(Icons.AutoMirrored.Rounded.DirectionsRun, c.strain, MaterialTheme.colorScheme.surface, size = 48.dp, iconSize = 24.dp)
+                IconCircle(sportIcon(w.sport), c.strain, MaterialTheme.colorScheme.surface, size = 48.dp, iconSize = 24.dp)
                 Spacer(Modifier.height(6.dp))
-                Text("Workout", style = RidgeType.topTitle)
+                Text(Sports.label(w.sport), style = RidgeType.topTitle)
                 Subtle("${day.format(DateTimeFormatter.ofPattern("EEE d MMM"))} · ${clockOf(w.start.toEpochMilli())} – ${clockOf(end.toEpochMilli())} · Helio Strap", style = RidgeType.body)
             }
         }

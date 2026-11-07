@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.DirectionsRun
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.Bolt
@@ -71,7 +70,9 @@ import app.strap.ui.theme.RidgeType
 import app.strap.sync.JournalEntry
 import app.strap.ui.journal.journalIcon
 import app.strap.ui.journal.journalTone
+import app.strap.ui.activity.sportIcon
 import strap.science.IllnessCheck
+import strap.science.Sports
 import strap.science.Workout
 import strap.science.shown
 import java.time.LocalDate
@@ -332,7 +333,7 @@ internal fun moments(data: TodayData, nav: TodayNav): List<Moment> {
         }
         data.workouts.forEach { w ->
             val start = w.start.toEpochMilli()
-            add(Moment(start, clockOf(start, zone), Icons.AutoMirrored.Rounded.DirectionsRun, c.heartTone, "Workout", workoutLine(w), null, nav.activity))
+            add(Moment(start, clockOf(start, zone), sportIcon(w.sport), c.heartTone, Sports.label(w.sport), workoutLine(w), null, nav.activity))
         }
         if (data.day == LocalDate.now()) data.strain.valueOrNull?.let { s ->
             val now = System.currentTimeMillis()

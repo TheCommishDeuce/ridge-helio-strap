@@ -415,15 +415,28 @@ lenient hand-rolled reader that skips unknown fields (wire types 0/1/2/5).
 | field | contents |
 |---|---|
 | 1 | version string `"2.1"` |
-| 2 | `{1 startTime sec, 3 sportType}` |
+| 2 | record `{1 trackId = startTime sec, 2 parentId, 3 timezone sint32}` |
+| 3 | type `{1 sport, 2 subtype}`: subtype 1 = the strap recognised it by itself |
 | 7 | `{1 durationSec}` |
 | 16 | `{1 calories}` |
 | 19 | `{1 avgHr, 2 maxHr, 3 minHr}` |
-| 11 | `{1,2 floats}` distance/speed — unconfirmed |
+| 4 | distance `{1 metres float}`; field 11 is steps, not distance (both unread) |
+
+Field names after OpenStrap's restatement of Zepp's `sport_summary2.proto`
+(github.com/sayed0am/openstrap, `docs/protocol/02-history-sync.md`, Apache-2.0).
 
 Verified sample: 2026-05-01, 409 s, 53 kcal, avg HR 122. Summary max HR is smoothed
-(140 vs app's 144 from the per-second track `0x06`, not decoded). Sport-code table not
-mapped (legacy knew 10 climbing, 14 strength, 21 HIIT, 22 core).
+(140 vs app's 144 from the per-second track `0x06`, not decoded).
+
+**Sport (0.7.1, issue #4).** Until 0.7.1 field 2.3 was read as the sport. It is the
+timezone: all 87 of the owner's workouts (Aug–Oct 2026, Amsterdam summer time) stored 16,
+which is +8 quarter-hours zigzagged. Workouts stored before 0.7.1 are reset to sport 0 (no
+sport known): the phone's store version 7 resets and re-uploads its own, and server migration
+0004 resets those that started before 2026-11-07. The code table
+is OpenStrap's (`strap-science` `Sports`): 1 outdoor run, 3 walk, 4 outdoor cycling, 10
+climbing, 52 strength training, 50 core training, 70 rock climbing, 223 the strap's own
+"Activity", and about 40 more; an unlisted code is shown as "Workout (code N)". The legacy
+app's 14 strength, 21 HIIT and 22 core were never confirmed and disagree with it.
 
 ---
 

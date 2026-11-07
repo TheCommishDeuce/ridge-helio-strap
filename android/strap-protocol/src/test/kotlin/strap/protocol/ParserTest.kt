@@ -68,11 +68,26 @@ class ParserTest {
         assertEquals(theirs.size, ours.size)
         ours.zip(theirs).forEach { (w, t) ->
             assertEquals(t.num("startMs"), w.start.toEpochMilli())
+            // Not the sport: the old code read field 2.3, which is the timezone (0.7.1); these vectors have no field 3.
             assertEquals(
-                listOf("sportType", "durationSec", "calories", "avgHr", "maxHr", "minHr").map { t.num(it).toInt() },
-                listOf(w.sportType, w.durationSec, w.calories, w.avgHr, w.maxHr, w.minHr),
+                listOf("durationSec", "calories", "avgHr", "maxHr", "minHr").map { t.num(it).toInt() },
+                listOf(w.durationSec, w.calories, w.avgHr, w.maxHr, w.minHr),
             )
+            assertEquals(0, w.sportType)
+            assertNull(w.subtype)
         }
+    }
+
+    @Test
+    fun `the sport is field 3_1 and the subtype 3_2, not the record's timezone 2_3`() {
+        // 1 "2.1"; 2 {1 start, 3 zone 16 = +8 quarter-hours zigzagged}; 3 {1 strength 52, 2 detected 1}; 7 {1 2400 s}; 19 {1 130}
+        val blob = "0a03322e31" + "1208" + "0880dacfcf06" + "1810" + "1a04" + "0834" + "1001" + "3a03" + "08e012" + "9a0103" + "088201"
+        val w = WorkoutParser.parseStream(blob.chunked(2).map { it.toInt(16).toByte() }.toByteArray()).single()
+        assertEquals(1777593600L, w.start.epochSecond)
+        assertEquals(52, w.sportType)
+        assertEquals(1, w.subtype)
+        assertEquals(2400, w.durationSec)
+        assertEquals(130, w.avgHr)
     }
 
     // ── spec/01 tables, independent of the old code ──

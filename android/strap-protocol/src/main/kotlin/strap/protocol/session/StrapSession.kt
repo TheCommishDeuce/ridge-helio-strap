@@ -137,7 +137,10 @@ public class StrapSession private constructor(
         val reply = exchange(Config.ENDPOINT, Config.readRequest(group), Config.READ_REPLY, encrypt, timeout) ?: return null
         return Config.group(reply).also { g ->
             // Settings bytes, never secrets: kept so a layout we misread can be studied.
-            if (g?.complete != true) log("config group 0x%02x not fully decoded: %s".format(group, reply.joinToString("") { "%02x".format(it) }))
+            // Logged every time: a complete reply with no settings in it looked fine and left no trace (issue #4).
+            val hex = reply.joinToString("") { "%02x".format(it) }
+            if (g?.complete != true) log("config group 0x%02x not fully decoded: %s".format(group, hex))
+            else log("config group 0x%02x v%d, %d keys: %s".format(group, g.version, g.values.size, hex))
         }
     }
 

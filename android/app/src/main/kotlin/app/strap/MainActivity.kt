@@ -138,6 +138,8 @@ private fun AppShell(app: StrapApp, requestedTab: MutableState<Tab?>) {
         }
     }
     val top = shell.top
+    // Back from another tab returns to Today; only back on Today leaves the app (issue #3).
+    BackHandler(enabled = top == null && shell.tab != Tab.TODAY) { shell.select(Tab.TODAY) }
     BackHandler(enabled = top != null) { shell.pop() }
     SyncSnackbar(app, sync, showSnack)
     SyncOnOpen(app)

@@ -126,7 +126,10 @@ fun StrapScreen(app: StrapApp, sync: SyncState) {
                 waiting = false
                 val strapClock = runner.clock.value ?: return@strapJob Triple(false, null, null) // measured before every job
                 // Settings on the opening read only; an alarm change re-reads the alarms alone.
-                val read = if (change == null) SETTING_GROUPS.map { s.readConfig(it) } else null
+                val read = if (change == null) {
+                    val encrypt = runner.configPreamble(s) ?: true
+                    SETTING_GROUPS.map { s.readConfig(it, encrypt) }
+                } else null
                 val confirmed = when (change) {
                     null -> true
                     is AlarmChange.Save -> {
