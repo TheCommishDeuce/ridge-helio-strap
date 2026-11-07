@@ -34,7 +34,31 @@ public object Config {
     public const val CAPABILITIES_REPLY: Int = 0x02
     public const val READ_REPLY: Int = 0x04
 
+    public const val SET_ACK: Int = 0x06
+
     public val capabilitiesRequest: ByteArray get() = byteArrayOf(0x01)
+
+    /**
+     * `05 · group · version · 00 · n · entries`: sets [values] in [group], whose [version] the read
+     * reported (layout learned from Gadgetbridge's config service, D8; the `00` is unexplained there
+     * too). Only the types Ridge writes: a flag, one byte, a byte list.
+     */
+    public fun setRequest(group: Int, version: Int, values: Map<Int, ConfigValue>): ByteArray {
+        val entries = values.flatMap { (key, v) ->
+            when (v) {
+                is ConfigValue.Flag -> listOf(key, 0x0b, if (v.on) 1 else 0)
+                is ConfigValue.Choice -> listOf(key, 0x10, v.value)
+                is ConfigValue.Choices -> listOf(key, 0x11, v.values.size) + v.values
+                else -> throw IllegalArgumentException("writing ${v::class.simpleName} is not supported")
+            }
+        }
+        require(values.size <= 0xff && entries.all { it in 0..0xff }) { "a value out of byte range" }
+        return (listOf(0x05, group, version, 0x00, values.size) + entries).map { it.toByte() }.toByteArray()
+    }
+
+    /** The set's acknowledgement `06 · status`: true when the status is 1 (as a read's), false otherwise, null when it isn't one. */
+    public fun setAccepted(payload: ByteArray): Boolean? =
+        if (payload.size >= 2 && Bytes.u8(payload, 0) == SET_ACK) Bytes.u8(payload, 1) == 1 else null
 
     /** `03 · constraints · group · n · keys`; no keys = every key the group has. */
     public fun readRequest(group: Int, keys: List<Int> = emptyList()): ByteArray =
@@ -170,5 +194,16 @@ public object Config {
         public const val DETECTION_CATEGORIES: Int = 0x40
         public const val DETECTION_ALERT: Int = 0x41
         public const val DETECTION_SENSITIVITY: Int = 0x42 // 0 high, 1 standard, 2 low
+
+        /**
+         * Key [DETECTION_CATEGORIES] lists the sport codes the strap detects; its options are the
+         * ones it can. A Helio offers only 223, the strap's own "Activity" (spec/01 "Config"), so on
+         * it detection is all or nothing: every offered category, or none.
+         */
+        public fun detecting(v: ConfigValue?): Boolean? = (v as? ConfigValue.Choices)?.values?.isNotEmpty()
+
+        /** The categories value that turns detection [on]: every category the strap offers, or none. */
+        public fun detection(current: ConfigValue.Choices, on: Boolean): ConfigValue.Choices =
+            current.copy(values = if (on) current.options.ifEmpty { current.values } else emptyList())
     }
 }

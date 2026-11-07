@@ -154,7 +154,13 @@ Not in Gadgetbridge, left alone (no read command is known, so no probe is safe):
 
 Commands: `01` capabilities → `02 · version · n · n group ids`; `03 · constraints(1) · group ·
 n · n keys` read (n = 0: every key) → `04 · status(1 = ok) · group · version · constraints ·
-n · n entries`; `05` set → `06` ack (not used yet).
+n · n entries`; `05 · group · version · 00 · n · entries` set (entries as in a read, without
+constraints; the `00` is unexplained in the reference too) → `06 · status`. Ridge writes only
+workout detection: `09`/`40` (a byte list: every offered category, or none) and `09`/`42`
+(a byte), then reads the group back. **Write verified on the strap 2026-11-07** (group 09
+v1): `0509010001421000` (sensitivity High), `…421001` (Standard), `…401100` (detection
+off: the read-back holds `40 11 00 01 df`, no categories with 223 still offered), `…401101df` (on),
+each answered `06 01` and read back as sent.
 
 Entry: `key u8 · type u8 · value`, little-endian. Types (constraints part only when asked):
 `0b` bool (1 byte, 0/1) · `10` byte + `n · n options` · `11` byte list `n · values` + `n ·

@@ -12,7 +12,7 @@ from uuid import UUID
 
 from psycopg import Cursor
 
-from strap_server import journal
+from strap_server import journal, sessions
 
 SAMPLE_PAGE = 20_000
 
@@ -49,6 +49,7 @@ def records(cur: Cursor, user_id: UUID, default_timezone: str) -> dict:
         (user_id,),
     )
     out["journal"] = [{"id": i, "kind": k, "ts": _ms(ts), "amount": a, "unit": u, "name": n} for i, k, ts, a, u, n in cur.fetchall()]
+    out["sessions"] = sessions.all_of(cur, user_id)
     cur.execute(
         "SELECT start_ts, end_ts, kind, score, avg_hr, rem_min, light_min, deep_min, wake_min, stages, source "
         "FROM sleep_session WHERE user_id = %s ORDER BY start_ts",

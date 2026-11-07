@@ -27,6 +27,10 @@ public object Sports {
         else -> NAMES[code] ?: "Workout (code $code)"
     }
 
+    /** Every named sport once (the first code of a name shared by several), by name: what a picker offers. */
+    public fun all(): List<Pair<Int, String>> =
+        NAMES.entries.filter { it.key != ACTIVITY }.distinctBy { it.value }.map { it.key to it.value }.sortedBy { it.second }
+
     public fun kind(code: Int): Kind = when (code) {
         1, 2, 11 -> Kind.RUN
         3, 40, 215, 225 -> Kind.WALK

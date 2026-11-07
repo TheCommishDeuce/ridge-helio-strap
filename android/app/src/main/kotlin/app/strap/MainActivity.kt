@@ -50,6 +50,7 @@ import app.strap.ui.detail.MetricDetailScreen
 import app.strap.ui.isRunning
 import app.strap.ui.activity.StrainScreen
 import app.strap.ui.activity.TrainingCalendarSheet
+import app.strap.ui.activity.SessionActions
 import app.strap.ui.activity.WorkoutScreen
 import app.strap.ui.activity.GymSessionScreen
 import app.strap.ui.activity.TrackScreen
@@ -187,6 +188,27 @@ private fun AppShell(app: StrapApp, requestedTab: MutableState<Tab?>) {
         },
     )
 
+    // The owner's changes to the workout list (D43): written on the phone, then the days re-derive.
+    val sessions = remember(app) {
+        fun changed(at: java.time.Instant?, done: String) = scope.launch {
+            showSnack(done, null, null)
+            at?.let { app.science.update(it) }
+        }
+        SessionActions(
+            add = { sport, from, to -> changed(app.owner.addSession(sport, from, to), "Session added") },
+            edit = { w, sport, from, to -> changed(app.owner.editWorkout(w, sport, from, to), "Workout changed") },
+            hide = { w -> changed(app.owner.hideWorkout(w), if (w.origin == strap.science.Workout.Origin.ADDED) "Session deleted" else "Workout hidden") },
+            undo = { id -> changed(app.owner.undoSession(id), "Shown as the strap recorded it") },
+            hidden = { day ->
+                val zone = java.time.ZoneId.systemDefault()
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    app.owner.sessions(day.atStartOfDay(zone).toInstant(), day.plusDays(1).atStartOfDay(zone).toInstant())
+                        .filter { it.action == strap.science.SessionOverlay.Action.HIDE && it.start.atZone(zone).toLocalDate() == day }
+                }
+            },
+        )
+    }
+
     CompositionLocalProvider(LocalInfo provides { shell.sheet = it }, LocalSnackbar provides showSnack) {
         NightTheme(enabled = top == null && shell.tab == Tab.SLEEP) {
             // Each screen's tone fades in from the very top, behind the status and top bars (Bevel's screens).
@@ -223,7 +245,7 @@ private fun AppShell(app: StrapApp, requestedTab: MutableState<Tab?>) {
                         top == Pushed.Background -> BackgroundScreen(app)
                         top is Pushed.Detail -> MetricDetailScreen(api, top.metric, shell.day)
                         top == Pushed.Strain -> StrainScreen(api, shell.day) { w -> shell.push(Pushed.Workout(w.start.toEpochMilli())) }
-                        top is Pushed.Workout -> WorkoutScreen(api, java.time.Instant.ofEpochMilli(top.startMs))
+                        top is Pushed.Workout -> WorkoutScreen(api, java.time.Instant.ofEpochMilli(top.startMs), sessions) { shell.pop() }
                         top is Pushed.GymSession -> GymSessionScreen(api, app.exerciseNames, top.id)
                         top is Pushed.Track -> TrackScreen(api, java.time.LocalDate.ofEpochDay(top.day), top.id) { id -> shell.push(Pushed.Track(top.day, id)) }
                         top == Pushed.Journal -> JournalScreen(api, app.owner) { at -> app.science.update(at) }
@@ -239,7 +261,7 @@ private fun AppShell(app: StrapApp, requestedTab: MutableState<Tab?>) {
                                 Tab.SLEEP -> SleepScreen(api, shell.day, { shell.day = it }, (sync is SyncState.Finished) to version)
                                 Tab.ACTIVITY -> ActivityScreen(api, Triple(sync is SyncState.Finished, version, gymChanges), onWorkout = { w -> shell.push(Pushed.Workout(w.start.toEpochMilli())) },
                                     onGym = { g -> shell.push(Pushed.GymSession(g.id)) }, onTrack = { day, id -> shell.push(Pushed.Track(day.toEpochDay(), id)) },
-                                    pick = shell.fitnessPick, onPicked = { shell.fitnessPick = null })
+                                    pick = shell.fitnessPick, onPicked = { shell.fitnessPick = null }, actions = sessions)
                                 Tab.BIOLOGY -> BiologyScreen(api, app.owner, (sync is SyncState.Finished) to version) { shell.select(Tab.SLEEP) }
                                 Tab.STRAP -> StrapScreen(app, sync)
                             }

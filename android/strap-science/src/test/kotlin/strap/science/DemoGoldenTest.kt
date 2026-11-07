@@ -22,13 +22,22 @@ class DemoGoldenTest {
     private val data = Golden.data(input, now = { now })
     private val store = MemoryDerived().also { Science(data, it).rederive() }
 
+    /**
+     * D43 changed how a workout without the strap's calories counts: its minutes stay in the
+     * movement model (the server left them out). The demo's one such workout moves the calories of
+     * its day and the 30-day calorie baselines after it, so those are not held to the server.
+     */
+    private val calorieRuleDays: Set<String> = data.workouts(Instant.EPOCH, now).filter { it.calories == null }
+        .flatMap { w -> val d = LocalDate.ofInstant(w.start, java.time.ZoneOffset.UTC); (-1L..31L).map { d.plusDays(it).toString() } }.toSet()
+    private fun calorieRule(day: String, what: String) = day in calorieRuleDays && "calories" in what
+
     @Test
     fun `every derived row matches the server's re-derive`() {
         val golden = Golden.read("demo/expected_daily.json.gz").jsonArray.map { it.jsonObject }
             .associateBy { it.getValue("day").jsonPrimitive.content to it.getValue("metric").jsonPrimitive.content }
         val actual = store.all().associateBy { it.day.toString() to it.metric }
         assertEquals(golden.keys.sortedBy { it.toString() }, actual.keys.sortedBy { it.toString() }, "metric set differs")
-        val mismatches = golden.mapNotNull { (key, row) ->
+        val mismatches = golden.filterKeys { (day, metric) -> !calorieRule(day, metric) }.mapNotNull { (key, row) ->
             val got = actual.getValue(key)
             val load = key.second == Golden.LOAD_METRIC
             (if (load) null else Golden.diff(row["value"], toJson(got.value)))?.let { "$key value $it" }
@@ -47,7 +56,7 @@ class DemoGoldenTest {
             tiesAgree(expected.jsonObject, actual, "heart", "hr")?.let { return@mapNotNull "$day $it" }
             tiesAgree(expected.jsonObject, actual, "stress", "stress")?.let { return@mapNotNull "$day $it" }
             Compare.diff(withoutExtremeTimes(Golden.summaryBeforeLoadSplit(JsonObject(expected.jsonObject - "charge"))), withoutExtremeTimes(actual))
-                .filterNot { Compare.serverNotYetMessage(it.path, it.expected) }.firstOrNull()?.let { "$day $it" }
+                .filterNot { Compare.serverNotYetMessage(it.path, it.expected) || calorieRule(day, it.path) }.firstOrNull()?.let { "$day $it" }
         }
         assertTrue(golden.size > 40)
         assertTrue(mismatches.isEmpty(), "${mismatches.size} summaries differ:\n" + mismatches.take(12).joinToString("\n"))

@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.AlarmAdd
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -34,6 +35,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -81,6 +83,7 @@ import kotlinx.coroutines.launch
 import strap.protocol.parse.Alarms
 import strap.protocol.parse.Config
 import strap.protocol.parse.ConfigGroup
+import strap.protocol.parse.ConfigValue
 import strap.protocol.parse.StrapAlarm
 import strap.protocol.parse.ZonedAlarm
 import java.time.DayOfWeek
@@ -98,7 +101,7 @@ internal const val LOW_BATTERY = 15
 /**
  * What the strap itself does: battery, alarms, its health and workout settings. Everything is
  * read from the strap on open (one connection); every change is written straight to the strap
- * and read back. The settings are shown read-only until each has been write-tested (R1).
+ * and read back. Of the settings only workout detection is written (issue #4); the rest stay read-only (R1).
  */
 @Composable
 fun StrapScreen(app: StrapApp, sync: SyncState) {
@@ -157,6 +160,33 @@ fun StrapScreen(app: StrapApp, sync: SyncState) {
     }
     LaunchedEffect(Unit) { apply(null) }
 
+    /**
+     * Writes workout-detection [values] to the strap, then reads the group back: the page shows what
+     * the strap holds, not what was asked (issue #4; the probe pattern, read → write → read back).
+     */
+    fun write(values: Map<Int, ConfigValue>) {
+        val workout = settings?.getOrNull(1) ?: return
+        scope.launch {
+            busy = true
+            message = null
+            val job = runner.strapJob { s ->
+                val encrypt = runner.configPreamble(s) ?: true
+                s.writeConfig(workout.group, workout.version, values, encrypt) to s.readConfig(workout.group, encrypt)
+            }
+            val (accepted, after) = job.value ?: (null to null)
+            after?.let { g -> settings = settings?.let { listOf(it[0], g) } }
+            message = when {
+                job.failure != null -> job.failure
+                accepted == false -> "The strap refused the change."
+                after == null -> "The strap didn't send its settings back. Open the page again to see what it holds."
+                values.any { (k, v) -> after.values[k] != v } -> "The strap kept its own setting. What it holds is shown."
+                accepted == null -> null // no acknowledgement, but the read-back shows the change
+                else -> null
+            }
+            busy = false
+        }
+    }
+
     // Each alarm as the owner set it: its own zone's time, sorted by that.
     val shown = remember(alarms, clock) {
         alarms?.map { a -> a to clock?.let { app.alarms.intent(a, it, phoneZone) } }
@@ -185,7 +215,7 @@ fun StrapScreen(app: StrapApp, sync: SyncState) {
             } else if (!busy) item { TextButton(onClick = { apply(null) }) { Text("Read again") } }
             settings?.let { (health, workout) ->
                 item { SettingsGroup("Heart rate & sensors", health, healthRows(health)) }
-                item { SettingsGroup("Workout detection", workout, workoutRows(workout)) }
+                item { DetectionGroup(workout, busy) { values -> write(values) } }
             }
         }
         AnimatedVisibility(list != null && list.size < MAX_ALARMS, Modifier.align(Alignment.BottomEnd).padding(16.dp)) {
@@ -289,6 +319,74 @@ private fun SettingsGroup(title: String, group: ConfigGroup?, rows: List<Pair<St
             }
         }
         if (group != null && !group.complete) Subtle("Some settings could not be read.", Modifier.padding(horizontal = 4.dp), RidgeType.caption)
+    }
+}
+
+/**
+ * Workout detection, the strap settings Ridge can change (issue #4): detection on or off (the
+ * categories key; a Helio has one, "Activity") and its sensitivity. The rest of the group stays
+ * read-only. Every change goes to the strap and is read back.
+ */
+@Composable
+private fun DetectionGroup(group: ConfigGroup?, busy: Boolean, onChange: (Map<Int, ConfigValue>) -> Unit) {
+    var pickingSensitivity by remember { mutableStateOf(false) }
+    val categories = group?.values?.get(Config.Workout.DETECTION_CATEGORIES) as? ConfigValue.Choices
+    val sensitivity = group?.values?.get(Config.Workout.DETECTION_SENSITIVITY) as? ConfigValue.Choice
+    val others = workoutRows(group).filterNot { it.first == SENSITIVITY_LABEL }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        GroupHeader("Workout detection", "Read from the strap", Infos.strapSettings)
+        if (group == null) {
+            RidgeCard { Subtle("The strap did not send these settings.") }
+            return@Column
+        }
+        val rows = buildList<@Composable (androidx.compose.ui.graphics.Shape) -> Unit> {
+            categories?.let { c ->
+                add { shape ->
+                    ListRow(shape, "Detect workouts", headlineStyle = RidgeType.body.copy(fontSize = 15.sp),
+                        trailing = {
+                            Switch(checked = Config.Workout.detecting(c) == true, enabled = !busy,
+                                onCheckedChange = { on -> onChange(mapOf(Config.Workout.DETECTION_CATEGORIES to Config.Workout.detection(c, on))) })
+                        })
+                }
+            }
+            sensitivity?.let { v ->
+                add { shape ->
+                    ListRow(shape, SENSITIVITY_LABEL, headlineStyle = RidgeType.body.copy(fontSize = 15.sp), onClick = { pickingSensitivity = true }, enabled = !busy,
+                        trailing = { Text(sensitivityName(v.value), style = RidgeType.body, color = MaterialTheme.colorScheme.onSurfaceVariant) })
+                }
+            }
+            others.forEach { (label, value) ->
+                add { shape ->
+                    ListRow(shape, label, headlineStyle = RidgeType.body.copy(fontSize = 15.sp),
+                        trailing = { Text(value, style = RidgeType.body, color = MaterialTheme.colorScheme.onSurfaceVariant) })
+                }
+            }
+        }
+        if (rows.isEmpty()) RidgeCard { Subtle("The strap reported none of the settings we know.") }
+        else Grouped(rows) { row, shape -> row(shape) }
+        if (!group.complete) Subtle("Some settings could not be read.", Modifier.padding(horizontal = 4.dp), RidgeType.caption)
+    }
+    if (pickingSensitivity && sensitivity != null) {
+        val options = sensitivity.options.ifEmpty { listOf(0, 1, 2) }
+        AlertDialog(
+            onDismissRequest = { pickingSensitivity = false },
+            title = { Text(SENSITIVITY_LABEL) },
+            text = {
+                Column {
+                    Subtle("Higher notices more workouts, and more that weren't.", Modifier.padding(bottom = 8.dp))
+                    options.forEach { o ->
+                        Row(Modifier.fillMaxWidth().clickable {
+                            pickingSensitivity = false
+                            if (o != sensitivity.value) onChange(mapOf(Config.Workout.DETECTION_SENSITIVITY to sensitivity.copy(value = o)))
+                        }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(selected = o == sensitivity.value, onClick = null)
+                            Text(sensitivityName(o), style = RidgeType.rowTitle, modifier = Modifier.padding(start = 12.dp))
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { pickingSensitivity = false }) { Text("Cancel") } },
+        )
     }
 }
 

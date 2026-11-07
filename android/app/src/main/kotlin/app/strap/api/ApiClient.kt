@@ -28,6 +28,11 @@ interface BackupServer {
     suspend fun addJournal(entry: JSONObject): JSONObject
 
     suspend fun deleteJournal(id: String)
+
+    /** One of the owner's workout changes (D43): returns its id on the server. */
+    suspend fun addSession(session: JSONObject): JSONObject
+
+    suspend fun deleteSession(id: String)
 }
 
 /** The server over HTTP. Every call returns the parsed JSON or throws [ApiException]. */
@@ -47,6 +52,12 @@ class ApiClient(private val link: ServerLink) : BackupServer {
 
     override suspend fun deleteJournal(id: String) {
         request("DELETE", "/v1/journal/$id", null)
+    }
+
+    override suspend fun addSession(session: JSONObject): JSONObject = JSONObject(request("POST", "/v1/sessions", session.toString()))
+
+    override suspend fun deleteSession(id: String) {
+        request("DELETE", "/v1/sessions/$id", null)
     }
 
     private suspend fun get(path: String): JSONObject = JSONObject(request("GET", path, null))

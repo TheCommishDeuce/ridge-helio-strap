@@ -45,7 +45,17 @@ public data class Workout(
     val avgHr: Int? = null,
     val maxHr: Int? = null,
     val minHr: Int? = null,
-)
+    /** Where it came from: as the strap recorded it, changed by the owner, or added by the owner (Sessions). */
+    val origin: Origin = Origin.STRAP,
+    /** The owner's change that made or changed it; null for a strap workout as recorded. */
+    val overlayId: String? = null,
+    /** The strap's own start for a strap workout, edited or not: what an edit or a hide points at. */
+    val strapStart: Instant? = null,
+) {
+    public enum class Origin { STRAP, EDITED, ADDED }
+
+    val end: Instant get() = start.plusSeconds(durationS.toLong())
+}
 
 /** The strap's own counter for a day; [readAt] is when it was read, [reportedAt] when stored. */
 public data class DeviceDailyTotal(

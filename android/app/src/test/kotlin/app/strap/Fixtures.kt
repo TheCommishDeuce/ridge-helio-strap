@@ -126,4 +126,14 @@ class FakeServer(
         up()
         deleted += id
     }
+
+    val addedSessions = mutableListOf<JSONObject>()
+    val deletedSessions = mutableListOf<String>()
+
+    override suspend fun addSession(session: JSONObject): JSONObject = up().let { addedSessions += session; JSONObject().put("id", "ses-${addedSessions.size}") }
+
+    override suspend fun deleteSession(id: String) {
+        up()
+        deletedSessions += id
+    }
 }

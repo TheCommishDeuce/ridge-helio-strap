@@ -105,7 +105,10 @@ object Infos {
         "The strap holds up to 10 alarms.",
         "Each alarm has a time zone (your phone's unless you pick another). The strap only knows its own clock, so an alarm in another zone is written to the strap shifted, and shows the strap's time under it. Daylight saving changes are caught on every sync.",
     ))
-    val strapSettings = Info("Strap settings", listOf("Read from the strap. Changing them here comes later."))
+    val strapSettings = Info("Strap settings", listOf(
+        "Read from the strap each time this page opens.",
+        "Workout detection and its sensitivity can be changed here: the change goes to the strap and is read back, so what you see is what the strap holds. The other settings are shown as they are.",
+    ))
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

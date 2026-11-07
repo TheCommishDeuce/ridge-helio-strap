@@ -35,12 +35,12 @@ internal fun healthRows(g: ConfigGroup?): List<Pair<String, String>> = rows(g, l
 
 internal fun workoutRows(g: ConfigGroup?): List<Pair<String, String>> = rows(g, listOf(
     Workout.DETECTION_ALERT to "Alert when a workout is detected",
-    Workout.DETECTION_SENSITIVITY to "Detection sensitivity",
+    Workout.DETECTION_SENSITIVITY to SENSITIVITY_LABEL,
     Workout.HR_ZONES to "Heart-rate zones",
 )) { key, v ->
     when {
         key == Workout.DETECTION_SENSITIVITY && v is ConfigValue.Choice ->
-            listOf("High", "Standard", "Low").getOrElse(v.value) { "Unknown (${v.value})" }
+            sensitivityName(v.value)
         key == Workout.HR_ZONES && v is ConfigValue.Numbers -> v.values.joinToString(" · ") + " bpm"
         else -> null
     }
@@ -56,3 +56,8 @@ private fun rows(g: ConfigGroup?, order: List<Pair<Int, String>>, special: (Int,
         }
         label to text
     }
+
+internal const val SENSITIVITY_LABEL = "Detection sensitivity"
+
+/** The strap's sensitivity byte: 0 high, 1 standard, 2 low (spec/01 "Config"). */
+internal fun sensitivityName(v: Int): String = listOf("High", "Standard", "Low").getOrElse(v) { "Unknown ($v)" }

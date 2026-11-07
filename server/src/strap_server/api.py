@@ -13,7 +13,7 @@ from uuid import UUID
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, status
 
-from strap_server import backup, journal
+from strap_server import backup, journal, sessions
 from strap_server.config import Settings, get_settings
 from strap_server.db import connection
 from strap_server.ingest.models import IngestPayload, IngestSummary
@@ -128,6 +128,25 @@ def post_journal(
     with connection() as conn:
         _ensure_owner(conn, user_id, settings)
         return journal.add(conn, user_id, entry)
+
+
+@app.post("/v1/sessions")
+def post_session(
+    entry: sessions.SessionIn,
+    user_id: Annotated[UUID, Depends(owner)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> dict:
+    with connection() as conn:
+        _ensure_owner(conn, user_id, settings)
+        return sessions.add(conn, user_id, entry)
+
+
+@app.delete("/v1/sessions/{session_id}")
+def delete_session(session_id: str, user_id: Annotated[UUID, Depends(owner)]) -> dict:
+    with connection() as conn:
+        if not sessions.delete(conn, user_id, session_id):
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "no such session")
+    return {"deleted": session_id}
 
 
 @app.delete("/v1/journal/{entry_id}")

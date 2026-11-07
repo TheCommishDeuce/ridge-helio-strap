@@ -129,8 +129,10 @@ private class PinStore(context: Context) {
  */
 @Composable
 fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit, onGym: (GymSession) -> Unit, onTrack: (LocalDate, Long) -> Unit,
-    pick: LocalDate? = null, onPicked: () -> Unit = {}) {
+    pick: LocalDate? = null, onPicked: () -> Unit = {}, actions: SessionActions? = null) {
     var data by remember { mutableStateOf<FitnessData?>(null) }
+    var adding by remember { mutableStateOf(false) }
+    var hidden by remember { mutableStateOf<List<strap.science.SessionOverlay>>(emptyList()) }
     var error by remember { mutableStateOf<String?>(null) }
     val today = LocalDate.now()
     var dayEpoch by rememberSaveable { mutableLongStateOf(today.toEpochDay()) }
@@ -158,6 +160,7 @@ fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit, 
             tracksError = e.message
         }
     }
+    LaunchedEffect(refreshKey, dayEpoch) { hidden = actions?.hidden?.invoke(day).orEmpty() }
     LaunchedEffect(refreshKey, dayEpoch) {
         try {
             data = FitnessData(
@@ -244,10 +247,24 @@ fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit, 
                 }
             })
         }
-        item { SectionTitle(day.format(DateTimeFormatter.ofPattern("EEEE d MMM"))) }
+        item {
+            if (actions != null) SectionTitle(day.format(DateTimeFormatter.ofPattern("EEEE d MMM")), "Add session", { adding = true })
+            else SectionTitle(day.format(DateTimeFormatter.ofPattern("EEEE d MMM")))
+        }
         item {
             if (dayWorkouts.isEmpty() && dayGym.isEmpty()) RidgeCard { Subtle("No workouts recorded on this day.") }
             if (dayWorkouts.isNotEmpty()) WorkoutRows(dayWorkouts, onWorkout)
+        }
+        if (hidden.isNotEmpty() && actions != null) item {
+            // Hidden strap workouts stay one tap from coming back (D43).
+            Column {
+                hidden.forEach { h ->
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Subtle("Hidden: ${strap.science.Sports.label(h.sport)} at ${clockOf(h.start.toEpochMilli())}", Modifier.weight(1f))
+                        TextButton(onClick = { actions.undo(h.id) }) { Text("Show") }
+                    }
+                }
+            }
         }
         if (dayGym.isNotEmpty()) item { GymRows(dayGym, onGym) }
         if (tracks.isNotEmpty() || tracksError != null) {
@@ -258,6 +275,10 @@ fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit, 
         }
     }
     if (editing) PinSheet(pins) { editing = false; store.save(pins) }
+    if (adding && actions != null) SessionSheet(SessionEdit.Add(day), onDismiss = { adding = false }) { sport, from, to ->
+        adding = false
+        actions.add(sport, from, to)
+    }
     open?.let { k ->
         val chart = CHARTS.getValue(k)
         DailyChartSheet(chart.label, chart.unit, d.daily.getValue(chart.metric), day, chart.tone(c), chart.format) { open = null }

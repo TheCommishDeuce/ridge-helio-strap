@@ -48,6 +48,47 @@ class ConfigTest {
     }
 
     @Test
+    fun `detection on the strap is all or nothing, its one category being 223 Activity`() {
+        val g = Config.group(workout)!!
+        val categories = g.values.getValue(Config.Workout.DETECTION_CATEGORIES) as ConfigValue.Choices
+        assertEquals(listOf(0xdf), categories.values)
+        assertEquals(listOf(0xdf), categories.options)
+        assertEquals(true, Config.Workout.detecting(categories))
+        assertEquals(emptyList(), Config.Workout.detection(categories, on = false).values)
+        assertEquals(listOf(0xdf), Config.Workout.detection(categories.copy(values = emptyList()), on = true).values)
+        assertEquals(ConfigValue.Choice(1, listOf(0, 1, 2)), g.values[Config.Workout.DETECTION_SENSITIVITY])
+    }
+
+    @Test
+    fun `a set names the group and its version, then key, type and value per setting`() {
+        assertEquals("0509010001421000", Config.setRequest(0x09, 1, mapOf(0x42 to ConfigValue.Choice(0, listOf(0, 1, 2)))).hex())
+        assertEquals("05090100014011020102", Config.setRequest(0x09, 1, mapOf(0x40 to ConfigValue.Choices(listOf(1, 2), emptyList()))).hex())
+        assertEquals("0509010001401100", Config.setRequest(0x09, 1, mapOf(0x40 to ConfigValue.Choices(emptyList(), listOf(0xdf)))).hex())
+        assertEquals("0508030002130b01140b00", Config.setRequest(0x08, 3, linkedMapOf(0x13 to ConfigValue.Flag(true), 0x14 to ConfigValue.Flag(false))).hex())
+        assertEquals(true, Config.setAccepted("0601".unhex()))
+        assertEquals(false, Config.setAccepted("0602".unhex()))
+        assertNull(Config.setAccepted("0401".unhex()))
+    }
+
+    @Test
+    fun `the strap took each detection write and read it back (2026-11-07)`() {
+        val g = Config.group(workout)!!
+        val categories = g.values.getValue(Config.Workout.DETECTION_CATEGORIES) as ConfigValue.Choices
+        val sensitivity = g.values.getValue(Config.Workout.DETECTION_SENSITIVITY) as ConfigValue.Choice
+        // Sent by the Strap page, each answered 06 01.
+        assertEquals("0509010001421000", Config.setRequest(0x09, g.version, mapOf(0x42 to sensitivity.copy(value = 0))).hex())
+        assertEquals("0509010001421001", Config.setRequest(0x09, g.version, mapOf(0x42 to sensitivity)).hex())
+        assertEquals("0509010001401100", Config.setRequest(0x09, g.version, mapOf(0x40 to Config.Workout.detection(categories, on = false))).hex())
+        assertEquals("0509010001401101df", Config.setRequest(0x09, g.version, mapOf(0x40 to categories)).hex())
+        // Read back with detection off: no categories, 223 still offered.
+        val off = Config.group(workout.hex().replace("401101df01df", "40110001df").unhex())!!
+        assertTrue(off.complete)
+        val offCategories = off.values.getValue(Config.Workout.DETECTION_CATEGORIES) as ConfigValue.Choices
+        assertEquals(ConfigValue.Choices(emptyList(), listOf(0xdf)), offCategories)
+        assertEquals(false, Config.Workout.detecting(offCategories))
+    }
+
+    @Test
     fun `the strap's capabilities`() {
         assertEquals(listOf(0x00, 0x0b, 0x08, 0x09, 0x0a), Config.groups("020305000b08090a".unhex()))
     }

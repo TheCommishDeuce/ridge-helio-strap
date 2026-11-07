@@ -32,6 +32,7 @@ import strap.protocol.parse.AlarmWrite
 import strap.protocol.parse.Alarms
 import strap.protocol.parse.Config
 import strap.protocol.parse.ConfigGroup
+import strap.protocol.parse.ConfigValue
 import strap.protocol.parse.Replies
 import strap.protocol.parse.StrapAlarm
 import strap.protocol.transport.ChunkDecoder
@@ -142,6 +143,17 @@ public class StrapSession private constructor(
             if (g?.complete != true) log("config group 0x%02x not fully decoded: %s".format(group, hex))
             else log("config group 0x%02x v%d, %d keys: %s".format(group, g.version, g.values.size, hex))
         }
+    }
+
+    /**
+     * Sets [values] in config [group] ([version] as read). True when the strap acknowledged it,
+     * false when it refused, null when no acknowledgement came. Read the group back to see what it holds.
+     */
+    public suspend fun writeConfig(group: Int, version: Int, values: Map<Int, ConfigValue>, encrypt: Boolean = true, timeout: Duration = REPLY_WAIT): Boolean? {
+        val request = Config.setRequest(group, version, values)
+        val reply = exchange(Config.ENDPOINT, request, Config.SET_ACK, encrypt, timeout)
+        log("config set %s → %s".format(request.joinToString("") { "%02x".format(it) }, reply?.joinToString("") { "%02x".format(it) } ?: "no reply"))
+        return reply?.let(Config::setAccepted)
     }
 
     /** The strap's alarms, or null when it did not answer in time. */

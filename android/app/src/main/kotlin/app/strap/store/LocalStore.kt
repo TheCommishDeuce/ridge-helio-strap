@@ -20,6 +20,8 @@ import strap.science.IllnessFlag
 import strap.science.MemoryData
 import strap.science.Profile
 import strap.science.Sample
+import strap.science.SessionOverlay
+import strap.science.Sessions
 import strap.science.SleepSession
 import strap.science.Stage
 import strap.science.WeightEntry
@@ -33,7 +35,7 @@ import java.time.LocalDate
  * live copy (D34). Each raw row carries an outbox flag for the backup to the server. Timestamps
  * are epoch milliseconds, UTC.
  */
-class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null, 7) {
+class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null, 8) {
     override fun onCreate(db: SQLiteDatabase) {
         SCHEMA.forEach(db::execSQL)
     }
@@ -53,6 +55,7 @@ class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null,
         if (oldVersion < 5) RESTORE_SCHEMA.forEach(db::execSQL)
         if (oldVersion < 6) GYM_SCHEMA.forEach(db::execSQL)
         if (oldVersion < 7) SPORT_FIX.forEach(db::execSQL)
+        if (oldVersion < 8) SESSION_SCHEMA.forEach(db::execSQL)
     }
 
     // ── the phone's own derived numbers (D34 S3) ────────────────────────────
@@ -141,6 +144,44 @@ class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null,
     }
 
     fun removeJournal(id: String) = writableDatabase.delete("journal", "id = ?", arrayOf(id))
+
+    // ── the owner's sessions (D43) ──────────────────────────────────────────
+
+    data class SessionRow(val overlay: SessionOverlay, val serverId: String?, val pushed: Boolean, val deleted: Boolean)
+
+    fun sessionRows(where: String = "1", vararg args: String): List<SessionRow> = readableDatabase.rawQuery(
+        "SELECT id, action, target, start, end_ts, sport, server_id, pushed, deleted FROM sessions WHERE $where ORDER BY start", args,
+    ).use { c ->
+        buildList {
+            while (c.moveToNext()) {
+                val action = runCatching { SessionOverlay.Action.valueOf(c.getString(1).uppercase()) }.getOrNull() ?: continue
+                add(SessionRow(
+                    SessionOverlay(c.getString(0), action, if (c.isNull(2)) null else Instant.ofEpochMilli(c.getLong(2)),
+                        Instant.ofEpochMilli(c.getLong(3)), Instant.ofEpochMilli(c.getLong(4)), c.getInt(5)),
+                    if (c.isNull(6)) null else c.getString(6), c.getInt(7) == 1, c.getInt(8) == 1,
+                ))
+            }
+        }
+    }
+
+    /** Stores [row] and marks the days it touches for the next derive. */
+    fun putSession(row: SessionRow) {
+        val db = writableDatabase
+        val o = row.overlay
+        db.insertWithOnConflict("sessions", null, ContentValues().apply {
+            put("id", o.id); put("action", o.action.name.lowercase()); o.target?.let { put("target", it.toEpochMilli()) }
+            put("start", o.start.toEpochMilli()); put("end_ts", o.end.toEpochMilli()); put("sport", o.sport)
+            row.serverId?.let { put("server_id", it) }; put("pushed", if (row.pushed) 1 else 0); put("deleted", if (row.deleted) 1 else 0)
+        }, SQLiteDatabase.CONFLICT_REPLACE)
+        markUnderived(db, listOfNotNull(o.start, o.target).min())
+    }
+
+    fun removeSession(id: String) = writableDatabase.delete("sessions", "id = ?", arrayOf(id))
+
+    /** The strap's workout starting at [start], as recorded, or null when the phone doesn't hold it. */
+    fun strapWorkout(start: Instant): Workout? = readableDatabase.rawQuery(
+        "SELECT start, sport, duration_s FROM workouts WHERE start = ?", arrayOf(start.toEpochMilli().toString()),
+    ).use { c -> if (c.moveToFirst()) Workout(Instant.ofEpochMilli(c.getLong(0)), c.getInt(1), c.getInt(2)) else null }
 
     /**
      * The earliest instant stored since the derive last caught up, if any: where the next one
@@ -320,7 +361,6 @@ class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null,
         val (inside, insideArgs) = between("ts", lo, hi)
         // A night shorter than a day: one that started up to a day before the cut reaches into it.
         val (nights, nightArgs) = between("start", lo?.minus(86_400_000L), hi)
-        val (started, startedArgs) = between("start", lo, hi)
         val (read, readArgs) = between("read_at", lo, hi)
         val (days, dayArgs) = between("day", from?.let { zones.dateOf(it).toEpochDay() }, until?.let { zones.dateOf(it).toEpochDay() })
         val samples = ArrayList<Sample>()
@@ -346,12 +386,17 @@ class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null,
         }
         // The server keeps one session per start; a later one with the same start replaces it.
         val byStart = sessions.associateBy { it.start }.values
-        val workouts = ArrayList<Workout>()
-        db.rawQuery("SELECT start, sport, duration_s, calories, avg_hr, max_hr, min_hr FROM workouts WHERE $started ORDER BY start", startedArgs).use { c ->
+        // The strap's workouts with the owner's changes (D43). An edit can move a workout up to a day,
+        // so both are read a day wider than the window, and the result is cut to it.
+        val (wide, wideArgs) = between("start", lo?.minus(86_400_000L), hi?.plus(86_400_000L))
+        val strapWorkouts = ArrayList<Workout>()
+        db.rawQuery("SELECT start, sport, duration_s, calories, avg_hr, max_hr, min_hr FROM workouts WHERE $wide ORDER BY start", wideArgs).use { c ->
             while (c.moveToNext()) {
-                workouts += Workout(Instant.ofEpochMilli(c.getLong(0)), c.getInt(1), c.getInt(2), c.intOrNull(3), null, c.intOrNull(4), c.intOrNull(5), c.intOrNull(6))
+                strapWorkouts += Workout(Instant.ofEpochMilli(c.getLong(0)), c.getInt(1), c.getInt(2), c.intOrNull(3), null, c.intOrNull(4), c.intOrNull(5), c.intOrNull(6))
             }
         }
+        val overlays = sessionRows("deleted = 0 AND $wide", *wideArgs).map { it.overlay }
+        val workouts = Sessions.apply(strapWorkouts, overlays).filter { w -> (lo == null || w.start.toEpochMilli() >= lo) && (hi == null || w.start.toEpochMilli() < hi) }
         // The server's day counters as restored, then this phone's own readings over them by the
         // server's rule: a strap reading replaces one read no later, or with no read time, or from the cloud.
         val totals = LinkedHashMap<LocalDate, DeviceDailyTotal>()
@@ -653,6 +698,17 @@ class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null,
             "odi_valid_time" to "odi_valid_time_device", "odi_raw" to "odi_raw_device",
         )
         /**
+         * Added in version 8 (D43): the owner's changes to the workout list, each a session added by
+         * hand, or an edit or hide of the strap workout starting at [target]. Backed up like the
+         * journal: [server_id] once uploaded, a deleted row waits as [deleted] until the server knows.
+         */
+        val SESSION_SCHEMA = listOf(
+            "CREATE TABLE sessions(id TEXT PRIMARY KEY, action TEXT NOT NULL, target INTEGER, start INTEGER NOT NULL, end_ts INTEGER NOT NULL, " +
+                "sport INTEGER NOT NULL, server_id TEXT, pushed INTEGER NOT NULL DEFAULT 0, deleted INTEGER NOT NULL DEFAULT 0)",
+            "CREATE INDEX sessions_start ON sessions(start)",
+        )
+
+        /**
          * Version 7 (0.7.1, issue #4): every workout stored so far has the timezone as its sport
          * (summary field 2.3 was read; the sport is 3.1), so none has a known sport. A data fix, not
          * a schema change. Each goes up again so the server's copy is corrected by the upload itself,
@@ -708,7 +764,7 @@ class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null,
                 "pushed INTEGER NOT NULL DEFAULT 0)",
             "CREATE TABLE meta(key TEXT PRIMARY KEY, value TEXT NOT NULL)",
             "CREATE TABLE sync_log(id INTEGER PRIMARY KEY AUTOINCREMENT, at INTEGER NOT NULL, summary TEXT NOT NULL)",
-        ) + DERIVED_SCHEMA + JOURNAL_SCHEMA + RESTORE_SCHEMA.drop(2) + GYM_SCHEMA
+        ) + DERIVED_SCHEMA + JOURNAL_SCHEMA + RESTORE_SCHEMA.drop(2) + GYM_SCHEMA + SESSION_SCHEMA
 
     }
 }

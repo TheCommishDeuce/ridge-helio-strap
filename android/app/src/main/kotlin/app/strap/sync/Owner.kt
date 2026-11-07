@@ -8,7 +8,9 @@ import app.strap.store.LocalStore.JournalRow
 import org.json.JSONArray
 import org.json.JSONObject
 import strap.science.Profile
+import strap.science.SessionOverlay
 import strap.science.WeightEntry
+import strap.science.Workout
 import strap.science.Zones
 import strap.science.real
 import java.time.Instant
@@ -78,6 +80,7 @@ class Owner(private val store: LocalStore, private val server: () -> BackupServe
             store.putJournal(JournalRow(id, e.getString("kind"), Instant.ofEpochMilli(e.getLong("ts")), e.getDouble("amount"),
                 e.getString("unit"), e.optString("name").takeUnless { e.isNull("name") }, id, pushed = true, deleted = false))
         }
+        restoreSessions(records)
         markSeeded("restore")
     }
 
@@ -137,6 +140,68 @@ class Owner(private val store: LocalStore, private val server: () -> BackupServe
 
     fun weights(): List<WeightEntry> = store.journalRows("deleted = 0 AND kind = 'weight'").map { WeightEntry(it.ts, it.amount.toFloat()) }
 
+    // ── the sessions (D43) ─────────────────────────────────────────────────
+
+    /** The changes in force (not deleted) that touch [from] until [until]. */
+    fun sessions(from: Instant, until: Instant): List<SessionOverlay> =
+        store.sessionRows("deleted = 0 AND start < ? AND end_ts > ?", until.toEpochMilli().toString(), from.toEpochMilli().toString()).map { it.overlay }
+
+    /** Adds a session from [start] to [end]; returns where the derive starts again. */
+    fun addSession(sport: Int, start: Instant, end: Instant): Instant {
+        putSession(SessionOverlay("local:${UUID.randomUUID()}", SessionOverlay.Action.ADD, null, start, end, sport))
+        return start
+    }
+
+    /**
+     * Sets [w]'s sport and window: an added session is replaced by the new one, a strap workout
+     * (as recorded or already edited) gets one edit in place of any it had.
+     */
+    fun editWorkout(w: Workout, sport: Int, start: Instant, end: Instant): Instant = store.batch {
+        w.overlayId?.let(::dropSession)
+        if (w.origin == Workout.Origin.ADDED) addSession(sport, start, end)
+        else {
+            val target = w.strapStart ?: w.start
+            putSession(SessionOverlay("local:${UUID.randomUUID()}", SessionOverlay.Action.EDIT, target, start, end, sport))
+        }
+        minOf(w.start, start)
+    }
+
+    /** Hides a strap workout (its edit goes with it) or deletes an added session. */
+    fun hideWorkout(w: Workout): Instant = store.batch {
+        w.overlayId?.let(::dropSession)
+        if (w.origin != Workout.Origin.ADDED) {
+            val target = w.strapStart ?: w.start
+            val strapEnd = store.strapWorkout(target)?.end ?: w.end
+            putSession(SessionOverlay("local:${UUID.randomUUID()}", SessionOverlay.Action.HIDE, target, target, strapEnd, w.sport))
+        }
+        w.start
+    }
+
+    /** Takes back one change: a hidden or edited strap workout shows as recorded again. Where the derive starts, or null when it's gone. */
+    fun undoSession(id: String): Instant? {
+        val o = store.sessionRows("id = ?", id).firstOrNull()?.overlay ?: return null
+        dropSession(id)
+        return listOfNotNull(o.start, o.target).min()
+    }
+
+    private fun putSession(o: SessionOverlay) = store.putSession(LocalStore.SessionRow(o, null, pushed = false, deleted = false))
+
+    private fun dropSession(id: String) {
+        val row = store.sessionRows("id = ?", id).firstOrNull() ?: return
+        if (row.serverId == null) store.removeSession(id) else store.putSession(row.copy(deleted = true, pushed = false))
+    }
+
+    private fun restoreSessions(records: JSONObject) {
+        val a = records.optJSONArray("sessions") ?: return
+        for (i in 0 until a.length()) {
+            val e = a.getJSONObject(i)
+            val action = runCatching { SessionOverlay.Action.valueOf(e.getString("action").uppercase()) }.getOrNull() ?: continue
+            val id = e.getString("id")
+            store.putSession(LocalStore.SessionRow(SessionOverlay(id, action, if (e.isNull("target")) null else Instant.ofEpochMilli(e.getLong("target")),
+                Instant.ofEpochMilli(e.getLong("start")), Instant.ofEpochMilli(e.getLong("end")), e.getInt("sport")), id, pushed = true, deleted = false))
+        }
+    }
+
     // ── the zones ──────────────────────────────────────────────────────────
 
     /** The base zone the server started from, every change it recorded, and every change this phone saw. */
@@ -180,14 +245,28 @@ class Owner(private val store: LocalStore, private val server: () -> BackupServe
                     store.putJournal(row.copy(serverId = id, pushed = true))
                 }
             }
+            for (row in store.sessionRows("pushed = 0")) {
+                if (row.deleted) {
+                    row.serverId?.let { api.deleteSession(it) }
+                    store.removeSession(row.overlay.id)
+                } else {
+                    val o = row.overlay
+                    fun iso(t: Instant) = t.atOffset(java.time.ZoneOffset.UTC).toString()
+                    val body = JSONObject().put("action", o.action.name.lowercase()).put("start", iso(o.start)).put("end", iso(o.end))
+                        .put("sport", o.sport).put("target", o.target?.let(::iso) ?: JSONObject.NULL)
+                    val id = api.addSession(body).getString("id")
+                    store.putSession(row.copy(serverId = id, pushed = true))
+                }
+            }
         } catch (e: ApiException) {
             return e.message ?: "upload failed"
         }
         return null
     }
 
-    /** How many profile and journal changes wait for the server. */
-    fun unpushed(): Int = store.journalRows("pushed = 0").size + if (store.metaValue(PROFILE_PUSHED) == "0") 1 else 0
+    /** How many profile, journal and session changes wait for the server. */
+    fun unpushed(): Int = store.journalRows("pushed = 0").size + store.sessionRows("pushed = 0").size +
+        if (store.metaValue(PROFILE_PUSHED) == "0") 1 else 0
 
     private fun log(line: String) = Log.i("strap", "owner: $line")
 

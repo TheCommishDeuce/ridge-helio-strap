@@ -137,7 +137,9 @@ total = Σ MET(m) × BMR/1440  +  Σ device workout calories
 active = max(0, total − BMR);  basal = BMR;  pal = total / BMR
 ```
 Workout minutes are excluded from the walk and replaced by the strap's calories; a
-workout with no calorie figure → caveat `workout_without_device_calories`. Stale weight
+workout with no calorie figure (a session added or re-timed by the owner, D43) keeps its
+minutes in the walk and raises caveat `workout_without_device_calories`, since steps miss
+effort without them (cycling, climbing, lifting). Stale weight
 (>14 d) → caveat with the error bound `100 × 10 / BMR` % per kg; never withhold.
 Individual error advertised: ±15–20 % (Brage 2015). Source:
 energy_expenditure_derivation (Probable). **Hard rule: no Keytel/HR-EE for free-living.**

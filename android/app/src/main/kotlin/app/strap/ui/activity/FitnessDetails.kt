@@ -36,6 +36,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -203,6 +205,13 @@ fun StrainScreen(api: Reader, day: LocalDate, onWorkout: (Workout) -> Unit) {
     }
 }
 
+/** Where a workout's record comes from (D43). */
+internal fun originOf(w: Workout): String = when (w.origin) {
+    Workout.Origin.STRAP -> "Helio Strap"
+    Workout.Origin.EDITED -> "Helio Strap, edited by you"
+    Workout.Origin.ADDED -> "Added by you"
+}
+
 /** A workout's icon, by the kind of sport (issue #4); a run's figure when the sport is unknown. */
 internal fun sportIcon(sport: Int): ImageVector = when (Sports.kind(sport)) {
     Sports.Kind.RUN, Sports.Kind.OTHER -> Icons.AutoMirrored.Rounded.DirectionsRun
@@ -240,7 +249,8 @@ internal fun WorkoutRows(workouts: List<Workout>, onWorkout: (Workout) -> Unit) 
  * the zones behind, minutes per zone, cardio focus, and what it added to the 7-day load.
  */
 @Composable
-fun WorkoutScreen(api: Reader, start: Instant) {
+fun WorkoutScreen(api: Reader, start: Instant, actions: SessionActions? = null, onGone: () -> Unit = {}) {
+    var editing by remember { mutableStateOf(false) }
     var workout by remember { mutableStateOf<Workout?>(null) }
     var detail by remember { mutableStateOf<WorkoutDetail?>(null) }
     var load by remember { mutableStateOf<Map<LocalDate, Double>>(emptyMap()) }
@@ -258,6 +268,11 @@ fun WorkoutScreen(api: Reader, start: Instant) {
         }
     }
     val w = workout ?: return Loading(error)
+    if (editing && actions != null) SessionSheet(SessionEdit.Edit(w), onDismiss = { editing = false }) { sport, from, to ->
+        editing = false
+        actions.edit(w, sport, from, to)
+        onGone()
+    }
     val c = LocalMetricColors.current
     val r = LocalRidgeColors.current
     val d = detail
@@ -269,7 +284,20 @@ fun WorkoutScreen(api: Reader, start: Instant) {
                 IconCircle(sportIcon(w.sport), c.strain, MaterialTheme.colorScheme.surface, size = 48.dp, iconSize = 24.dp)
                 Spacer(Modifier.height(6.dp))
                 Text(Sports.label(w.sport), style = RidgeType.topTitle)
-                Subtle("${day.format(DateTimeFormatter.ofPattern("EEE d MMM"))} · ${clockOf(w.start.toEpochMilli())} – ${clockOf(end.toEpochMilli())} · Helio Strap", style = RidgeType.body)
+                Subtle("${day.format(DateTimeFormatter.ofPattern("EEE d MMM"))} · ${clockOf(w.start.toEpochMilli())} – ${clockOf(end.toEpochMilli())} · ${originOf(w)}", style = RidgeType.body)
+            }
+        }
+        if (actions != null) item {
+            // Edits change what Ridge shows and counts, never the strap's record (D43); each leaves this page.
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = { editing = true }) { Text("Edit") }
+                when (w.origin) {
+                    Workout.Origin.ADDED -> OutlinedButton(onClick = { actions.hide(w); onGone() }) { Text("Delete") }
+                    else -> OutlinedButton(onClick = { actions.hide(w); onGone() }) { Text("Hide") }
+                }
+                if (w.origin == Workout.Origin.EDITED) w.overlayId?.let { id ->
+                    TextButton(onClick = { actions.undo(id); onGone() }) { Text("Undo edit") }
+                }
             }
         }
         item {
@@ -282,7 +310,10 @@ fun WorkoutScreen(api: Reader, start: Instant) {
                             ?: "Needs a profile and a resting heart rate", style = RidgeType.body)
                     }
                 }
-                CardFoot(listOf("Duration" to duration(w.durationS / 60.0), "Avg HR" to (w.avgHr?.let { "$it bpm" } ?: "—"), "Max HR" to (w.maxHr?.let { "$it bpm" } ?: "—")))
+                // A session without the strap's summary (added or re-timed, D43) takes its figures from the per-minute stream.
+                val avgHr = w.avgHr ?: d?.hr?.takeIf { it.isNotEmpty() }?.map { it.value }?.average()?.roundToInt()
+                val maxHr = w.maxHr ?: d?.hr?.maxOfOrNull { it.value }?.roundToInt()
+                CardFoot(listOf("Duration" to duration(w.durationS / 60.0), "Avg HR" to (avgHr?.let { "$it bpm" } ?: "—"), "Max HR" to (maxHr?.let { "$it bpm" } ?: "—")))
                 CardFoot(listOf("Calories" to (w.calories?.let { "$it kcal" } ?: "—"), "Distance" to (w.distanceM?.let { "%.1f km".format(it / 1000) } ?: "—"),
                     "Load" to (d?.let { "+${it.trimp.roundToInt()}" } ?: "—")))
             }

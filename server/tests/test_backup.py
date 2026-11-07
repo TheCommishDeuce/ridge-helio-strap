@@ -66,5 +66,9 @@ def test_every_endpoint_the_phone_uses_is_served(db, test_dsn, monkeypatch) -> N
         put = client.put("/v1/profile", json={"height_cm": 180, "sex": "male", "dob": "1990-01-01", "srpa": 1}, headers=auth)
         assert put.status_code == 200, put.text
         assert client.post("/v1/ingest", json={}, headers=auth).status_code == 200
+        added = client.post("/v1/sessions", json={"action": "add", "start": "2026-03-05T17:00:00Z", "end": "2026-03-05T19:00:00Z",
+                                                  "sport": 70}, headers=auth)
+        assert added.status_code == 200, added.text
+        assert client.delete(f"/v1/sessions/{added.json()['id']}", headers=auth).status_code == 200
     finally:
         config.get_settings.cache_clear()

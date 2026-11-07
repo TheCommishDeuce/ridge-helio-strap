@@ -360,7 +360,7 @@ class SyncRunner(private val context: Context, private val store: LocalStore, pr
     /** The strap's data, then the owner's profile and journal (D34 S3); a full success is the backup's time. */
     private suspend fun pushAll(): List<String> = listOfNotNull(
         pushOnce(),
-        app().owner.push()?.let { "Profile and journal upload stopped: $it (it resumes with the next backup)" },
+        app().owner.push()?.let { "Profile, journal and sessions upload stopped: $it (it resumes with the next backup)" },
     ).also { if (it.isEmpty() && vault.loadServer() != null) store.setMetaValue(BACKUP_AT, Instant.now().toEpochMilli().toString()) }
 
     /** When everything last reached the server, or null if it never did (or no server is set). */

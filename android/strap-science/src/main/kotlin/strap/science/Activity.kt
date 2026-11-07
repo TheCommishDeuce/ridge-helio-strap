@@ -104,7 +104,9 @@ private const val INDIVIDUAL_ERROR_PCT = 15.0
 internal fun Science.teeMet(start: Instant, end: Instant, bmr: Double, strideM: Double): Double {
     val bmrMin = bmr / 1440.0
     val sleepWins = sleepWindows(start, end)
-    val workoutWins = data.workouts(start, end).map { it.start to it.start.plusSeconds(it.durationS.toLong()) }
+    // Only a workout with the strap's own calories replaces the movement model over its minutes;
+    // one without (added or re-timed by the owner, D43) is counted from movement like any minute.
+    val workoutWins = data.workouts(start, end).filter { it.calories != null }.map { it.start to it.start.plusSeconds(it.durationS.toLong()) }
     val stepsByMin = perMinute(STEPS, start, end, keep = { it < 250 }, sum = true)
     var total = 0.0
     val base = start.floorMinute()
@@ -166,10 +168,10 @@ private fun Science.calories(day: LocalDate, prof: ProfileAsOf, start: Instant, 
     val uncountedCaveats = if (uncounted.isEmpty()) emptyList() else listOf(
         json(
             "reason" to "workout_without_device_calories",
-            "message" to "${uncounted.size} recorded ${if (uncounted.size == 1) "session" else "sessions"} on this day ($uncountedMinutes min in total) " +
-                "came from the strap with no calorie figure. Workout minutes are counted from the strap's own measurement rather than from the " +
-                "movement model, so those minutes contributed nothing and this total is lower than the day actually was — by at least the resting " +
-                "energy of $uncountedMinutes minutes.",
+            "message" to "${uncounted.size} ${if (uncounted.size == 1) "session" else "sessions"} on this day ($uncountedMinutes min in total) " +
+                "had no calorie figure from the strap (added or re-timed by you, or the strap sent none). Their minutes are counted from " +
+                "your movement like any other minute, which misses effort without steps (cycling, climbing, lifting), so this total " +
+                "may be lower than the day actually was.",
             "sessions" to uncounted.size, "uncounted_minutes" to uncountedMinutes,
         ),
     )
