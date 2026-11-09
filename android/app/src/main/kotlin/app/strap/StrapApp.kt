@@ -7,6 +7,11 @@ import app.strap.api.LocalReader
 import app.strap.api.Reader
 import app.strap.integrations.Dawarich
 import app.strap.integrations.ExerciseNames
+import app.strap.integrations.HealthConnect
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import app.strap.integrations.OpenGymSync
 import app.strap.pairing.KeyVault
 import app.strap.store.LocalStore
@@ -31,6 +36,15 @@ class StrapApp : Application() {
     val exerciseNames: ExerciseNames by lazy { ExerciseNames(this) { openGym.customNames() } }
     val dawarich: Dawarich by lazy { Dawarich(vault) }
 
+    /** Ridge's days written to Health Connect (D45), when turned on in Settings. */
+    val healthConnect: HealthConnect by lazy { HealthConnect(this, store, science, owner) }
+    private val exports = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    /** Writes what is owed to Health Connect, off the caller's thread. */
+    fun exportHealth() {
+        exports.launch { healthConnect.export() }
+    }
+
     /** The backup server, if one is set up (D34: it is optional). */
     val server: () -> BackupServer? = { vault.loadServer()?.let(::ApiClient) }
     val owner: Owner by lazy { Owner(store, server, zones) }
@@ -52,6 +66,7 @@ class StrapApp : Application() {
         super.onCreate()
         zones.record() // a backstop for a change the broadcast missed (D31)
         background.scheduleBackup(vault.loadServer() != null)
+        science.onDerived = { from -> healthConnect.touched(from); exportHealth() }
         restore // wires the one-time backfill of the server's history into the science
         app.strap.ui.widget.WidgetUpdater.watch(this)
     }

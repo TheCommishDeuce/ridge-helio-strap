@@ -64,6 +64,7 @@ import app.strap.ui.settings.SettingsScreen
 import app.strap.ui.setup.ServerStep
 import app.strap.ui.setup.OpenGymStep
 import app.strap.ui.setup.DawarichStep
+import app.strap.ui.setup.HealthConnectStep
 import app.strap.ui.setup.SetupFlow
 import app.strap.ui.setup.StrapStep
 import app.strap.ui.shell.BottomBar
@@ -165,6 +166,7 @@ private fun AppShell(app: StrapApp, requestedTab: MutableState<Tab?>, requestedW
         Pushed.ChangeServer -> return FullScreen { ServerStep(app, onCancel = shell::pop) { app.background.scheduleBackup(true); shell.pop() } }
         Pushed.OpenGymSetup -> return FullScreen { OpenGymStep(app) { shell.pop() } }
         Pushed.DawarichSetup -> return FullScreen { DawarichStep(app) { shell.pop() } }
+        Pushed.HealthConnectSetup -> return FullScreen { HealthConnectStep(app) { shell.pop() } }
         else -> {}
     }
 
@@ -251,6 +253,7 @@ private fun AppShell(app: StrapApp, requestedTab: MutableState<Tab?>, requestedW
                             onProfile = { shell.push(Pushed.Profile) },
                             onOpenGym = { shell.push(Pushed.OpenGymSetup) },
                             onDawarich = { shell.push(Pushed.DawarichSetup) },
+                            onHealthConnect = { shell.push(Pushed.HealthConnectSetup) },
                         )
                         top == Pushed.Profile -> ProfileScreen(app.owner) { scope.launch { app.science.update(null) } }
                         top == Pushed.Diagnostics -> DiagnosticsScreen(app)

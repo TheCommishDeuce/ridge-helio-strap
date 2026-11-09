@@ -68,6 +68,9 @@ sealed interface Pushed {
 
     data object DawarichSetup : Pushed
 
+    /** Turning the Health Connect export on or off (D45). */
+    data object HealthConnectSetup : Pushed
+
     /** One openGym session, by its openGym id. */
     data class GymSession(val id: String) : Pushed
 

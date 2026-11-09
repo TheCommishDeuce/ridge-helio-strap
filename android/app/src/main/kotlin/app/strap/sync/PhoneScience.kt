@@ -39,6 +39,9 @@ class PhoneScience(private val store: LocalStore, private val server: () -> Back
     @Volatile private var older: Pair<Pair<Instant, LocalDate>, Science>? = null
     private val _version = kotlinx.coroutines.flow.MutableStateFlow(0)
 
+    /** Told after every update which day it reached back to (null: nothing new): the Health Connect export (D45). */
+    @Volatile var onDerived: ((LocalDate?) -> Unit)? = null
+
     /** Moves on after every update: the screens reload on it. */
     val version: kotlinx.coroutines.flow.StateFlow<Int> = _version
 
@@ -111,6 +114,7 @@ class PhoneScience(private val store: LocalStore, private val server: () -> Back
             recent = Window(window, science)
             older = null
             _version.value++
+            onDerived?.invoke(from)
             if (from != null) {
                 store.setMetaValue(INPUTS, inputs)
                 store.setMetaValue(DERIVED_AT, Instant.now().toEpochMilli().toString())

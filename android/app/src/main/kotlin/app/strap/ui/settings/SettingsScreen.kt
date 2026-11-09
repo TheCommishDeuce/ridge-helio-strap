@@ -15,6 +15,7 @@ import androidx.compose.material.icons.outlined.CloudUpload
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Map
+import androidx.compose.material.icons.outlined.MonitorHeart
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Sync
@@ -55,7 +56,7 @@ private data class Item(val icon: ImageVector, val title: String, val detail: St
 /** The gear (D27): what is set up, a way to change it, and the raw diagnostics only under Advanced. */
 @Composable
 fun SettingsScreen(app: StrapApp, onChangeStrap: () -> Unit, onChangeServer: () -> Unit, onDiagnostics: () -> Unit, onBackground: () -> Unit, onProfile: () -> Unit,
-    onOpenGym: () -> Unit, onDawarich: () -> Unit) {
+    onOpenGym: () -> Unit, onDawarich: () -> Unit, onHealthConnect: () -> Unit) {
     val links = LocalUriHandler.current
     val sync by app.syncRunner.state.collectAsStateWithLifecycle()
     // Re-read when a sync changes state: it may have finished, or uploaded the outbox.
@@ -100,6 +101,7 @@ fun SettingsScreen(app: StrapApp, onChangeStrap: () -> Unit, onChangeServer: () 
         val gym = remember(sync) { app.openGym.status() }
         val gymLink = remember(sync) { app.vault.loadOpenGym() }
         val tracks = remember { app.vault.loadDawarich() }
+        val health = remember(sync) { app.healthConnect.status() }
         Section("Integrations", listOf(
             Item(Icons.Outlined.FitnessCenter, "openGym", when {
                 gymLink == null -> "Gym sessions with the strap's heart rate"
@@ -108,6 +110,11 @@ fun SettingsScreen(app: StrapApp, onChangeStrap: () -> Unit, onChangeServer: () 
                 else -> "${host(gymLink.baseUrl)} · " + (gym?.at?.let { "pulled ${time(it)}" } ?: "not pulled yet")
             }, onClick = onOpenGym),
             Item(Icons.Outlined.Map, "Dawarich", tracks?.let { "${host(it.baseUrl)} · walks and rides on Fitness" } ?: "Walks and rides with the strap's heart rate", onClick = onDawarich),
+            Item(Icons.Outlined.MonitorHeart, "Health Connect", when {
+                health == null -> "Share your days with other apps on this phone"
+                health.failure != null -> "⚠ ${health.failure}"
+                else -> health.at?.let { "Written ${time(it)}" } ?: "On · nothing written yet"
+            }, onClick = onHealthConnect),
         ))
         Section("You", listOf(
             Item(Icons.Outlined.Person, "Profile", profileSummary(profile, weights), onClick = onProfile),

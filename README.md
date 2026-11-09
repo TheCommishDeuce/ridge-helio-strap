@@ -62,6 +62,11 @@ up once a night, so a new phone can start from your whole history.
 - **Sync that keeps up**: opening the app syncs when the last sync is over 15 minutes old,
   and optional background sync collects from the strap on an interval you choose (Settings →
   Background sync). With a server, a backup runs once a night while the phone charges on Wi-Fi.
+- **Health Connect, if you want it** (Settings → Integrations, off until you turn it on):
+  Ridge writes each day's steps, distance and calories, each night's sleep with its stages,
+  resting heart rate, HRV, blood oxygen and breathing rate, your heart rate minute by minute,
+  your workouts and your VO₂max estimate to Health Connect, where other apps on the phone
+  that you allow can read them. Write-only: Ridge reads nothing from Health Connect. A late sync or an edit corrects what was written.
 - **Your own openGym and Dawarich, if you run them** (Settings → Integrations, both
   optional and read-only): gym sessions logged in [openGym](https://github.com/DuarteSantos8/openGym)
   appear on Fitness with the strap's heart rate, strain and zones through them, each exercise
