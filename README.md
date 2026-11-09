@@ -1,14 +1,12 @@
 # Ridge
 
-**Your Amazfit Helio Strap's data, off the Zepp cloud and on your phone, with honest, cited
-metrics, a light Android app and an optional backup on your own server.**
+**Your Amazfit Helio Strap's data, off the Zepp cloud and on your phone.**
 
-Ridge syncs the strap directly over Bluetooth. Nothing goes through Zepp's servers when you
-use it. The phone works out your days itself, offline: recovery, strain, sleep, heart rate,
-stress, steps and more. A small server you run yourself is optional: it keeps a copy, backed
-up once a night, so a new phone can start from your whole history.
-
-`strap` is the codename you will see in the code, the server and the package names.
+Ridge is an Android app that syncs the strap directly over Bluetooth and works out your days
+itself, offline: recovery, strain, sleep, heart rate, stress, steps and more. Nothing goes
+through Zepp's servers, and there is no account, cloud or analytics. A small server you run
+yourself is optional: it keeps a nightly backup, so a new phone can start from your whole
+history.
 
 <p>
   <img src="docs/screenshots/demo-today.png" width="19%" alt="Today: week strip, strain, recovery and sleep rings, last night's vitals against your usual">
@@ -28,153 +26,72 @@ up once a night, so a new phone can start from your whole history.
 
 ## What you get
 
-- **Today**: strain, recovery and the strap's sleep score as rings, the day in words, and
-  last night's HRV, resting heart rate, breathing rate, SpO₂, time asleep and skin
-  temperature against your own usual. Heart rate, stress and steps cards draw the whole day
-  (coloured by heart-rate zone, stress level, steps adding up) and how it split; steps show
-  where you usually are by now. A week strip and a calendar of rings step back through past
-  days; heart rate, stress and steps open per-minute charts with the peaks kept.
-- **Timeline**: the day hour by hour behind Today's moments, with rings you pin and a quick
-  log (coffee, tea, a drink, your weight) at any hour.
-- **Energy**: a body battery from 0 to 100, minute by minute. Sleep fills it; movement,
-  stress and the waking day drain it, and the Recovery screen shows what did which. With the
-  strap off it drifts and then shows a gap rather than freezing.
-- **Sleep, Fitness, Biology, Journal**: any of the last seven nights with its stages, sleep
-  health and vitals through the night; training load against its range, pinned charts, a
-  training calendar and each workout's strain, zones and load; biological age from your
-  habits (resting heart rate, steps, sleep regularity and length, strength training); and a
-  journal for caffeine, alcohol and weight. The strap's own PAI (Fitness) and its nightly breathing disturbances (Sleep) are shown as the strap's
-  figures, and its HRV (SDNN) through the day has its own chart.
-- **Workouts you can correct**: each workout shows its sport (Climbing, Outdoor cycling,
-  Strength training…). Add a session the strap missed, **edit** one it got wrong (its sport,
-  or stretch it to when you really started and stopped) or **hide** a false detection. The
-  strap's own record is never changed, your changes are backed up, and the day's load and
-  calories follow them.
-- **"Workout detected"**: when the strap recognises a workout by itself, the next sync tells
-  you, with a tap through to check, edit or hide it. No connection is held for it.
-- **Strap**: battery, the strap's own alarms (read, add, edit, delete, each in a timezone
-  you pick, so a 07:00 alarm rings at 07:00 there), workout detection on or off and how
-  sensitive it is, and its heart-rate, stress, SpO₂ and sleep settings: how often heart rate
-  is read, the high and low heart-rate and low SpO₂ alerts, and each sensor's switch. Every
-  change is written to the strap and read back.
-- **Live steps**: while Today is on screen the step count follows you, once a second while
-  you move.
-- **Sync that keeps up**: opening the app syncs when the last sync is over 15 minutes old,
-  and optional background sync collects from the strap on an interval you choose (Settings →
-  Background sync). With a server, a backup runs once a night while the phone charges on Wi-Fi.
-- **Health Connect, if you want it** (Settings → Integrations, off until you turn it on):
-  Ridge writes each day's steps, distance and calories, each night's sleep with its stages,
-  resting heart rate, HRV, blood oxygen and breathing rate, your heart rate minute by minute,
-  your workouts and your VO₂max estimate to Health Connect, where other apps on the phone
-  that you allow can read them. Write-only: Ridge reads nothing from Health Connect. A late sync or an edit corrects what was written.
-- **Your own openGym and Dawarich, if you run them** (Settings → Integrations, both
-  optional and read-only): gym sessions logged in [openGym](https://github.com/DuarteSantos8/openGym)
-  appear on Fitness with the strap's heart rate, strain and zones through them, each exercise
-  and set placed where it happened; the day's walks and rides from
-  [Dawarich](https://github.com/Freika/dawarich) appear with their path on a map and the
-  heart rate through them. A strap workout during a gym session or a ride is shown as that
-  session or ride, not as a second entry. Ridge itself records no location; the tracks stay
-  in Dawarich.
-- **Days follow you when you travel**: each day starts at midnight wherever you are, and
-  its charts and times are shown in that day's own timezone.
-- **Metrics that say why when they can't answer.** A number that lacks the data it needs
-  is withheld and names the reason ("sync the strap", "log your weight"), never shown as
-  a zero or a guess. Every formula, constant, gate and source is written down in
+- **Today**: strain, recovery and sleep as rings, last night's vitals against your own
+  usual, the day's heart rate, stress and steps, and an hour-by-hour timeline. Steps follow
+  you live while the screen is open.
+- **Energy**: a body battery from 0 to 100, minute by minute, with what filled and drained it.
+- **Sleep**: any recent night with its stages, sleep health and vitals through the night.
+- **Fitness**: training load against its range, a training calendar, and each workout's
+  strain, zones and load. Add a session the strap missed, edit one it got wrong or hide a
+  false detection; a workout the strap detects by itself is announced after the next sync.
+- **Biology and Journal**: biological age from your habits, and a log for caffeine, alcohol
+  and weight.
+- **Strap**: battery, the strap's own alarms, and its heart-rate, sleep, stress, SpO₂ and
+  workout-detection settings, each written to the strap and read back.
+- **Integrations, all optional** (Settings → Integrations):
+  - **Health Connect**: Ridge writes your days there for other apps on the phone to read.
+    Write-only.
+  - **[openGym](https://github.com/DuarteSantos8/openGym)**: your gym sessions on Fitness,
+    with the strap's heart rate through each exercise and set. Read-only.
+  - **[Dawarich](https://github.com/Freika/dawarich)**: your walks, runs and rides on a map
+    with the heart rate through them. Read-only; Ridge itself never records location.
+- **Honest numbers**: a metric that lacks the data it needs is withheld and says why, never
+  shown as a zero or a guess. Every formula and source is in
   [`docs/spec/02-science.md`](docs/spec/02-science.md).
-- **Your data stays yours**: on your phone, and on your server if you run one. Ridge has no
-  account, no cloud and no analytics. (Your Zepp account is needed once, on your computer, to fetch
-  the strap's key, and optionally to copy your older history to your server: see
-  [What you need](#what-you-need).)
 
-## What it is not
+Syncing happens when you open the app and, if you turn it on, in the background. Days start
+at midnight wherever you are.
 
-- **Not a medical device** and not medical advice. The illness flag and similar signals
-  are prompts to pay attention, not diagnoses.
-- **Not affiliated with Amazfit, Zepp Health or Huami.**
-- Not a Zepp app replacement for everything. You still need the Zepp app to pair the
-  strap and to update its firmware, and your Zepp account once per pairing to fetch the
-  strap's key.
+## Good to know
 
-## Limitations
-
-- **Android only.** There is no iPhone app.
-- **The Amazfit Helio Strap only.** Confirmed to work on the latest firmware,
-  3.27.0.1 (October 2026). Other Zepp OS devices speak a similar protocol but are untested.
-- **Without a server there is no backup.** Everything works on the phone alone, but losing
-  the phone then loses the history. A small always-on machine with Docker is enough for one.
-- **One person per server.** There is one device token, no accounts and no sign-up.
-- **Background sync is best effort.** Android decides when the scheduled jobs actually run
-  (the intervals are the shortest gaps), and may hold them back while the phone is idle.
-- **Getting the strap's auth key needs your Zepp account, once per pairing**, signed in
-  with email and password (see [What you need](#what-you-need)).
-- **Workout detection is the strap's own.** It can miss a session or cut it short (a ride
-  can come through as two pieces with a gap); you can add or stretch it afterwards.
-- No GPS of its own: Ridge never records your location. With Dawarich connected it shows the
-  walks and rides Dawarich recorded. English only.
-
-## What you need
-
-- **The strap, paired with the official Zepp app** on your phone, with any pending firmware
-  update installed.
-- **Your Zepp account's email and password.** The strap only talks to someone who knows its
-  *auth key*, 16 bytes the Zepp app created when it paired the strap and stored in your
-  Zepp cloud account. Ridge cannot pair a strap or make its own key, so a small script
-  signs in to your Zepp account once and reads the key from there. The same sign-in can
-  optionally bring your older history across (see
-  [Your history](#your-history-the-last-30-days-or-everything)). Accounts that sign in
-  with Google, Apple or Facebook don't work unless they also have a password. Signing in
-  logs the Zepp app out; the key is not affected.
-- **A computer with [uv](https://docs.astral.sh/uv/)** to run that script. The Ridge app
-  itself never talks to Zepp.
-- **An Android phone.**
-- **Optional: an always-on machine with Docker** for the backup server, reachable from the
-  phone over HTTPS.
-- **Optional: your own [openGym](https://github.com/DuarteSantos8/openGym) and
-  [Dawarich](https://github.com/Freika/dawarich)**, over HTTPS, if you want gym sessions or
-  walks, runs and rides with the strap's heart rate.
-
-You end up with the strap's **MAC and auth key** (from your Zepp account) and, with a server,
-its **token** (made by the server's setup). The app asks for them during setup.
+- **Not a medical device**, and not medical advice. Not affiliated with Amazfit, Zepp Health
+  or Huami.
+- **Android and the Amazfit Helio Strap only.** Confirmed on firmware 3.27.0.1 (October
+  2026). English only.
+- **You still need the Zepp app** to pair the strap and update its firmware, and your Zepp
+  account once per pairing to fetch the strap's key.
+- **Without a server there is no backup**: losing the phone loses the history. A server
+  holds one person's data.
+- **Background sync is best effort**: Android decides when it actually runs.
+- **Workout detection is the strap's own.** It can miss a session or cut it short; you can
+  add or stretch it afterwards.
 
 ## Getting started
 
-1. **Optional: run the backup server**: [`deploy/README.md`](deploy/README.md). Docker
-   Compose, about ten minutes, then put HTTPS in front of it. Keep the token it prints.
-2. **Get your strap's MAC and auth key from your Zepp account**:
-   `uv run tools/keyfetch/keyfetch.py you@example.com --qr`. Details, and how to keep the
-   Zepp app from grabbing the strap afterwards:
-   [`tools/keyfetch/README.md`](tools/keyfetch/README.md). Already use Gadgetbridge? Its
-   device export holds the same key.
+You need the strap paired with the official Zepp app (firmware up to date), your Zepp
+account's **email and password**, and a computer with [uv](https://docs.astral.sh/uv/).
+
+1. **Optional: run the backup server.** Docker Compose on any always-on machine, with HTTPS
+   in front: [`deploy/README.md`](deploy/README.md). Keep the token it prints.
+2. **Get your strap's MAC and auth key** from your Zepp account:
+   `uv run tools/keyfetch/keyfetch.py you@example.com --qr`. The strap only talks to someone
+   who knows this key, and Ridge cannot make its own. Accounts that sign in with Google,
+   Apple or Facebook don't work unless they also have a password, and signing in logs the
+   Zepp app out.
+   Details: [`tools/keyfetch/README.md`](tools/keyfetch/README.md).
 3. **Install the app** from the
-   [latest release](https://github.com/TheCommishDeuce/ridge-helio-strap/releases) and open
-   it. Setup walks you through pairing the strap (MAC and key), connecting your server or
-   continuing without one, restoring from the server when it already holds your history,
-   and the first sync. Later changes live under the gear (Settings).
-4. **Optional: connect openGym and Dawarich** under Settings → Integrations. openGym takes
-   the 8-character code from its Settings → "Pair the mobile app" (it lasts 5 minutes);
-   Dawarich takes the API key from its account settings. Both are read-only.
+   [latest release](https://github.com/TheCommishDeuce/ridge-helio-strap/releases). Setup
+   walks you through pairing, the server (or none), restoring, and the first sync.
+4. **Optional: connect integrations** under Settings → Integrations.
 
-### Your history: the last 30 days, or everything
-
-Moving to Ridge, you choose how much of your past comes with you:
-
-- **Just the strap: nothing more to do.** The first sync reads what the strap still
-  holds, about the last 30 days. You can ignore the Zepp cloud and its data export
-  completely.
-- **Everything the Zepp app ever synced: optional, one more command.** Your Zepp
-  account keeps the strap's history from the months you used the Zepp app. With the
-  same email and password you already use for the auth key,
-  [`tools/zepp-backfill`](tools/zepp-backfill/README.md) copies it to your server, and the
-  phone takes it from there (Settings → Diagnostics → Copy the server's history again):
-  per-minute heart rate and steps, stress, sleep with its stages, and daily totals.
-  It only fills days the strap didn't deliver, so whatever the strap recorded always
-  wins. It works before or after your first sync. The cloud doesn't keep HRV, SpO₂, skin
-  temperature or breathing rate, so older days have none of those.
-
-You can backfill at any time later. The cloud keeps your history after you stop using the
-Zepp app; it just stops growing.
+**Your older history.** The first sync reads what the strap still holds, about the last 30
+days. To bring across everything the Zepp app ever synced, run
+[`tools/zepp-backfill`](tools/zepp-backfill/README.md) once, at any time: it copies your
+Zepp cloud history to your server, filling only days the strap didn't deliver.
 
 ## How it's built
+
+`strap` is the codename you will see in the code, the server and the package names.
 
 | Part | Where | What |
 |---|---|---|
