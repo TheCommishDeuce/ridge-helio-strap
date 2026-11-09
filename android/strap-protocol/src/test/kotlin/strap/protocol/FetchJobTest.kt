@@ -2,8 +2,10 @@ package strap.protocol
 
 import strap.protocol.fetch.FetchFailure
 import strap.protocol.fetch.FetchJob
+import strap.protocol.fetch.FetchResult
 import strap.protocol.model.Metric
 import strap.protocol.parse.FetchType
+import strap.protocol.parse.WorkoutParser
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -151,5 +153,67 @@ class FetchJobTest {
     fun `start command carries local wall time and the zone offset`() {
         val first = job(FetchType.ACTIVITY, origin).start().writes.single()
         assertContentEquals("0101ea07060408000008".unhex(), first) // 2026-06-04 08:00, +2h = 8 units
+    }
+
+    /** A summary as the strap sends it: the 2-byte record header, then "2.1" and the record's start. */
+    private fun summary(start: Instant): ByteArray {
+        var v = start.epochSecond
+        val varint = buildList { while (v >= 0x80) { add(((v and 0x7f) or 0x80).toByte()); v = v ushr 7 }; add(v.toByte()) }.toByteArray()
+        return "00800a03322e31".unhex() + byteArrayOf(0x12, (varint.size + 1).toByte(), 0x08) + varint
+    }
+
+    /**
+     * A strap that keeps workouts on a wall clock [aheadMinutes] ahead of the one the phone asks
+     * in (workouts recorded in summer time, read in winter time): one summary a round, the first
+     * whose wall-clock start is not before `since`.
+     */
+    private class WorkoutStrap(private val records: List<Pair<LocalDateTime, ByteArray>>, private val aheadMinutes: Long) : FetchResponder {
+        private var pending = ByteArray(0)
+        var rounds = 0
+
+        override fun handle(write: ByteArray): List<FakeFetchStrap.Event> = when (write[0].toInt()) {
+            0x01 -> {
+                rounds++
+                val since = sinceOf(write)
+                val next = records.firstOrNull { !it.first.plusMinutes(aheadMinutes).isBefore(since) }
+                pending = next?.second ?: ByteArray(0)
+                listOf(FakeFetchStrap.Event.Control(startReply(write[1].toInt(), pending.size, next?.first ?: since)))
+            }
+            0x02 -> listOf(FakeFetchStrap.Event.Data(byteArrayOf(0) + pending), FakeFetchStrap.Event.Control("100201".unhex()))
+            else -> listOf(FakeFetchStrap.Event.Control("100301".unhex()))
+        }
+    }
+
+    private fun runWorkouts(strap: WorkoutStrap, since: LocalDateTime): FetchResult {
+        val job = job(FetchType.WORKOUTS, since)
+        val writes = ArrayDeque(job.start().writes)
+        while (writes.isNotEmpty()) {
+            for (event in strap.handle(writes.removeFirst())) {
+                val out = when (event) {
+                    is FakeFetchStrap.Event.Control -> job.onControl(event.bytes)
+                    is FakeFetchStrap.Event.Data -> { job.onData(event.bytes); null }
+                } ?: continue
+                writes.addAll(out.writes)
+                out.result?.let { return it }
+            }
+        }
+        error("job never finished")
+    }
+
+    /** The owner's strap, 2026-11-09: stuck on a 17 Oct workout, with 29 newer ones never fetched. */
+    @Test
+    fun `a workout the strap sends again does not end the fetch, the cursor steps on to the next`() {
+        val starts = listOf(origin.plusHours(1), origin.plusHours(2), origin.plusHours(9))
+        val strap = WorkoutStrap(starts.map { it to summary(at(it)) }, aheadMinutes = 60)
+        val result = runWorkouts(strap, origin)
+        assertNull(result.failure)
+        assertEquals(starts.map { at(it) }, WorkoutParser.parseStream(result.raw).map { it.start }.distinct())
+    }
+
+    @Test
+    fun `a strap that only ever sends one workout ends the fetch after a bounded number of rounds`() {
+        val strap = WorkoutStrap(listOf(origin.plusHours(1) to summary(at(origin.plusHours(1)))), aheadMinutes = 100_000)
+        assertNull(runWorkouts(strap, origin).failure)
+        assertTrue(strap.rounds in 3..60)
     }
 }

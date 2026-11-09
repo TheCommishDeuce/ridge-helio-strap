@@ -54,8 +54,9 @@ up once a night, so a new phone can start from your whole history.
   you, with a tap through to check, edit or hide it. No connection is held for it.
 - **Strap**: battery, the strap's own alarms (read, add, edit, delete, each in a timezone
   you pick, so a 07:00 alarm rings at 07:00 there), workout detection on or off and how
-  sensitive it is (written to the strap and read back), and its heart-rate, stress, SpO₂ and
-  sleep settings (read-only for now).
+  sensitive it is, and its heart-rate, stress, SpO₂ and sleep settings: how often heart rate
+  is read, the high and low heart-rate and low SpO₂ alerts, and each sensor's switch. Every
+  change is written to the strap and read back.
 - **Live steps**: while Today is on screen the step count follows you, once a second while
   you move.
 - **Sync that keeps up**: opening the app syncs when the last sync is over 15 minutes old,
@@ -101,10 +102,8 @@ up once a night, so a new phone can start from your whole history.
   (the intervals are the shortest gaps), and may hold them back while the phone is idle.
 - **Getting the strap's auth key needs your Zepp account, once per pairing**, signed in
   with email and password (see [What you need](#what-you-need)).
-- Strap settings other than alarms and workout detection can be read, not yet changed.
 - **Workout detection is the strap's own.** It can miss a session or cut it short (a ride
-  can come through as two pieces with a gap); you can add or stretch it afterwards, and
-  higher sensitivity may help.
+  can come through as two pieces with a gap); you can add or stretch it afterwards.
 - No GPS of its own: Ridge never records your location. With Dawarich connected it shows the
   walks and rides Dawarich recorded. English only.
 

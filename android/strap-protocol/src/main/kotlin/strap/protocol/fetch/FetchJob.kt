@@ -33,6 +33,7 @@ public class FetchJob(
     private var lastCounter = -1
     private var counterGap = false
     private var integrityRetries = 0
+    private var stuckSteps = 0
     private var expected = -1L
     private var packets = 0
     private val roundStats = mutableListOf<RoundStat>()
@@ -81,7 +82,7 @@ public class FetchJob(
 
     private fun endRound(): FetchOutput {
         val short = round.size().toLong() != announcedBytes(code, expected)
-        roundStats += RoundStat(expected, packets, round.size(), counterGap, short)
+        roundStats += RoundStat(expected, packets, round.size(), counterGap, short, roundStart, since)
         if (counterGap || short) {
             if (++integrityRetries > MAX_INTEGRITY_RETRIES) return finish(FetchFailure.MissingPackets, ACK_KEEP)
             return FetchOutput(listOf(ACK_KEEP, startRound())) // same cursor, whole round discarded
@@ -101,7 +102,13 @@ public class FetchJob(
     private fun nextSince(raw: ByteArray, decoded: List<Sample>): Instant? {
         val candidate = when {
             code == FetchType.WORKOUTS ->
-                WorkoutParser.parseStream(allRaw.toByteArray()).maxOfOrNull { it.start }?.plus(ONE_MINUTE)
+                // One summary a round. Asked from a workout's start + 1 min the strap can send
+                // that workout again (2026-11-09, one recorded before a clock change): then step
+                // on a little at a time until it moves on, bounded so a deaf strap ends the fetch.
+                WorkoutParser.parseStream(allRaw.toByteArray()).maxOfOrNull { it.start }?.plus(ONE_MINUTE)?.let { byStart ->
+                    if (byStart.isAfter(since)) byStart.also { stuckSteps = 0 }
+                    else if (++stuckSteps <= MAX_STUCK_STEPS) since.plus(STUCK_STEP) else null
+                }
             decoded.isNotEmpty() -> decoded.last().at.plus(ONE_MINUTE)
             (code == FetchType.ACTIVITY || code == FetchType.STRESS) && raw.isNotEmpty() -> {
                 // 0xFF gap-skip: an all-sentinel round decodes to nothing, so step past it by
@@ -144,6 +151,8 @@ public class FetchJob(
 
         public const val DEFAULT_MAX_ROUNDS: Int = 20
         private const val MAX_INTEGRITY_RETRIES = 2
+        private const val MAX_STUCK_STEPS = 40
+        private val STUCK_STEP: Duration = Duration.ofMinutes(5)
         private const val RESPONSE = 0x10
         private const val CMD_START = 0x01
         private const val CMD_FETCH = 0x02
@@ -179,7 +188,7 @@ public class FetchResult(
 )
 
 /** One downloaded round, as diagnostics: what the start reply announced against what arrived. */
-public data class RoundStat(val announced: Long, val packets: Int, val bytes: Int, val counterGap: Boolean, val short: Boolean)
+public data class RoundStat(val announced: Long, val packets: Int, val bytes: Int, val counterGap: Boolean, val short: Boolean, val headerTime: Instant? = null, val since: Instant? = null)
 
 public sealed interface FetchFailure {
     public data class StartRejected(val status: Int) : FetchFailure

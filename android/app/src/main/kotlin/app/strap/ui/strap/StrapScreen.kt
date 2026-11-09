@@ -8,6 +8,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -101,7 +103,8 @@ internal const val LOW_BATTERY = 15
 /**
  * What the strap itself does: battery, alarms, its health and workout settings. Everything is
  * read from the strap on open (one connection); every change is written straight to the strap
- * and read back. Of the settings only workout detection is written (issue #4); the rest stay read-only (R1).
+ * and read back: workout detection (issue #4) and the heart-rate and sensor settings (public issue #5).
+ * The strap's own heart-rate zones are not shown: Ridge works with the owner's, from their maximum heart rate.
  */
 @Composable
 fun StrapScreen(app: StrapApp, sync: SyncState) {
@@ -161,11 +164,11 @@ fun StrapScreen(app: StrapApp, sync: SyncState) {
     LaunchedEffect(Unit) { apply(null) }
 
     /**
-     * Writes workout-detection [values] to the strap, then reads the group back: the page shows what
-     * the strap holds, not what was asked (issue #4; the probe pattern, read → write → read back).
+     * Writes [values] to the strap's settings group at [index] (0 health, 1 workout), then reads the
+     * group back: the page shows what the strap holds, not what was asked (issue #4; read → write → read back).
      */
-    fun write(values: Map<Int, ConfigValue>) {
-        val workout = settings?.getOrNull(1) ?: return
+    fun write(index: Int, values: Map<Int, ConfigValue>) {
+        val workout = settings?.getOrNull(index) ?: return
         scope.launch {
             busy = true
             message = null
@@ -174,7 +177,7 @@ fun StrapScreen(app: StrapApp, sync: SyncState) {
                 s.writeConfig(workout.group, workout.version, values, encrypt) to s.readConfig(workout.group, encrypt)
             }
             val (accepted, after) = job.value ?: (null to null)
-            after?.let { g -> settings = settings?.let { listOf(it[0], g) } }
+            after?.let { g -> settings = settings?.toMutableList()?.also { it[index] = g } }
             message = when {
                 job.failure != null -> job.failure
                 accepted == false -> "The strap refused the change."
@@ -214,8 +217,7 @@ fun StrapScreen(app: StrapApp, sync: SyncState) {
                 }
             } else if (!busy) item { TextButton(onClick = { apply(null) }) { Text("Read again") } }
             settings?.let { (health, workout) ->
-                item { SettingsGroup("Heart rate & sensors", health, healthRows(health)) }
-                item { DetectionGroup(workout, busy) { values -> write(values) } }
+                item { StrapSettingsSections(health, workout, busy) { group, values -> write(group, values) } }
             }
         }
         AnimatedVisibility(list != null && list.size < MAX_ALARMS, Modifier.align(Alignment.BottomEnd).padding(16.dp)) {
@@ -302,91 +304,6 @@ private fun readAt(at: Instant): String {
         today -> time
         today.minusDays(1) -> "yesterday $time"
         else -> t.format(DateTimeFormatter.ofPattern("d MMM HH:mm"))
-    }
-}
-
-/** A strap settings group, read-only: one row per setting the strap reported that we can name. */
-@Composable
-private fun SettingsGroup(title: String, group: ConfigGroup?, rows: List<Pair<String, String>>) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        GroupHeader(title, "Read from the strap", Infos.strapSettings)
-        when {
-            group == null -> RidgeCard { Subtle("The strap did not send these settings.") }
-            rows.isEmpty() -> RidgeCard { Subtle("The strap reported none of the settings we know.") }
-            else -> Grouped(rows) { (label, value), shape ->
-                ListRow(shape, label, headlineStyle = RidgeType.body.copy(fontSize = 15.sp),
-                    trailing = { Text(value, style = RidgeType.body, color = MaterialTheme.colorScheme.onSurfaceVariant) })
-            }
-        }
-        if (group != null && !group.complete) Subtle("Some settings could not be read.", Modifier.padding(horizontal = 4.dp), RidgeType.caption)
-    }
-}
-
-/**
- * Workout detection, the strap settings Ridge can change (issue #4): detection on or off (the
- * categories key; a Helio has one, "Activity") and its sensitivity. The rest of the group stays
- * read-only. Every change goes to the strap and is read back.
- */
-@Composable
-private fun DetectionGroup(group: ConfigGroup?, busy: Boolean, onChange: (Map<Int, ConfigValue>) -> Unit) {
-    var pickingSensitivity by remember { mutableStateOf(false) }
-    val categories = group?.values?.get(Config.Workout.DETECTION_CATEGORIES) as? ConfigValue.Choices
-    val sensitivity = group?.values?.get(Config.Workout.DETECTION_SENSITIVITY) as? ConfigValue.Choice
-    val others = workoutRows(group).filterNot { it.first == SENSITIVITY_LABEL }
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        GroupHeader("Workout detection", "Read from the strap", Infos.strapSettings)
-        if (group == null) {
-            RidgeCard { Subtle("The strap did not send these settings.") }
-            return@Column
-        }
-        val rows = buildList<@Composable (androidx.compose.ui.graphics.Shape) -> Unit> {
-            categories?.let { c ->
-                add { shape ->
-                    ListRow(shape, "Detect workouts", headlineStyle = RidgeType.body.copy(fontSize = 15.sp),
-                        trailing = {
-                            Switch(checked = Config.Workout.detecting(c) == true, enabled = !busy,
-                                onCheckedChange = { on -> onChange(mapOf(Config.Workout.DETECTION_CATEGORIES to Config.Workout.detection(c, on))) })
-                        })
-                }
-            }
-            sensitivity?.let { v ->
-                add { shape ->
-                    ListRow(shape, SENSITIVITY_LABEL, headlineStyle = RidgeType.body.copy(fontSize = 15.sp), onClick = { pickingSensitivity = true }, enabled = !busy,
-                        trailing = { Text(sensitivityName(v.value), style = RidgeType.body, color = MaterialTheme.colorScheme.onSurfaceVariant) })
-                }
-            }
-            others.forEach { (label, value) ->
-                add { shape ->
-                    ListRow(shape, label, headlineStyle = RidgeType.body.copy(fontSize = 15.sp),
-                        trailing = { Text(value, style = RidgeType.body, color = MaterialTheme.colorScheme.onSurfaceVariant) })
-                }
-            }
-        }
-        if (rows.isEmpty()) RidgeCard { Subtle("The strap reported none of the settings we know.") }
-        else Grouped(rows) { row, shape -> row(shape) }
-        if (!group.complete) Subtle("Some settings could not be read.", Modifier.padding(horizontal = 4.dp), RidgeType.caption)
-    }
-    if (pickingSensitivity && sensitivity != null) {
-        val options = sensitivity.options.ifEmpty { listOf(0, 1, 2) }
-        AlertDialog(
-            onDismissRequest = { pickingSensitivity = false },
-            title = { Text(SENSITIVITY_LABEL) },
-            text = {
-                Column {
-                    Subtle("Higher notices more workouts, and more that weren't.", Modifier.padding(bottom = 8.dp))
-                    options.forEach { o ->
-                        Row(Modifier.fillMaxWidth().clickable {
-                            pickingSensitivity = false
-                            if (o != sensitivity.value) onChange(mapOf(Config.Workout.DETECTION_SENSITIVITY to sensitivity.copy(value = o)))
-                        }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(selected = o == sensitivity.value, onClick = null)
-                            Text(sensitivityName(o), style = RidgeType.rowTitle, modifier = Modifier.padding(start = 12.dp))
-                        }
-                    }
-                }
-            },
-            confirmButton = { TextButton(onClick = { pickingSensitivity = false }) { Text("Cancel") } },
-        )
     }
 }
 

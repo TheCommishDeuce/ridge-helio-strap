@@ -107,7 +107,8 @@ object Infos {
     ))
     val strapSettings = Info("Strap settings", listOf(
         "Read from the strap each time this page opens.",
-        "Workout detection and its sensitivity can be changed here: the change goes to the strap and is read back, so what you see is what the strap holds. The other settings are shown as they are.",
+        "A switch turns something on or off, a row of buttons picks one of a few values, and a row with arrows opens a list. Whatever you change goes to the strap at once and is read back, so what you see is what the strap holds.",
+        "Every value offered is one the strap itself accepts.",
     ))
 }
 

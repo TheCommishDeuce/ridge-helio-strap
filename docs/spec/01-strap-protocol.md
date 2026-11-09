@@ -155,9 +155,12 @@ Not in Gadgetbridge, left alone (no read command is known, so no probe is safe):
 Commands: `01` capabilities → `02 · version · n · n group ids`; `03 · constraints(1) · group ·
 n · n keys` read (n = 0: every key) → `04 · status(1 = ok) · group · version · constraints ·
 n · n entries`; `05 · group · version · 00 · n · entries` set (entries as in a read, without
-constraints; the `00` is unexplained in the reference too) → `06 · status`. Ridge writes only
-workout detection: `09`/`40` (a byte list: every offered category, or none) and `09`/`42`
-(a byte), then reads the group back. **Write verified on the strap 2026-11-07** (group 09
+constraints; the `00` is unexplained in the reference too) → `06 · status`. Ridge writes
+workout detection, `09`/`40` (a byte list: every offered category, or none) and `09`/`42`
+(a byte), and the HEALTH settings it can name (group `08`: bools and bytes, a byte only to
+one of its offered values), then reads the group back. **HEALTH write verified on the strap
+2026-11-09** (group 08 v3): `0508030001140b01` (relaxation reminder on), `…140b00` (off),
+`…32105a` (low-SpO₂ alert 90 %), `…321055` (85 %), each answered `06 01` and read back as sent. **Write verified on the strap 2026-11-07** (group 09
 v1): `0509010001421000` (sensitivity High), `…421001` (Standard), `…401100` (detection
 off: the read-back holds `40 11 00 01 df`, no categories with 223 still offered), `…401101df` (on),
 each answered `06 01` and read back as sent.
@@ -326,7 +329,13 @@ app → 0004  [0x03, 0x09]     ← 0x09 = ACK and KEEP data on the strap. Never 
 - **0xFF gap-skip (types 0x01, 0x13):** a round that decodes to zero samples but has
   raw bytes → advance `since` by `rawLen / recordSize` minutes (clamp 1–1440); record
   size 8 (0x01; 4 if len%8≠0) or 1 (0x13). Without it the pager stalls forever.
-- **Workouts (0x05)** page by latest decoded workout start + 1 min.
+- **Workouts (0x05)** come one summary a round; page by latest decoded workout start + 1 min.
+  The strap matches `since` against the wall clock the workout was recorded on, not the one
+  it runs on now: after the 25 Oct 2026 clock change, asked from a 17 Oct (summer time)
+  workout's start + 1 min it sent that workout again, up to an hour past its start. The pager
+  used to stop there, and 29 workouts recorded since never reached the phone (found
+  2026-11-09). A round that brings nothing newer now steps `since` on by 5 min, up to 40
+  times, until the strap moves on. The start reply's date for a summary is its start in UTC.
 - **Probe** mode: send start, read `expected`, ack-abort (1.5 s timeout) — used to
   discover codes.
 - Timeouts: 30 s per type (150 s for workouts). On failure, keep samples from completed

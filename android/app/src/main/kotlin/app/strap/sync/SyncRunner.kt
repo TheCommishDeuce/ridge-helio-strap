@@ -422,6 +422,9 @@ class SyncRunner(private val context: Context, private val store: LocalStore, pr
             val logged = if (candidates.isEmpty()) emptyList()
                 else store.gymSessions(now.minus(java.time.Duration.ofDays(2)), now).map { it.start to it.end }
             val detected = DetectedWorkouts.toNotify(result.workouts, known, now, logged)
+            result.fetches.filter { it.code == strap.protocol.parse.FetchType.WORKOUTS }.forEach { f ->
+                log("workout fetch: ${f.rounds} rounds, ${f.roundStats.joinToString { "since ${it.since}: ${it.bytes} B filed ${it.headerTime}" }}, failure=${f.failure}")
+            }
             result.workouts.forEach { w ->
                 log("workout ${w.start} sport ${w.sportType} ${w.durationSec / 60} min subtype ${w.subtype}${if (w.start in known) " known" else ""}" +
                     if (w in detected) " → notice" else if (w in candidates) " → inside openGym, no notice" else "")

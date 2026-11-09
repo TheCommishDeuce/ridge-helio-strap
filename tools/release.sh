@@ -43,7 +43,7 @@ cp "$apk" "$out/$name"
 cert=$("$apksigner" verify --print-certs "$apk" | sed -nE 's/.*certificate SHA-256 digest: //p' | head -1)
 
 notes="$out/notes-$version.md"
-{ printf 'Ridge %s for Android 12+ (Amazfit Helio Strap).\n\n' "$version"; cat "$whats_new"; printf '\n'; } > "$notes"
+{ printf 'Ridge %s for the Amazfit Helio Strap.\n\n' "$version"; cat "$whats_new"; printf '\n'; } > "$notes"
 cat >> "$notes" <<EOF
 Install \`$name\` (allow installs from your browser or file manager). Updates install over
 the previous version. Pairing needs your strap's auth key (see tools/keyfetch). The phone
