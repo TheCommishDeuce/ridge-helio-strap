@@ -220,6 +220,14 @@ private fun AppShell(app: StrapApp, requestedTab: MutableState<Tab?>, requestedW
                         .filter { it.action == strap.science.SessionOverlay.Action.HIDE && it.start.atZone(zone).toLocalDate() == day }
                 }
             },
+            walks = { day ->
+                val zone = java.time.ZoneId.systemDefault()
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    app.owner.shortWalks(day.atStartOfDay(zone).toInstant(), day.plusDays(1).atStartOfDay(zone).toInstant())
+                }
+            },
+            // An edit to its own sport and window: the owner says it was a workout, and the strap's figures stay.
+            keep = { w -> changed(app.owner.editWorkout(w, w.sport, w.start, w.end), "Kept as a workout") },
         )
     }
 

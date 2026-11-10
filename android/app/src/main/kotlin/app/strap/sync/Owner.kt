@@ -146,6 +146,18 @@ class Owner(private val store: LocalStore, private val server: () -> BackupServe
     fun sessions(from: Instant, until: Instant): List<SessionOverlay> =
         store.sessionRows("deleted = 0 AND start < ? AND end_ts > ?", until.toEpochMilli().toString(), from.toEpochMilli().toString()).map { it.overlay }
 
+    /**
+     * The strap workouts starting from [from] until [until] that are left out as short walks (D46).
+     * Not one the owner changed: an edit keeps it as a workout, a hide is listed as hidden.
+     */
+    fun shortWalks(from: Instant, until: Instant): List<Workout> {
+        val walks = store.shortWalks(daysIn(), profile(), from, until)
+        if (walks.isEmpty()) return walks
+        val changed = store.sessionRows("deleted = 0 AND target >= ? AND target < ?", from.toEpochMilli().toString(), until.toEpochMilli().toString())
+            .mapNotNullTo(HashSet()) { it.overlay.target }
+        return walks.filter { it.start !in changed }
+    }
+
     /** Adds a session from [start] to [end]; returns where the derive starts again. */
     fun addSession(sport: Int, start: Instant, end: Instant): Instant {
         putSession(SessionOverlay("local:${UUID.randomUUID()}", SessionOverlay.Action.ADD, null, start, end, sport))

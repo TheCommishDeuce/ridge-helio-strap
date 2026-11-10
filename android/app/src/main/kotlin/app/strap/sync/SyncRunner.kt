@@ -416,18 +416,21 @@ class SyncRunner(private val context: Context, private val store: LocalStore, pr
             val known = store.knownWorkouts(result.workouts.map { it.start })
             store.save(result, battery)
             val now = Instant.now()
-            val candidates = DetectedWorkouts.toNotify(result.workouts, known, now)
+            // Read after the save: a walk is told by the steps this sync brought with it (D46).
+            val walks = if (result.workouts.isEmpty()) emptySet()
+                else app().owner.shortWalks(result.workouts.minOf { it.start }, result.workouts.maxOf { it.start }.plusMillis(1)).mapTo(HashSet()) { it.start }
+            val candidates = DetectedWorkouts.toNotify(result.workouts, known, now, walks = walks)
             // A session just logged in openGym may not be on the phone yet: ask it first, only when there is something to tell.
             if (candidates.isNotEmpty()) (context.applicationContext as StrapApp).openGym.pull()
             val logged = if (candidates.isEmpty()) emptyList()
                 else store.gymSessions(now.minus(java.time.Duration.ofDays(2)), now).map { it.start to it.end }
-            val detected = DetectedWorkouts.toNotify(result.workouts, known, now, logged)
+            val detected = DetectedWorkouts.toNotify(result.workouts, known, now, logged, walks)
             result.fetches.filter { it.code == strap.protocol.parse.FetchType.WORKOUTS }.forEach { f ->
                 log("workout fetch: ${f.rounds} rounds, ${f.roundStats.joinToString { "since ${it.since}: ${it.bytes} B filed ${it.headerTime}" }}, failure=${f.failure}")
             }
             result.workouts.forEach { w ->
                 log("workout ${w.start} sport ${w.sportType} ${w.durationSec / 60} min subtype ${w.subtype}${if (w.start in known) " known" else ""}" +
-                    if (w in detected) " → notice" else if (w in candidates) " → inside openGym, no notice" else "")
+                    if (w in detected) " → notice" else if (w in candidates) " → inside openGym, no notice" else if (w.start in walks) " → short walk, not a workout" else "")
             }
             WorkoutNotifier(context).notify(detected)
             battery?.let { _battery.value = LocalStore.Battery(it, result.completedAt) }

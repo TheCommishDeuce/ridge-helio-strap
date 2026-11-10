@@ -22,18 +22,21 @@ import java.time.format.DateTimeFormatter
  * "Workout detected" after a sync, as the Zepp app does it: a workout the strap recognised by
  * itself (summary subtype 1), new to the phone and ended within a day. No held connection (D30).
  * Not for one inside a session the owner already logged in openGym (D44): that is known training.
+ * Not for a short walk either (D46): Ridge doesn't list it as a workout.
  */
 object DetectedWorkouts {
     private val RECENT: Duration = Duration.ofHours(24)
 
     /**
      * The fetched workouts to tell the owner about; [known] are the starts the phone held before
-     * this sync, [logged] the windows of sessions logged elsewhere.
+     * this sync, [logged] the windows of sessions logged elsewhere, [walks] the starts of short walks.
      */
-    fun toNotify(fetched: List<Workout>, known: Set<Instant>, now: Instant, logged: List<Pair<Instant, Instant>> = emptyList()): List<Workout> =
+    fun toNotify(
+        fetched: List<Workout>, known: Set<Instant>, now: Instant, logged: List<Pair<Instant, Instant>> = emptyList(), walks: Set<Instant> = emptySet(),
+    ): List<Workout> =
         fetched.filter { w ->
             val end = w.start.plusSeconds(w.durationSec.toLong())
-            w.subtype == Sports.SUBTYPE_AUTO_DETECTED && w.start !in known && Duration.between(end, now) <= RECENT &&
+            w.subtype == Sports.SUBTYPE_AUTO_DETECTED && w.start !in known && w.start !in walks && Duration.between(end, now) <= RECENT &&
                 logged.none { (a, b) -> w.start.isBefore(b) && end.isAfter(a) }
         }.distinctBy { it.start }.sortedBy { it.start }
 

@@ -34,6 +34,7 @@ history.
 - **Fitness**: training load against its range, a training calendar, and each workout's
   strain, zones and load. Add a session the strap missed, edit one it got wrong or hide a
   false detection; a workout the strap detects by itself is announced after the next sync.
+  A short, easy walk the strap filed as a workout is left out.
 - **Biology and Journal**: biological age from your habits, and a log for caffeine, alcohol
   and weight.
 - **Strap**: battery, the strap's own alarms, and its heart-rate, sleep, stress, SpO₂ and

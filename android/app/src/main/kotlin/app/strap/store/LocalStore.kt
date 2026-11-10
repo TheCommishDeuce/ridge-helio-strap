@@ -22,6 +22,7 @@ import strap.science.Profile
 import strap.science.Sample
 import strap.science.SessionOverlay
 import strap.science.Sessions
+import strap.science.ShortWalks
 import strap.science.SleepSession
 import strap.science.Stage
 import strap.science.WeightEntry
@@ -187,6 +188,30 @@ class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null,
     fun strapWorkout(start: Instant): Workout? = readableDatabase.rawQuery(
         "SELECT start, sport, duration_s FROM workouts WHERE start = ?", arrayOf(start.toEpochMilli().toString()),
     ).use { c -> if (c.moveToFirst()) Workout(Instant.ofEpochMilli(c.getLong(0)), c.getInt(1), c.getInt(2)) else null }
+
+    /**
+     * The strap workouts starting from [from] until [until] that were short, easy walks (D46,
+     * `ShortWalks`), as recorded. Their steps are the per-minute counts inside the window, read as
+     * the science reads them; none without a date of birth, which the easy heart rate comes from.
+     */
+    fun shortWalks(zones: Zones, profile: Profile?, from: Instant?, until: Instant?): List<Workout> {
+        if (profile?.dob == null) return emptyList()
+        return readableDatabase.rawQuery(
+            "SELECT w.start, w.sport, w.duration_s, w.calories, w.avg_hr, w.max_hr, w.min_hr, " +
+                "(SELECT SUM(s.value) FROM samples s WHERE s.metric = 'steps' AND s.ts >= w.start AND s.ts < w.start + w.duration_s * 1000 " +
+                "AND s.value > 0 AND s.value < 250) " +
+                "FROM workouts w WHERE w.duration_s < ${ShortWalks.MAX_S} AND w.start >= ? AND w.start < ? ORDER BY w.start",
+            arrayOf((from?.toEpochMilli() ?: Long.MIN_VALUE).toString(), (until?.toEpochMilli() ?: Long.MAX_VALUE).toString()),
+        ).use { c ->
+            buildList {
+                while (c.moveToNext()) {
+                    val start = Instant.ofEpochMilli(c.getLong(0))
+                    val w = Workout(start, c.getInt(1), c.getInt(2), c.intOrNull(3), null, c.intOrNull(4), c.intOrNull(5), c.intOrNull(6), strapStart = start)
+                    if (ShortWalks.isOne(w, c.getDouble(7), ShortWalks.easyHr(profile, zones.dateOf(start)))) add(w)
+                }
+            }
+        }
+    }
 
     /**
      * The earliest instant stored since the derive last caught up, if any: where the next one
@@ -401,7 +426,8 @@ class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null,
             }
         }
         val overlays = sessionRows("deleted = 0 AND $wide", *wideArgs).map { it.overlay }
-        val workouts = Sessions.apply(strapWorkouts, overlays).filter { w -> (lo == null || w.start.toEpochMilli() >= lo) && (hi == null || w.start.toEpochMilli() < hi) }
+        val walks = shortWalks(zones, profile, from?.minusSeconds(86_400), until?.plusSeconds(86_400)).mapTo(HashSet()) { it.start }
+        val workouts = Sessions.apply(strapWorkouts, overlays, walks).filter { w -> (lo == null || w.start.toEpochMilli() >= lo) && (hi == null || w.start.toEpochMilli() < hi) }
         // The server's day counters as restored, then this phone's own readings over them by the
         // server's rule: a strap reading replaces one read no later, or with no read time, or from the cloud.
         val totals = LinkedHashMap<LocalDate, DeviceDailyTotal>()

@@ -129,12 +129,16 @@ private class PinStore(context: Context) {
  * Fitness (Bevel's layout): the week with what you did each day, the day's note, the
  * training load and the strap's PAI, the week's steps, charts you pin, and the workouts.
  */
+/** How long a day's short walks stay listed with Keep (D46). */
+private const val WALKS_LISTED_DAYS = 7L
+
 @Composable
 fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit, onGym: (GymSession) -> Unit, onTrack: (LocalDate, Long) -> Unit,
     pick: LocalDate? = null, onPicked: () -> Unit = {}, actions: SessionActions? = null) {
     var data by remember { mutableStateOf<FitnessData?>(null) }
     var adding by remember { mutableStateOf(false) }
     var hidden by remember { mutableStateOf<List<strap.science.SessionOverlay>>(emptyList()) }
+    var walks by remember { mutableStateOf<List<strap.science.Workout>>(emptyList()) }
     var error by remember { mutableStateOf<String?>(null) }
     val today = LocalDate.now()
     var dayEpoch by rememberSaveable { mutableLongStateOf(today.toEpochDay()) }
@@ -163,6 +167,8 @@ fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit, 
         }
     }
     LaunchedEffect(refreshKey, dayEpoch) { hidden = actions?.hidden?.invoke(day).orEmpty() }
+    // Listed for a week, the time in which the owner might still say one was a workout (D46).
+    LaunchedEffect(refreshKey, dayEpoch) { walks = if (day < today.minusDays(WALKS_LISTED_DAYS)) emptyList() else actions?.walks?.invoke(day).orEmpty() }
     LaunchedEffect(refreshKey, dayEpoch) {
         try {
             data = FitnessData(
@@ -266,6 +272,17 @@ fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit, 
                     Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                         Subtle("Hidden: ${strap.science.Sports.label(h.sport)} at ${clockOf(h.start.toEpochMilli())}", Modifier.weight(1f))
                         TextButton(onClick = { actions.undo(h.id) }) { Text("Show") }
+                    }
+                }
+            }
+        }
+        if (walks.isNotEmpty() && actions != null) item {
+            // What the strap filed as a workout and Ridge took for a short walk (D46): one tap makes it a workout.
+            Column {
+                walks.forEach { w ->
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Subtle("Short walk, not a workout: ${(w.durationS + 30) / 60} min at ${clockOf(w.start.toEpochMilli())}", Modifier.weight(1f))
+                        TextButton(onClick = { actions.keep(w) }) { Text("Keep") }
                     }
                 }
             }

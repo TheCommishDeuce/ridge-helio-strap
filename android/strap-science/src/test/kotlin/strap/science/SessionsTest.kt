@@ -4,7 +4,9 @@ import strap.science.SessionOverlay.Action
 import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class SessionsTest {
     private val t0 = Instant.parse("2026-11-04T17:00:00Z")
@@ -63,5 +65,44 @@ class SessionsTest {
     fun `an edit pointing at a workout the phone doesn't hold changes nothing`() {
         val edit = SessionOverlay("e1", Action.EDIT, at(999), at(0), at(10), sport = 1)
         assertEquals(listOf(climb.start), Sessions.apply(listOf(climb), listOf(edit)).map { it.start })
+    }
+
+    // ── short walks (D46) ──────────────────────────────────────────────────
+
+    private val easy = 0.7 * 180
+    private fun strapWalk(minutes: Double, avgHr: Int?) = Workout(at(0), Sports.ACTIVITY, (minutes * 60).toInt(), calories = 50, avgHr = avgHr, maxHr = 124)
+
+    @Test
+    fun `a short easy stretch with walking steps is a walk, not a workout`() {
+        assertTrue(ShortWalks.isOne(strapWalk(6.8, 110), steps = 583.0, easyHr = easy))
+        assertTrue(ShortWalks.isOne(strapWalk(9.8, 109), steps = 484.0, easyHr = easy)) // a stop-and-go one
+    }
+
+    @Test
+    fun `not a walk when long, hard, without steps, or when nothing says it was easy`() {
+        assertFalse(ShortWalks.isOne(strapWalk(10.6, 110), 870.0, easy))
+        assertFalse(ShortWalks.isOne(strapWalk(8.0, 150), 1300.0, easy)) // a short run
+        assertFalse(ShortWalks.isOne(strapWalk(9.5, 118), 20.0, easy)) // effort without steps: a piece of a session
+        assertFalse(ShortWalks.isOne(strapWalk(6.0, null), 500.0, easy))
+        assertFalse(ShortWalks.isOne(strapWalk(6.0, 110), 500.0, easyHr = null))
+    }
+
+    @Test
+    fun `the easy limit follows the owner's age`() {
+        val day = java.time.LocalDate.of(2026, 11, 9)
+        assertEquals(0.7 * (208 - 0.7 * 40), ShortWalks.easyHr(Profile(dob = day.minusYears(40)), day))
+        assertNull(ShortWalks.easyHr(Profile(), day))
+    }
+
+    @Test
+    fun `a walk is left out, unless the owner's edit keeps it`() {
+        val walks = setOf(climb.start)
+        assertEquals(listOf(ride.start), Sessions.apply(listOf(climb, ride), emptyList(), walks).map { it.start })
+        val keep = SessionOverlay("k1", Action.EDIT, climb.start, climb.start, climb.end, climb.sport)
+        val kept = Sessions.apply(listOf(climb, ride), listOf(keep), walks).first()
+        assertEquals(climb.start, kept.start)
+        assertEquals(80, kept.calories) // the strap's own window: its figures stay
+        val hide = SessionOverlay("h1", Action.HIDE, climb.start, climb.start, climb.end, 0)
+        assertEquals(listOf(ride.start), Sessions.apply(listOf(climb, ride), listOf(hide), walks).map { it.start })
     }
 }

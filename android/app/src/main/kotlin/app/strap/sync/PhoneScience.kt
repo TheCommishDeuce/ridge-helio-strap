@@ -130,8 +130,8 @@ class PhoneScience(private val store: LocalStore, private val server: () -> Back
         /** The old app synced until the day after this phone's first sync (P7). */
         const val ERA_MARGIN_DAYS = 2L
         private const val INPUTS = "science_inputs"
-        /** Bump when a derive pass's rule changes, so stored rows are worked out again (D37: the load split). */
-        private const val RULES = "D37"
+        /** Bump when a derive pass's rule changes, so stored rows are worked out again (D37: the load split; D46: short walks are no workouts). */
+        private const val RULES = "D46"
         private const val DERIVED_AT = "science_derived_at"
 
         /** Every metric the derive passes write (spec/02). */

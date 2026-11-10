@@ -58,6 +58,9 @@ class SessionActions(
     val undo: (id: String) -> Unit,
     /** The strap workouts hidden on a day, to show them again. */
     val hidden: suspend (LocalDate) -> List<SessionOverlay>,
+    /** The strap workouts on a day that Ridge left out as short walks (D46), and keeping one as a workout after all. */
+    val walks: suspend (LocalDate) -> List<Workout>,
+    val keep: (w: Workout) -> Unit,
 )
 
 /** Where the sheet is: adding a session on [day], or editing [workout]. */

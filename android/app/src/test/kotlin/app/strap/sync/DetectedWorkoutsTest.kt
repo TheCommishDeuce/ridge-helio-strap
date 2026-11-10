@@ -31,6 +31,13 @@ class DetectedWorkoutsTest {
     }
 
     @Test
+    fun `none for a short walk`() {
+        val walk = w("2026-11-07T13:36:00Z", 7, 1)
+        val climb = w("2026-11-07T14:00:00Z", 40, 1)
+        assertEquals(listOf(climb), DetectedWorkouts.toNotify(listOf(walk, climb), emptySet(), now, walks = setOf(walk.start)))
+    }
+
+    @Test
     fun `the notice names the sport, length and start`() {
         assertEquals("Workout · 1 h 15 min from 14:00. Tap to check it, edit it or hide it.",
             DetectedWorkouts.text(w("2026-11-07T13:00:00Z", 75, 1, sport = 0), ZoneOffset.ofHours(1)))
