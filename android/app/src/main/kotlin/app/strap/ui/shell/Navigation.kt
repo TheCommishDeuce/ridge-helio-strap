@@ -93,8 +93,8 @@ class Shell {
     /** The Fitness tab's training calendar is open. */
     var trainingCalendar by mutableStateOf(false)
 
-    /** A day picked in the training calendar, for Fitness to show; Fitness clears it once taken. */
-    var fitnessPick by mutableStateOf<LocalDate?>(null)
+    /** The day Fitness shows; kept here so it survives a workout opened over it (issue #4). */
+    var fitnessDay by mutableStateOf(LocalDate.now())
 
     val top: Pushed? get() = stack.lastOrNull()
 
@@ -106,9 +106,10 @@ class Shell {
         stack.removeAt(stack.lastIndex)
     }
 
-    /** Shows [t] with nothing over it; tapping Today again on Today goes back to today. */
+    /** Shows [t] with nothing over it; tapping Today (or Fitness) again on it goes back to today. */
     fun select(t: Tab) {
         if (t == Tab.TODAY && tab == Tab.TODAY && stack.isEmpty()) day = LocalDate.now()
+        if (t == Tab.ACTIVITY && tab == Tab.ACTIVITY && stack.isEmpty()) fitnessDay = LocalDate.now()
         tab = t
         stack.clear()
     }

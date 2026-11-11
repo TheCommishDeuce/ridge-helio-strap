@@ -143,6 +143,8 @@ effort without them (cycling, climbing, lifting). Stale weight
 (>14 d) → caveat with the error bound `100 × 10 / BMR` % per kg; never withhold.
 Individual error advertised: ±15–20 % (Brage 2015). Source:
 energy_expenditure_derivation (Probable). **Hard rule: no Keytel/HR-EE for free-living.**
+One display-only exception: inside a session without the strap's calories, Keytel is shown as
+an estimate on its row and page, never counted in the day (D47).
 
 ### 2.4 Cardio load — Banister TRIMP + Edwards zones (workouts, and moving minutes; D37)
 

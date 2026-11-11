@@ -133,7 +133,13 @@ private fun AppShell(app: StrapApp, requestedTab: MutableState<Tab?>, requestedW
     val shell = rememberShell()
     LaunchedEffect(requestedTab.value) { requestedTab.value?.let { shell.select(it); requestedTab.value = null } }
     LaunchedEffect(requestedWorkout.value) {
-        requestedWorkout.value?.let { shell.select(Tab.ACTIVITY); shell.push(Pushed.Workout(it)); requestedWorkout.value = null }
+        requestedWorkout.value?.let {
+            shell.select(Tab.ACTIVITY)
+            // Back from the workout lands on its day, not today.
+            shell.fitnessDay = java.time.Instant.ofEpochMilli(it).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+            shell.push(Pushed.Workout(it))
+            requestedWorkout.value = null
+        }
     }
     val sync by app.syncRunner.state.collectAsStateWithLifecycle()
     val lastSync = remember(sync) { app.store.lastSync()?.first }
@@ -228,6 +234,7 @@ private fun AppShell(app: StrapApp, requestedTab: MutableState<Tab?>, requestedW
             },
             // An edit to its own sport and window: the owner says it was a workout, and the strap's figures stay.
             keep = { w -> changed(app.owner.editWorkout(w, w.sport, w.start, w.end), "Kept as a workout") },
+            heartRate = { from, to -> api.heartRate(from, to) },
         )
     }
 
@@ -290,7 +297,7 @@ private fun AppShell(app: StrapApp, requestedTab: MutableState<Tab?>, requestedW
                                 Tab.SLEEP -> SleepScreen(api, shell.day, { shell.day = it }, (sync is SyncState.Finished) to version)
                                 Tab.ACTIVITY -> ActivityScreen(api, Triple(sync is SyncState.Finished, version, gymChanges), onWorkout = { w -> shell.push(Pushed.Workout(w.start.toEpochMilli())) },
                                     onGym = { g -> shell.push(Pushed.GymSession(g.id)) }, onTrack = { day, id -> shell.push(Pushed.Track(day.toEpochDay(), id)) },
-                                    pick = shell.fitnessPick, onPicked = { shell.fitnessPick = null }, actions = sessions)
+                                    day = shell.fitnessDay, onDay = { shell.fitnessDay = it }, actions = sessions)
                                 Tab.BIOLOGY -> BiologyScreen(api, app.owner, (sync is SyncState.Finished) to version) { shell.select(Tab.SLEEP) }
                                 Tab.STRAP -> StrapScreen(app, sync)
                             }
@@ -302,7 +309,7 @@ private fun AppShell(app: StrapApp, requestedTab: MutableState<Tab?>, requestedW
     }
     shell.sheet?.let { InfoSheet(it) { shell.sheet = null } }
     if (shell.trainingCalendar) TrainingCalendarSheet(api, onDismiss = { shell.trainingCalendar = false },
-        onDay = { d -> shell.trainingCalendar = false; shell.stack.clear(); shell.fitnessPick = d },
+        onDay = { d -> shell.trainingCalendar = false; shell.stack.clear(); shell.fitnessDay = d },
         onGym = { g -> shell.trainingCalendar = false; shell.push(Pushed.GymSession(g.id)) }) { w ->
         shell.trainingCalendar = false
         shell.push(Pushed.Workout(w.start.toEpochMilli()))

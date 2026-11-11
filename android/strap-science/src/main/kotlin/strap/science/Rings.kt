@@ -96,6 +96,38 @@ public fun Science.workoutDetail(start: Instant, durationS: Int): WorkoutDetail?
 }
 
 /**
+ * Heart rate and an estimated energy for a workout that has no figures of the strap's own (a
+ * session added or re-timed by the owner, D43): what the list rows show (issue #4, D47).
+ */
+public data class SessionFigures(val avgHr: Int, val maxHr: Int, val estKcal: Int?)
+
+/**
+ * Keytel et al. 2005 (J Sports Sci 23:289), the prediction without VO₂max: kJ a minute from heart
+ * rate, weight and age, by sex. Validated on exercise only, so it is used inside a session's window
+ * and for display only, never summed into the day (D47; spec/02 §2.3 keeps HR out of free-living energy).
+ */
+public object Keytel {
+    /** kcal over [minutes] of heart rate, each minute floored at 0; null for a sex the equation has no coefficients for. */
+    public fun kcal(minutes: Collection<Double>, weightKg: Double, age: Int, sex: String): Double? {
+        val perMinute: (Double) -> Double = when (sex) {
+            "male" -> { hr -> -55.0969 + 0.6309 * hr + 0.1988 * weightKg + 0.2017 * age }
+            "female" -> { hr -> -20.4022 + 0.4472 * hr - 0.1263 * weightKg + 0.074 * age }
+            else -> return null
+        }
+        return minutes.sumOf { maxOf(0.0, perMinute(it)) } / 4.184
+    }
+}
+
+/** Null without heart-rate minutes in the window; no [SessionFigures.estKcal] without a full profile and a weight. */
+public fun Science.sessionFigures(start: Instant, durationS: Int): SessionFigures? {
+    val minutes = hrPerMinute(start, start.plusSeconds(durationS.toLong())).values
+    if (minutes.isEmpty()) return null
+    val day = zones.dateOf(start)
+    val kcal = loadProfile(day)?.let { p -> Keytel.kcal(minutes, p.weightKg, age(p.dob, day), p.sex) }
+    return SessionFigures(roundInt(minutes.average()).toInt(), roundInt(minutes.max()).toInt(), kcal?.let { roundInt(it).toInt() })
+}
+
+/**
  * The per-minute heart rate over [start, end) (the same valid minutes [workoutDetail] uses), for a
  * window that needs no profile: an openGym session or a Dawarich track (D41, D42).
  */

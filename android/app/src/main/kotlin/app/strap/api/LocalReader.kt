@@ -28,6 +28,7 @@ import strap.science.bucketSeries
 import strap.science.dayRings
 import strap.science.illnessCheck
 import strap.science.workoutDetail
+import strap.science.sessionFigures
 import strap.science.daySeries
 import strap.science.daySummary
 import java.time.Instant
@@ -52,7 +53,13 @@ class LocalReader(
     override suspend fun daily(metric: String, from: LocalDate, to: LocalDate): List<Derived> = off { store.derived.range(metric, from, to) }
 
     override suspend fun workouts(from: LocalDate, to: LocalDate): List<Workout> = over(from, to) { s ->
-        s.data.workouts(s.zones.bounds(from).first, s.zones.bounds(to).second).sortedByDescending { it.start }
+        s.data.workouts(s.zones.bounds(from).first, s.zones.bounds(to).second).map { w ->
+            // A session added or re-timed has none of the strap's figures: the rows show its heart rate
+            // and Keytel's estimate instead (issue #4, D47), for display only.
+            if (w.avgHr != null) w else s.sessionFigures(w.start, w.durationS)?.let { f ->
+                w.copy(avgHr = f.avgHr, maxHr = f.maxHr, estKcal = f.estKcal.takeIf { w.calories == null })
+            } ?: w
+        }.sortedByDescending { it.start }
     }
 
     override suspend fun journal(from: LocalDate, to: LocalDate): List<JournalEntry> = over(from, to) { s ->

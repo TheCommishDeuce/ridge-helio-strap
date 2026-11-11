@@ -51,6 +51,11 @@ public data class Workout(
     val overlayId: String? = null,
     /** The strap's own start for a strap workout, edited or not: what an edit or a hide points at. */
     val strapStart: Instant? = null,
+    /**
+     * Keytel's estimate for a workout without the strap's [calories] (D47): set by the app's reader
+     * for display only; the science, the export and the backup never read it.
+     */
+    val estKcal: Int? = null,
 ) {
     public enum class Origin { STRAP, EDITED, ADDED }
 

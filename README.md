@@ -32,8 +32,8 @@ history.
 - **Energy**: a body battery from 0 to 100, minute by minute, with what filled and drained it.
 - **Sleep**: any recent night with its stages, sleep health and vitals through the night.
 - **Fitness**: training load against its range, a training calendar, and each workout's
-  strain, zones and load. Add a session the strap missed, edit one it got wrong or hide a
-  false detection; a workout the strap detects by itself is announced after the next sync.
+  strain, zones and load. Add a session the strap missed, picking its times on the day's
+  heart rate, edit one it got wrong or hide a false detection; a workout the strap detects by itself is announced after the next sync.
   A short, easy walk the strap filed as a workout is left out.
 - **Biology and Journal**: biological age from your habits, and a log for caffeine, alcohol
   and weight.

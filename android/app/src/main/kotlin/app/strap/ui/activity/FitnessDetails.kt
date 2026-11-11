@@ -83,6 +83,7 @@ import app.strap.ui.components.color
 import app.strap.ui.components.icon
 import androidx.compose.ui.unit.Dp
 import app.strap.ui.today.workoutLine
+import app.strap.ui.today.workoutKcal
 import androidx.compose.ui.graphics.vector.ImageVector
 import strap.science.DaySummary
 import strap.science.Sports
@@ -285,7 +286,7 @@ fun WorkoutScreen(api: Reader, start: Instant, actions: SessionActions? = null, 
         }
     }
     val w = workout ?: return Loading(error)
-    if (editing && actions != null) SessionSheet(SessionEdit.Edit(w), onDismiss = { editing = false }) { sport, from, to ->
+    if (editing && actions != null) SessionSheet(SessionEdit.Edit(w), onDismiss = { editing = false }, heartRate = actions.heartRate) { sport, from, to ->
         editing = false
         actions.edit(w, sport, from, to)
         onGone()
@@ -336,8 +337,11 @@ fun WorkoutScreen(api: Reader, start: Instant, actions: SessionActions? = null, 
                 val avgHr = w.avgHr ?: d?.hr?.takeIf { it.isNotEmpty() }?.map { it.value }?.average()?.roundToInt()
                 val maxHr = w.maxHr ?: d?.hr?.maxOfOrNull { it.value }?.roundToInt()
                 CardFoot(listOf("Duration" to duration(w.durationS / 60.0), "Avg HR" to (avgHr?.let { "$it bpm" } ?: "—"), "Max HR" to (maxHr?.let { "$it bpm" } ?: "—")))
-                CardFoot(listOf("Calories" to (w.calories?.let { "$it kcal" } ?: "—"), "Distance" to (w.distanceM?.let { "%.1f km".format(it / 1000) } ?: "—"),
+                CardFoot(listOf("Calories" to (workoutKcal(w) ?: "—"), "Distance" to (w.distanceM?.let { "%.1f km".format(it / 1000) } ?: "—"),
                     "Load" to (d?.let { "+${it.trimp.roundToInt()}" } ?: "—")))
+                if (w.calories == null && w.estKcal != null) {
+                    Subtle("Calories estimated from heart rate. The day's calories count these minutes from your movement.", style = RidgeType.caption)
+                }
             }
         }
         if (d != null && d.hr.isNotEmpty()) {

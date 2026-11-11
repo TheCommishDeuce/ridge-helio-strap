@@ -112,10 +112,14 @@ fun DayLineChart(
     zone: ZoneId = ZoneId.systemDefault(),
     shaded: List<Span> = emptyList(),
     height: Dp = 140.dp,
+    /** The [shaded] spans' color; the night's by default. */
+    shadeColor: Color? = null,
+    /** A part of a day rather than all of it: the grid and the labels at quarters of [dayStart]..[dayEnd], as clock times. */
+    spanAxis: Boolean = false,
     onScrub: ((Point?) -> Unit)? = null,
 ) {
     val grid = LocalRidgeColors.current.surface3
-    val sleepShade = LocalMetricColors.current.sleepTone.container.copy(alpha = 0.55f)
+    val sleepShade = shadeColor ?: LocalMetricColors.current.sleepTone.container.copy(alpha = 0.55f)
     var scrub by remember { mutableStateOf<Float?>(null) }
     val selected = scrub?.let { f -> nearest(points, dayStart + ((dayEnd - dayStart) * f).toLong(), maxGapMs) }
     Column(modifier) {
@@ -138,7 +142,7 @@ fun DayLineChart(
                 }
                 val peak = points.maxByOrNull { it.v }?.let { Offset(x(it.t), y(it.v)) }
                 val shades = shaded.map { s -> x(s.start.coerceAtLeast(dayStart)) to x(s.end.coerceAtMost(dayEnd)) }.filter { (l, r) -> r > l }
-                val gridX = listOf(6, 12, 18).map { x(dayStart + it * 3_600_000L) }
+                val gridX = if (spanAxis) (1..3).map { x(dayStart + (dayEnd - dayStart) * it / 4) } else listOf(6, 12, 18).map { x(dayStart + it * 3_600_000L) }
                 val stroke = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
                 val sel = selected?.let { Offset(x(it.t), y(it.v)) }
                 onDrawBehind {
@@ -153,7 +157,7 @@ fun DayLineChart(
                 }
             },
         )
-        HourAxis()
+        if (spanAxis) EvenAxis((0..4).map { clockOf(dayStart + (dayEnd - dayStart) * it / 4, zone) }) else HourAxis()
     }
 }
 

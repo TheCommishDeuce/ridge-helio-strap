@@ -353,5 +353,8 @@ internal fun moments(data: TodayData, nav: TodayNav): List<Moment> {
 internal fun workoutLine(w: Workout): String = listOfNotNull(
     "${w.durationS / 60} min",
     w.avgHr?.let { "avg $it bpm" },
-    w.calories?.let { "$it kcal" },
+    workoutKcal(w),
 ).joinToString(" · ")
+
+/** The strap's calories, else Keytel's estimate marked as one (D47), else null. */
+internal fun workoutKcal(w: Workout): String? = w.calories?.let { "$it kcal" } ?: w.estKcal?.let { "~$it kcal (est.)" }

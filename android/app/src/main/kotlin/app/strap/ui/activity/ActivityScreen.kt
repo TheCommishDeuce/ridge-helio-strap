@@ -36,7 +36,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -134,16 +133,15 @@ private const val WALKS_LISTED_DAYS = 7L
 
 @Composable
 fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit, onGym: (GymSession) -> Unit, onTrack: (LocalDate, Long) -> Unit,
-    pick: LocalDate? = null, onPicked: () -> Unit = {}, actions: SessionActions? = null) {
+    day: LocalDate, onDay: (LocalDate) -> Unit, actions: SessionActions? = null) {
     var data by remember { mutableStateOf<FitnessData?>(null) }
     var adding by remember { mutableStateOf(false) }
     var hidden by remember { mutableStateOf<List<strap.science.SessionOverlay>>(emptyList()) }
     var walks by remember { mutableStateOf<List<strap.science.Workout>>(emptyList()) }
     var error by remember { mutableStateOf<String?>(null) }
     val today = LocalDate.now()
-    var dayEpoch by rememberSaveable { mutableLongStateOf(today.toEpochDay()) }
-    LaunchedEffect(pick) { pick?.let { dayEpoch = it.toEpochDay(); onPicked() } }
-    val day = LocalDate.ofEpochDay(dayEpoch)
+    // The shown day lives in the shell, so it survives a workout opened over Fitness (issue #4).
+    val dayEpoch = day.toEpochDay()
     // The week strip shows the last 7 days, or a week around a day picked further back.
     val stripEnd = if (day > today.minusDays(7)) today else minOf(day.plusDays(3), today)
     val first = minOf(today.minusDays(29), stripEnd.minusDays(6))
@@ -197,7 +195,7 @@ fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit, 
     val load = d.daily.getValue("cardio_load")
     val range = loadRange(load, day)
     LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { WeekStrip(stripEnd, day, activeDays, d.statuses) { dayEpoch = it.toEpochDay() } }
+        item { WeekStrip(stripEnd, day, activeDays, d.statuses) { onDay(it) } }
         item {
             val w = dayWorkouts.firstOrNull()
             val g = dayGym.firstOrNull()
@@ -266,25 +264,17 @@ fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit, 
             if (dayWorkouts.isNotEmpty()) WorkoutRows(dayWorkouts, onWorkout)
         }
         if (hidden.isNotEmpty() && actions != null) item {
-            // Hidden strap workouts stay one tap from coming back (D43).
-            Column {
-                hidden.forEach { h ->
-                    Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Subtle("Hidden: ${strap.science.Sports.label(h.sport)} at ${clockOf(h.start.toEpochMilli())}", Modifier.weight(1f))
-                        TextButton(onClick = { actions.undo(h.id) }) { Text("Show") }
-                    }
-                }
+            // Hidden strap workouts stay one tap from coming back (D43), folded into one row (issue #4).
+            FoldedRows("${hidden.size} hidden", dayEpoch, hidden) { h ->
+                Subtle("${strap.science.Sports.label(h.sport)} at ${clockOf(h.start.toEpochMilli())}", Modifier.weight(1f))
+                TextButton(onClick = { actions.undo(h.id) }) { Text("Show") }
             }
         }
         if (walks.isNotEmpty() && actions != null) item {
             // What the strap filed as a workout and Ridge took for a short walk (D46): one tap makes it a workout.
-            Column {
-                walks.forEach { w ->
-                    Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Subtle("Short walk, not a workout: ${(w.durationS + 30) / 60} min at ${clockOf(w.start.toEpochMilli())}", Modifier.weight(1f))
-                        TextButton(onClick = { actions.keep(w) }) { Text("Keep") }
-                    }
-                }
+            FoldedRows(if (walks.size == 1) "1 short walk, not a workout" else "${walks.size} short walks, not workouts", dayEpoch, walks) { w ->
+                Subtle("${(w.durationS + 30) / 60} min at ${clockOf(w.start.toEpochMilli())}", Modifier.weight(1f))
+                TextButton(onClick = { actions.keep(w) }) { Text("Keep") }
             }
         }
         if (dayGym.isNotEmpty()) item { GymRows(dayGym, onGym) }
@@ -296,7 +286,7 @@ fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit, 
         }
     }
     if (editing) PinSheet(pins) { editing = false; store.save(pins) }
-    if (adding && actions != null) SessionSheet(SessionEdit.Add(day), onDismiss = { adding = false }) { sport, from, to ->
+    if (adding && actions != null) SessionSheet(SessionEdit.Add(day), onDismiss = { adding = false }, heartRate = actions.heartRate) { sport, from, to ->
         adding = false
         actions.add(sport, from, to)
     }
@@ -307,6 +297,23 @@ fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit, 
 }
 
 /** The week ending today, a day per cell, a run icon on the days with a workout and its own on a marked day. */
+/** A line of what Ridge left off the day's list, opening to one row per item ([row] lays out its content). */
+@Composable
+private fun <T> FoldedRows(title: String, dayEpoch: Long, items: List<T>, row: @Composable androidx.compose.foundation.layout.RowScope.(T) -> Unit) {
+    var open by rememberSaveable(dayEpoch) { mutableStateOf(false) }
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    Column {
+        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { open = !open }.padding(horizontal = 4.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+            Subtle(title, Modifier.weight(1f))
+            Icon(if (open) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown, if (open) "Fold" else "Unfold", tint = muted)
+        }
+        if (open) items.forEach { item ->
+            Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) { row(item) }
+        }
+    }
+}
+
 @Composable
 private fun WeekStrip(today: LocalDate, selected: LocalDate, active: Set<LocalDate>, statuses: Map<LocalDate, DayStatus>, onSelect: (LocalDate) -> Unit) {
     val r = LocalRidgeColors.current
