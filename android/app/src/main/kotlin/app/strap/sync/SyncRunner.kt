@@ -300,10 +300,10 @@ class SyncRunner(private val context: Context, private val store: LocalStore, pr
             coroutineScope {
                 launch {
                     s.frames(DAILY_TOTALS).collect { frame ->
-                        Replies.realtimeSteps(frame, Instant.now())?.let { last = it; _live.value = it }
+                        Replies.realtimeSteps(frame, Instant.now())?.takeIf(::onPhoneDay)?.let { last = it; _live.value = it }
                     }
                 }
-                s.exchange(DAILY_TOTALS, byteArrayOf(0x03), 0x04)?.let(::readingOf)?.let { last = it; _live.value = it }
+                s.exchange(DAILY_TOTALS, byteArrayOf(0x03), 0x04)?.let(::readingOf)?.takeIf(::onPhoneDay)?.let { last = it; _live.value = it }
                 if (s.exchange(DAILY_TOTALS, Replies.realtimeStepsOn, Replies.REALTIME_STEPS_ACK) == null) log("live steps: no acknowledgement")
                 awaitCancellation()
             }
@@ -414,7 +414,7 @@ class SyncRunner(private val context: Context, private val store: LocalStore, pr
             val result = StrapSync(session) { _state.value = SyncState.Running(it) }.run(store.window())
             val battery = link.batteryPercent()
             val known = store.knownWorkouts(result.workouts.map { it.start })
-            store.save(result, battery)
+            store.save(result.copy(dailyTotals = result.dailyTotals?.takeIf(::onPhoneDay)), battery)
             val now = Instant.now()
             // Read after the save: a walk is told by the steps this sync brought with it (D46).
             val walks = if (result.workouts.isEmpty()) emptySet()
@@ -452,13 +452,36 @@ class SyncRunner(private val context: Context, private val store: LocalStore, pr
     /**
      * The strap clock's offset: its Current Time reading against the phone's true time. A strap
      * without that reading is assumed to run on the phone's zone, as the history fetch does.
+     * A strap on another zone than the phone's, or more than [CLOCK_DRIFT] off, is set to the
+     * phone's time and zone first, as the Zepp app does (D50): the strap starts its step counter
+     * again at its own midnight, so abroad on home time a day's count started at 23:00.
      */
     private suspend fun measureClock(link: AndroidStrapLink): StrapClock {
         val now = Instant.now()
         val raw = link.currentTime()
-        val offset = raw?.let(CurrentTime::parse)?.let { AlarmZones.offsetOf(it, now) }
+        val local = raw?.let(CurrentTime::parse)
+        val offset = local?.let { AlarmZones.offsetOf(it, now) }
         log("strap clock: ${raw?.hex() ?: "not read"} → ${offset ?: "assumed phone zone"}")
-        return offset?.let { StrapClock(it, measured = true) } ?: StrapClock(ZoneId.systemDefault().rules.getOffset(now), measured = false)
+        val phone = ZoneId.systemDefault().rules.getOffset(now)
+        if (local == null || offset == null) return StrapClock(phone, measured = false)
+        val drift = java.time.Duration.between(now.atOffset(offset).toLocalDateTime(), local).abs()
+        if (offset == phone && drift < CLOCK_DRIFT) return StrapClock(offset, measured = true)
+        val written = link.writeCurrentTime(CurrentTime.encode(java.time.ZonedDateTime.now()))
+        val after = Instant.now()
+        val back = link.currentTime()
+        val backOffset = back?.let(CurrentTime::parse)?.let { AlarmZones.offsetOf(it, after) }
+        log("strap clock set (was $offset, ${drift.seconds} s off; phone $phone): ${if (written) "written" else "not written"}, reads ${back?.hex() ?: "nothing"} → ${backOffset ?: "?"}")
+        return StrapClock(backOffset ?: offset, measured = true)
+    }
+
+    /**
+     * Whether counter reading [t] counts the phone's day (D50): the strap's counter starts again at
+     * the strap's midnight, so a reading taken while the strap's date differs (its clock on
+     * another zone, not set) counts another day.
+     */
+    private fun onPhoneDay(t: DailyTotals): Boolean {
+        val clock = _clock.value ?: return true
+        return t.readAt.atOffset(clock.offset).toLocalDate() == t.readAt.atZone(ZoneId.systemDefault()).toLocalDate()
     }
 
     private fun saveBattery(percent: Int) {
@@ -526,6 +549,8 @@ class SyncRunner(private val context: Context, private val store: LocalStore, pr
         const val DAILY_TOTALS = 0x0016
         const val BACKUP_AT = "backup_at"
         val LIVE_RETRY = 15.seconds
+        /** A strap clock this far off the phone's is set again; the Zepp app sets it on every connection. */
+        val CLOCK_DRIFT: java.time.Duration = java.time.Duration.ofSeconds(20)
         val LIVE_OFF_WAIT = 1.seconds
         const val DEVICE_INFO = 0x0043
         const val FIND_DEVICE = 0x001A

@@ -186,6 +186,33 @@ class AndroidStrapLink private constructor(private val log: (String) -> Unit) : 
         }
     }
 
+    override suspend fun writeCurrentTime(bytes: ByteArray): Boolean {
+        val c = chars[Gatt.CURRENT_TIME] ?: return false
+        if (c.properties and BluetoothGattCharacteristic.PROPERTY_WRITE == 0) {
+            log("current time: not writable (properties 0x%02x)".format(c.properties))
+            return false
+        }
+        val type = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT // with response: the strap says whether it took it
+        return try {
+            op("current time write") {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    gatt.writeCharacteristic(c, bytes, type) == BluetoothStatusCodes.SUCCESS
+                } else {
+                    @Suppress("DEPRECATION")
+                    c.writeType = type
+                    @Suppress("DEPRECATION")
+                    c.value = bytes
+                    @Suppress("DEPRECATION")
+                    gatt.writeCharacteristic(c)
+                }
+            }
+            true
+        } catch (e: IOException) {
+            log("current time write failed: ${e.message}")
+            false
+        }
+    }
+
     fun close() {
         disconnected = true
         runCatching { gatt.disconnect() }

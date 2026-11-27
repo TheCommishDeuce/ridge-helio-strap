@@ -128,6 +128,12 @@ public fun Science.sessionFigures(start: Instant, durationS: Int): SessionFigure
 }
 
 /**
+ * Where Edwards zone 2 starts on [day] (60 % of the age-based maximum the load uses), in beats a
+ * minute; null without a profile. What tells a ride from being carried on a Dawarich track (D48).
+ */
+public fun Science.zone2Floor(day: LocalDate): Double? = loadProfile(day)?.let { hrMax(age(it.dob, day)) * EDWARDS_ZONE_LO[1] }
+
+/**
  * The per-minute heart rate over [start, end) (the same valid minutes [workoutDetail] uses), for a
  * window that needs no profile: an openGym session or a Dawarich track (D41, D42).
  */

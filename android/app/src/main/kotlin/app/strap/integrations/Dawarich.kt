@@ -28,9 +28,10 @@ data class Leg(val start: Instant, val end: Instant, val moved: Moved, val path:
 }
 
 /**
- * A track cut at its fixes by how the owner moved (D42): Dawarich's mode is one guess for a whole
- * track and is often wrong (walk + tram as a ride, a ride as a run, a metro inside a walk). The
- * strap decides instead: its steps say walking or running, its recorded workouts say riding.
+ * A track cut at its fixes by how the owner moved (D42, D48): Dawarich's mode is one guess for a
+ * whole track and is often wrong (walk + tram as a ride, a ride as a run, a metro inside a walk).
+ * The strap decides instead: its steps say walking or running, its heart rate says riding.
+ * [ownS] is the time moving: standing still is left out.
  */
 data class Split(val legs: List<Leg>, val walkedM: Int, val ranM: Int, val rodeM: Int, val ownS: Int) {
     val carried: List<Leg> get() = legs.filter { it.carried }
@@ -102,60 +103,130 @@ object DawarichFormat {
         if (lat !in -90.0..90.0 || lon !in -180.0..180.0) null else Fix(Instant.ofEpochSecond(t), LatLon(lat, lon))
     }.sortedBy { it.at }
 
+    /** Faster than this (km/h), nobody was pedalling: real rides stayed under 36 between fixes (spec/03 §2). */
+    const val RIDE_KMH = 36.0
+
     /**
-     * Cuts a track at its fixes by how the owner moved over each step between two (D42):
-     * running-level steps and speed → ran; walking-level steps on the strap ([steps], per minute)
-     * → walked; else at walking speed or slower → walked; else inside a workout the strap recorded
-     * ([workouts]) → rode; else carried.
+     * At least this many steps a minute over a whole step between two fixes is somebody walking
+     * all of it (walkers: 90–125), so a speed over [WALK_KMH] there is a GPS jump, not a ride.
+     */
+    const val STEADY_STEPS = 80.0
+
+    /** Slower than this (km/h) between two fixes, the owner stood still: not counted as time moving. */
+    const val STILL_KMH = 1.0
+
+    /**
+     * Cuts a track at its fixes by how the owner moved over each step between two (D42, D48):
+     * running-level steps and speed → ran; at walking speed or slower → walked; faster, with
+     * walking steps all through it → walked (a GPS jump). What is left is faster than walking, and
+     * each unbroken stretch of it is decided as one: **rode** when the strap's heart rate over it
+     * ([hr], per minute) averages at least [rideHr] (where zone 2 starts) and no step is over
+     * [RIDE_KMH]; else **carried** (heart rate falls on a tram and stays up on a bike). Without
+     * heart rate for a stretch or without [rideHr], a workout the strap recorded ([workouts])
+     * says it was a ride, as before D48.
      * Minutes with no steps sample count as 0 when the strap sent any step for the track, and as
      * unknown (speed decides) when it sent none. Null with fewer than two fixes.
      */
-    fun split(fixes: List<Fix>, steps: Map<Instant, Double>, workouts: List<Pair<Instant, Instant>>): Split? {
+    fun split(
+        fixes: List<Fix>,
+        steps: Map<Instant, Double>,
+        workouts: List<Pair<Instant, Instant>>,
+        hr: Map<Instant, Double> = emptyMap(),
+        rideHr: Double? = null,
+    ): Split? {
         if (fixes.size < 2) return null
         val worn = steps.keys.any { !it.isBefore(fixes.first().at.minusSeconds(60)) && !it.isAfter(fixes.last().at) }
         val n = fixes.size - 1
         val secs = LongArray(n)
         val dist = DoubleArray(n)
-        val kind = arrayOfNulls<Moved>(n)
+        val speed = DoubleArray(n)
+        val kind = arrayOfNulls<Moved>(n) // null: faster than walking, decided below
         val stepless = BooleanArray(n) // the strap was worn and counted (next to) no steps
+        // The minutes a stretch overlaps: from its first minute up to, not including, a minute starting at its end or later.
+        fun minutes(from: Instant, to: Instant) = generateSequence(from.truncatedTo(ChronoUnit.MINUTES)) { it.plusSeconds(60) }.takeWhile { it.isBefore(to) }.toList()
+            .ifEmpty { listOf(from.truncatedTo(ChronoUnit.MINUTES)) }
         for (i in 0 until n) {
             val a = fixes[i]; val b = fixes[i + 1]
             val s = Duration.between(a.at, b.at).seconds
             val m = metres(a.pos, b.pos)
             val kmh = if (s > 0) m / s * 3.6 else Double.MAX_VALUE
-            // The minutes the step overlaps: from a's minute up to, not including, a minute starting at b or later.
-            val minutes = generateSequence(a.at.truncatedTo(ChronoUnit.MINUTES)) { it.plusSeconds(60) }.takeWhile { it.isBefore(b.at) }.toList()
-                .ifEmpty { listOf(a.at.truncatedTo(ChronoUnit.MINUTES)) }
-            val stepsPerMin = if (worn) minutes.sumOf { steps[it] ?: 0.0 } / minutes.size else null
-            val mid = a.at.plusSeconds(s / 2)
-            secs[i] = s; dist[i] = m
+            val stepsPerMin = if (worn) minutes(a.at, b.at).let { ms -> ms.sumOf { steps[it] ?: 0.0 } / ms.size } else null
+            secs[i] = s; dist[i] = m; speed[i] = kmh
             stepless[i] = stepsPerMin != null && stepsPerMin < WALK_STEPS
             kind[i] = when {
                 stepsPerMin != null && stepsPerMin >= RUN_STEPS && kmh >= RUN_KMH -> Moved.RAN
-                stepsPerMin != null && stepsPerMin >= WALK_STEPS -> Moved.WALKED
                 kmh <= WALK_KMH -> Moved.WALKED
-                workouts.any { (ws, we) -> !mid.isBefore(ws) && mid.isBefore(we) } -> Moved.RODE
-                else -> Moved.CARRIED
+                stepsPerMin != null && stepsPerMin >= STEADY_STEPS -> Moved.WALKED
+                else -> null
             }
         }
+        // Each unbroken stretch faster than walking, as one: a single step's heart rate lags (the first
+        // minutes of a ride, the first after boarding), the stretch's average does not.
+        var i = 0
+        while (i < n) {
+            if (kind[i] != null) { i++; continue }
+            var j = i
+            while (j < n && kind[j] == null) j++
+            val beats = minutes(fixes[i].at, fixes[j].at).mapNotNull { hr[it] }
+            val tooFast = (i until j).any { speed[it] > RIDE_KMH }
+            for (k in i until j) {
+                val rode = when {
+                    tooFast -> false
+                    rideHr != null && beats.isNotEmpty() -> beats.average() >= rideHr
+                    else -> fixes[k].at.plusSeconds(secs[k] / 2).let { mid -> workouts.any { (ws, we) -> !mid.isBefore(ws) && mid.isBefore(we) } }
+                }
+                kind[k] = if (rode) Moved.RODE else Moved.CARRIED
+            }
+            i = j
+        }
         // A slow, stepless step between two carried ones is the tram standing at a stop: carried too.
-        for (i in 1 until n - 1) {
-            if (kind[i] == Moved.WALKED && stepless[i] && kind[i - 1] == Moved.CARRIED && kind[i + 1] == Moved.CARRIED) kind[i] = Moved.CARRIED
+        for (k in 1 until n - 1) {
+            if (kind[k] == Moved.WALKED && stepless[k] && kind[k - 1] == Moved.CARRIED && kind[k + 1] == Moved.CARRIED) kind[k] = Moved.CARRIED
         }
         val legs = mutableListOf<Leg>()
         val metres = DoubleArray(Moved.entries.size)
         var ownS = 0L
         var from = 0
-        for (i in 0 until n) {
-            val k = kind[i]!!
-            metres[k.ordinal] += dist[i]
-            if (k != Moved.CARRIED) ownS += secs[i]
-            if (i == n - 1 || kind[i + 1] != k) {
-                legs += Leg(fixes[from].at, fixes[i + 1].at, k, fixes.subList(from, i + 2).map { it.pos })
-                from = i + 1
+        for (k in 0 until n) {
+            val moved = kind[k]!!
+            metres[moved.ordinal] += dist[k]
+            if (moved != Moved.CARRIED && speed[k] >= STILL_KMH) ownS += secs[k]
+            if (k == n - 1 || kind[k + 1] != moved) {
+                legs += Leg(fixes[from].at, fixes[k + 1].at, moved, fixes.subList(from, k + 2).map { it.pos })
+                from = k + 1
             }
         }
         return Split(legs, metres[Moved.WALKED.ordinal].toInt(), metres[Moved.RAN.ordinal].toInt(), metres[Moved.RODE.ordinal].toInt(), ownS.toInt())
+    }
+
+    /** Tracks less than this apart (s) are one outing Dawarich cut at a pause (D49). */
+    const val JOIN_GAP_S = 600L
+
+    /**
+     * Joins the pieces of one outing (D49): Dawarich ends a track at a pause of a few minutes (a
+     * light, a shop door) and starts another, so one ride came as two tracks 6 minutes apart and
+     * a morning walk as three. [tracks] in time order; each run of them less than [JOIN_GAP_S]
+     * apart becomes one track from the first's start to the last's end, under the first's id,
+     * with the fixes of all (so the pause is one more step for [split] to decide), Dawarich's
+     * distances added up and the mode of the longest piece. If a piece came without fixes the
+     * whole is left uncut rather than cut from part of it.
+     */
+    fun join(tracks: List<Track>): List<Track> {
+        val out = mutableListOf<MutableList<Track>>()
+        for (t in tracks) {
+            val last = out.lastOrNull()?.last()
+            if (last != null && Duration.between(last.end, t.start).seconds < JOIN_GAP_S) out.last() += t else out += mutableListOf(t)
+        }
+        return out.map { pieces ->
+            if (pieces.size == 1) pieces[0]
+            else pieces[0].copy(
+                end = pieces.maxOf { it.end },
+                mode = pieces.maxBy { it.distanceM ?: 0 }.mode,
+                distanceM = pieces.mapNotNull { it.distanceM }.takeIf { it.isNotEmpty() }?.sum(),
+                path = pieces.flatMap { it.path },
+                fixes = if (pieces.any { it.fixes.isEmpty() }) emptyList() else pieces.flatMap { it.fixes }.sortedBy { it.at },
+            )
+        }
     }
 
     /** Great-circle distance (haversine, mean Earth radius). */
@@ -206,7 +277,7 @@ class Dawarich(private val vault: KeyVault) {
 
     val connected: Boolean get() = vault.loadDawarich() != null
 
-    /** The tracks that started in [from, until) with their fixes, not yet cut ([DawarichFormat.split]); empty when not connected. */
+    /** The tracks that started in [from, until) with their fixes, the pieces of one outing joined (D49), not yet cut ([DawarichFormat.split]); empty when not connected. */
     suspend fun tracks(from: Instant, until: Instant): List<Track> {
         val link = vault.loadDawarich() ?: return emptyList()
         val key = from to until
@@ -215,6 +286,7 @@ class Dawarich(private val vault: KeyVault) {
         }
         val tracks = fetch(link, from, until).filter { it.mode in DawarichFormat.SHOWN && !it.start.isBefore(from) && it.start.isBefore(until) }.sortedBy { it.start }
             .map { t -> t.copy(fixes = runCatching { points(link, t.id) }.getOrDefault(emptyList())) } // uncut if the fixes cannot be read
+            .let(DawarichFormat::join)
         lock.withLock { cache[key] = Cached(Instant.now(), tracks) }
         return tracks
     }

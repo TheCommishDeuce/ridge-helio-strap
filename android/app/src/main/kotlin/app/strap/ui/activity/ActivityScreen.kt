@@ -128,6 +128,9 @@ private class PinStore(context: Context) {
  * Fitness (Bevel's layout): the week with what you did each day, the day's note, the
  * training load and the strap's PAI, the week's steps, charts you pin, and the workouts.
  */
+/** "2 h 40 min", or "45 min" under an hour. */
+private fun lengthOf(minutes: Long) = if (minutes >= 60) "${minutes / 60} h ${minutes % 60} min" else "$minutes min"
+
 /** How long a day's short walks stay listed with Keep (D46). */
 private const val WALKS_LISTED_DAYS = 7L
 
@@ -135,9 +138,10 @@ private const val WALKS_LISTED_DAYS = 7L
 fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit, onGym: (GymSession) -> Unit, onTrack: (LocalDate, Long) -> Unit,
     day: LocalDate, onDay: (LocalDate) -> Unit, actions: SessionActions? = null) {
     var data by remember { mutableStateOf<FitnessData?>(null) }
-    var adding by remember { mutableStateOf(false) }
     var hidden by remember { mutableStateOf<List<strap.science.SessionOverlay>>(emptyList()) }
     var walks by remember { mutableStateOf<List<strap.science.Workout>>(emptyList()) }
+    var possible by remember { mutableStateOf<List<strap.science.PossibleWorkout>>(emptyList()) }
+    var adding by remember { mutableStateOf<SessionEdit.Add?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     val today = LocalDate.now()
     // The shown day lives in the shell, so it survives a workout opened over Fitness (issue #4).
@@ -167,6 +171,8 @@ fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit, 
     LaunchedEffect(refreshKey, dayEpoch) { hidden = actions?.hidden?.invoke(day).orEmpty() }
     // Listed for a week, the time in which the owner might still say one was a workout (D46).
     LaunchedEffect(refreshKey, dayEpoch) { walks = if (day < today.minusDays(WALKS_LISTED_DAYS)) emptyList() else actions?.walks?.invoke(day).orEmpty() }
+    // Offered for the same week (D51); after that, Add session still takes any window.
+    LaunchedEffect(refreshKey, dayEpoch) { possible = if (day < today.minusDays(WALKS_LISTED_DAYS)) emptyList() else actions?.possible?.invoke(day).orEmpty() }
     LaunchedEffect(refreshKey, dayEpoch) {
         try {
             data = FitnessData(
@@ -256,7 +262,7 @@ fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit, 
             })
         }
         item {
-            if (actions != null) SectionTitle(day.format(DateTimeFormatter.ofPattern("EEEE d MMM")), "Add session", { adding = true })
+            if (actions != null) SectionTitle(day.format(DateTimeFormatter.ofPattern("EEEE d MMM")), "Add session", { adding = SessionEdit.Add(day) })
             else SectionTitle(day.format(DateTimeFormatter.ofPattern("EEEE d MMM")))
         }
         item {
@@ -277,6 +283,13 @@ fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit, 
                 TextButton(onClick = { actions.keep(w) }) { Text("Keep") }
             }
         }
+        if (possible.isNotEmpty() && actions != null) item {
+            // Raised heart rate the strap opened no workout for (D51): Add opens the sheet on its window.
+            FoldedRows(if (possible.size == 1) "1 possible workout, not recorded" else "${possible.size} possible workouts, not recorded", dayEpoch, possible) { p ->
+                Subtle("${lengthOf(p.minutes)} from ${clockOf(p.start.toEpochMilli())} · avg ${p.avgHr} bpm", Modifier.weight(1f))
+                TextButton(onClick = { adding = SessionEdit.Add(day, p.start, p.end) }) { Text("Add") }
+            }
+        }
         if (dayGym.isNotEmpty()) item { GymRows(dayGym, onGym) }
         if (tracks.isNotEmpty() || tracksError != null) {
             item { SectionTitle("Walks and rides") }
@@ -286,10 +299,10 @@ fun ActivityScreen(api: Reader, refreshKey: Any?, onWorkout: (Workout) -> Unit, 
         }
     }
     if (editing) PinSheet(pins) { editing = false; store.save(pins) }
-    if (adding && actions != null) SessionSheet(SessionEdit.Add(day), onDismiss = { adding = false }, heartRate = actions.heartRate) { sport, from, to ->
-        adding = false
+    adding?.let { a -> if (actions != null) SessionSheet(a, onDismiss = { adding = null }, heartRate = actions.heartRate) { sport, from, to ->
+        adding = null
         actions.add(sport, from, to)
-    }
+    } }
     open?.let { k ->
         val chart = CHARTS.getValue(k)
         DailyChartSheet(chart.label, chart.unit, d.daily.getValue(chart.metric), day, chart.tone(c), chart.format) { open = null }

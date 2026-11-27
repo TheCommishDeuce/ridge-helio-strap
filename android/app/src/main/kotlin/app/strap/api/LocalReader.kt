@@ -28,6 +28,7 @@ import strap.science.bucketSeries
 import strap.science.dayRings
 import strap.science.illnessCheck
 import strap.science.workoutDetail
+import strap.science.zone2Floor
 import strap.science.sessionFigures
 import strap.science.daySeries
 import strap.science.daySummary
@@ -91,7 +92,7 @@ class LocalReader(
 
     override suspend fun gymSession(id: String): GymSession? = withContext(Dispatchers.IO) { store.gymSession(id) }
 
-    /** The day's tracks cut by how the owner moved (D42): the strap's steps say walking or running, its workouts riding. */
+    /** The day's tracks cut by how the owner moved (D42, D48): the strap's steps say walking or running, its heart rate riding. */
     override suspend fun tracks(day: LocalDate): List<Track> {
         val (from, until) = zones().bounds(day)
         val raw = dawarich.tracks(from, until)
@@ -101,7 +102,9 @@ class LocalReader(
             val last = raw.maxOf { it.end }.plusSeconds(120)
             val steps = s.data.samples("steps_per_minute", first, last).associate { it.ts.truncatedTo(java.time.temporal.ChronoUnit.MINUTES) to it.value }
             val workouts = s.data.workouts(first.minus(java.time.Duration.ofHours(12)), last).map { it.start to it.start.plusSeconds(it.durationS.toLong()) }
-            raw.map { t -> t.copy(split = DawarichFormat.split(t.fixes, steps, workouts)) }
+            val hr = s.heartRate(first, last).associate { it.at.truncatedTo(java.time.temporal.ChronoUnit.MINUTES) to it.value }
+            val rideHr = s.zone2Floor(day)
+            raw.map { t -> t.copy(split = DawarichFormat.split(t.fixes, steps, workouts, hr, rideHr)) }
                 .filter { (it.split?.ownM ?: Int.MAX_VALUE) >= DawarichFormat.MIN_OWN_M }
         }
     }

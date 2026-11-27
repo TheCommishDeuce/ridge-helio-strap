@@ -166,6 +166,75 @@ class IntegrationsTest : PhoneTest() {
     }
 
     @Test
+    fun `heart rate tells a ride from being carried, whatever the strap recorded as a workout`() {
+        // 4 km/h, 15 km/h for three steps, 4 km/h; zone 2 starts at 113.
+        val fixes = fixesOf(133.0, 500.0, 500.0, 500.0, 133.0)
+        val steps = (0L..1L).associate { minute(it) to 100.0 } + (8L..9L).associate { minute(it) to 100.0 }
+        fun beats(fast: Double) = (0L..9L).associate { minute(it) to if (it in 2L..7L) fast else 100.0 }
+        val wholeTrack = listOf(minute(0) to minute(10))
+
+        // Heart rate up through the fast stretch: a ride, though the strap recorded no workout (13 Nov).
+        val ride = DawarichFormat.split(fixes, steps, emptyList(), beats(120.0), 113.0)!!
+        assertEquals(listOf(Moved.WALKED, Moved.RODE, Moved.WALKED), ride.legs.map { it.moved })
+        assertEquals(1500.0, ride.rodeM.toDouble(), 2.0)
+        assertEquals(Moved.RODE, ride.moved)
+        // The stretch is decided as one: a first minute still climbing does not cut it.
+        val climbing = beats(120.0) + (minute(2) to 100.0) + (minute(3) to 108.0)
+        assertEquals(listOf(Moved.WALKED, Moved.RODE, Moved.WALKED), DawarichFormat.split(fixes, steps, emptyList(), climbing, 113.0)!!.legs.map { it.moved })
+
+        // Heart rate down: carried, though a workout of the strap's covers it (the metro of 1 Nov).
+        val tram = DawarichFormat.split(fixes, steps, wholeTrack, beats(95.0), 113.0)!!
+        assertEquals(listOf(Moved.WALKED, Moved.CARRIED, Moved.WALKED), tram.legs.map { it.moved })
+        assertEquals(0, tram.rodeM)
+        // A few steps in a fast step (getting off mid-step) do not make it a walk (8 Nov).
+        val gotOff = steps + (minute(6) to 60.0) + (minute(7) to 60.0)
+        assertEquals(266.0, DawarichFormat.split(fixes, gotOff, emptyList(), beats(95.0), 113.0)!!.walkedM.toDouble(), 2.0)
+        // Faster than anyone pedals: carried whatever the heart does.
+        val metro = fixesOf(133.0, 500.0, 1300.0, 500.0, 133.0)
+        assertEquals(listOf(Moved.WALKED, Moved.CARRIED, Moved.WALKED), DawarichFormat.split(metro, steps, wholeTrack, beats(130.0), 113.0)!!.legs.map { it.moved })
+        // At walking speed a zone-2 heart rate changes nothing: a brisk walk is a walk.
+        assertEquals(listOf(Moved.WALKED), DawarichFormat.split(fixesOf(133.0, 250.0, 133.0), (0L..5L).associate { minute(it) to 110.0 }, emptyList(), (0L..5L).associate { minute(it) to 125.0 }, 113.0)!!.legs.map { it.moved })
+        // No heart rate over the stretch, or no profile to place zone 2: the strap's workouts decide, as before.
+        assertEquals(Moved.RODE, DawarichFormat.split(fixes, steps, wholeTrack, emptyMap(), 113.0)!!.moved)
+        assertEquals(Moved.RODE, DawarichFormat.split(fixes, steps, wholeTrack, beats(95.0), null)!!.moved)
+
+        // Standing still is not time moving: a 2-minute stop of 20 m inside a walk.
+        val stopped = DawarichFormat.split(fixesOf(133.0, 20.0, 133.0), (0L..5L).associate { minute(it) to 60.0 }, emptyList())!!
+        assertEquals(240, stopped.ownS)
+        assertEquals(286.0, stopped.walkedM.toDouble(), 2.0)
+    }
+
+    @Test
+    fun `tracks a few minutes apart are one outing, and the pause between them is a step like any other`() {
+        fun piece(id: Long, from: Long, to: Long, mode: String, m: Int?, fixes: List<Fix>) =
+            Track(id, minute(from), minute(to), mode, m, fixes.map { it.pos }, fixes)
+        val all = fixesOf(133.0, 133.0, 20.0, 500.0, 500.0) // fixes at minutes 0, 2, 4, 6, 8, 10
+        val a = piece(7, 0, 4, "walking", 266, all.subList(0, 3))
+        val b = piece(8, 6, 10, "running", 1000, all.subList(3, 6)) // 2 minutes after a
+        val later = piece(9, 20, 30, "walking", 400, emptyList()) // 10 minutes after b: its own outing
+
+        val joined = DawarichFormat.join(listOf(a, b, later))
+        assertEquals(listOf(7L, 9L), joined.map { it.id })
+        val one = joined[0]
+        assertEquals(minute(0) to minute(10), one.start to one.end)
+        assertEquals(1266, one.distanceM)
+        assertEquals("running", one.mode)
+        assertEquals(all, one.fixes)
+        assertEquals(6, one.path.size)
+        // Cut as one: the 20 m pause is walked but no time moving, and the heart rate makes the rest a ride.
+        val cut = DawarichFormat.split(one.fixes, (0L..3L).associate { minute(it) to 100.0 }, emptyList(), (0L..9L).associate { minute(it) to 125.0 }, 113.0)!!
+        assertEquals(listOf(Moved.WALKED, Moved.RODE), cut.legs.map { it.moved })
+        assertEquals(Moved.RODE, cut.moved)
+        assertEquals(480, cut.ownS)
+
+        // A piece whose fixes could not be read leaves the whole uncut, with Dawarich's own figures.
+        val blind = DawarichFormat.join(listOf(a, b.copy(fixes = emptyList()))).single()
+        assertEquals(emptyList<Fix>(), blind.fixes)
+        assertEquals(1266, blind.distanceM)
+        assertEquals(listOf(a), DawarichFormat.join(listOf(a)))
+    }
+
+    @Test
     fun `links take https only and never print their secret`() {
         val token = "a".repeat(40)
         val gym = OpenGymLink.parse("gym.example.com/", token)!!

@@ -305,7 +305,7 @@ private fun sourceLine(ts: List<Track>, one: Boolean): String {
         ts.any { it.split == null } -> "Distance and time are Dawarich's for the whole track.$hr"
         carried == 0 -> "Distance and time from your tracker's points.$hr"
         else -> "Distance and time count only what you walked, ran or rode yourself, from your tracker's points. " +
-            "${if (carried == 1) "1 stretch" else "$carried stretches"} faster than walking, with no steps on the strap and no workout it recorded, " +
+            "${if (carried == 1) "1 stretch" else "$carried stretches"} faster than walking, with your heart rate below zone 2 on the strap, " +
             "${if (carried == 1) "was" else "were"} a ride on something (dashed on the map) and ${if (carried == 1) "is" else "are"} left out. " +
             "Dawarich counts ${ts.mapNotNull { it.distanceM }.sum().let(::km)} for the whole track.$hr"
     }

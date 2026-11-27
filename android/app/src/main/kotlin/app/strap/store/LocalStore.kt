@@ -13,6 +13,8 @@ import strap.protocol.sync.SyncResult
 import strap.protocol.sync.SyncWindow
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
+import strap.science.CounterDays
+import strap.science.CounterReading
 import strap.science.Derived
 import strap.science.DerivedStore
 import strap.science.DeviceDailyTotal
@@ -375,8 +377,8 @@ class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null,
     /**
      * Everything stored, as the server receives it from [unpushedSamples] and [unpushedRecords]:
      * metrics under the server's names (unknown ones dropped), missing session and workout
-     * fields as 0, sessions without stages left out, and per day only the latest counter
-     * reading, filed on the local date it was read. [zones], [profile] and [weights] are the
+     * fields as 0, sessions without stages left out, and per day the one counter reading
+     * that holds it (`CounterDays`, D50), filed on the local date it was read. [zones], [profile] and [weights] are the
      * owner's (Owner). Only what lies from [from] (a day start, `Zones.rawFrom`) until [until]
      * is read, cut as `MemoryData.window` cuts; null bounds read everything.
      */
@@ -438,15 +440,23 @@ class LocalStore(context: Context) : SQLiteOpenHelper(context, "strap.db", null,
                     Instant.ofEpochMilli(c.getLong(6)), if (c.isNull(5)) null else Instant.ofEpochMilli(c.getLong(5)))
             }
         }
+        class Read(val at: Instant, val steps: Long, val distanceM: Long, val calories: Long)
+        val readings = LinkedHashMap<LocalDate, MutableList<Read>>()
         db.rawQuery("SELECT read_at, steps, distance_m, calories FROM daily_totals WHERE $read ORDER BY read_at", readArgs).use { c ->
             while (c.moveToNext()) {
-                val read = Instant.ofEpochMilli(c.getLong(0))
-                val day = zones.dateOf(read)
-                val held = totals[day]
-                if (held != null && held.source != "zepp_cloud" && held.readAt != null && read < held.readAt) continue
-                // Stored when the server received it; the phone only knows when it was read.
-                totals[day] = DeviceDailyTotal(day, c.getLong(1).toInt(), c.getLong(2).toDouble(), c.getLong(3).toDouble(), "strap_0x16", read, read)
+                val at = Instant.ofEpochMilli(c.getLong(0))
+                readings.getOrPut(zones.dateOf(at)) { ArrayList() } += Read(at, c.getLong(1), c.getLong(2), c.getLong(3))
             }
+        }
+        readings.forEach { (day, list) ->
+            // The one reading that holds the day: not one taken after the strap's own midnight (D50).
+            val (dayStart, dayEnd) = zones.bounds(day)
+            val pick = CounterDays.pick(list.map { CounterReading(it.at, it.steps) }, dayStart, dayEnd) ?: return@forEach
+            val r = list.first { it.at == pick.readAt }
+            val held = totals[day]
+            if (held != null && held.source != "zepp_cloud" && held.readAt != null && r.at < held.readAt) return@forEach
+            // Stored when the server received it; the phone only knows when it was read.
+            totals[day] = DeviceDailyTotal(day, r.steps.toInt(), r.distanceM.toDouble(), r.calories.toDouble(), "strap_0x16", r.at, r.at)
         }
         return MemoryData(zones, samples, byStart, workouts, totals.values, profile, weights)
     }

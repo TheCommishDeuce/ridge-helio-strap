@@ -70,9 +70,17 @@ class DeviceTotalsTest {
 
     @Test
     fun `the two instruments are never blended`() {
-        for ((counter, perMinute) in listOf(9264 to 6100.0, 1000 to 12000.0, 0 to 0.0, 5 to 5.0)) {
+        for ((counter, perMinute) in listOf(9264 to 6100.0, 7169 to 7201.0, 0 to 0.0, 5 to 5.0)) {
             assertEquals(counter.toDouble(), selectSteps(device(steps = counter), perMinute).value)
         }
+    }
+
+    @Test
+    fun `a counter read after the strap's own midnight is set aside for the per-minute sum (D50)`() {
+        val s = selectSteps(device(steps = 44), 19008.0)
+        assertEquals(19008.0, s.value)
+        assertEquals("steps_per_minute", s.flags.str("source"))
+        assertEquals(1000.0, selectSteps(device(steps = 1000), 1999.0).value)
     }
 
     @Test

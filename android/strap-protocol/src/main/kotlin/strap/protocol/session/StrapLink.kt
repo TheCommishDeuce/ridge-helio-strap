@@ -42,6 +42,9 @@ public interface StrapLink {
 
     /** The raw Current Time reading (`2a2b`), or null when the strap has none or it failed. */
     public suspend fun currentTime(): ByteArray? = null
+
+    /** Writes [bytes] to Current Time (`2a2b`); false when the strap has none or the write failed. */
+    public suspend fun writeCurrentTime(bytes: ByteArray): Boolean = false
 }
 
 public enum class Channel { CHUNKED, CONTROL, DATA }

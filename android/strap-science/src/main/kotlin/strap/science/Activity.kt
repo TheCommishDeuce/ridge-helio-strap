@@ -31,9 +31,16 @@ internal fun Science.mvpa(day: LocalDate) {
 
 internal data class DailyValue(val value: Double, val flags: JsonObject)
 
-/** The strap's own counter wins over the per-minute sum, which stalls (D28). */
+/**
+ * The strap's own counter wins over the per-minute sum, which stalls (D28). A counter under half
+ * the sum counts less than the day: it was read after the strap's own midnight, its clock on
+ * another zone (D50), so the sum stands. (The two differ by a few percent on an ordinary day.)
+ */
+private const val COUNTER_SET_ASIDE = 0.5
+
 internal fun selectSteps(device: DeviceDailyTotal?, perMinuteSum: Double): DailyValue {
     if (device?.steps == null) return DailyValue(perMinuteSum, json("source" to STEPS))
+    if (device.steps < COUNTER_SET_ASIDE * perMinuteSum) return DailyValue(perMinuteSum, json("source" to STEPS, "counter_below_minutes" to device.steps))
     return DailyValue(
         device.steps.toDouble(),
         json(
@@ -80,13 +87,15 @@ internal fun Science.dailyActivity(day: LocalDate) {
     val device = data.deviceTotal(day)
     val perMinute = data.samples(STEPS, start, end).filter { it.value < 250 }
     val steps = selectSteps(device, perMinute.sumOf { it.value })
+    // The counter set aside (D50) takes its distance with it, and no caveat speaks of it.
+    val counter = device?.takeIf { "counter_below_minutes" !in steps.flags }
     val counted = device?.steps != null || perMinute.isNotEmpty()
     if (counted) {
-        upsert(day, "steps_total", steps.value, steps.flags + json("sample_minutes" to perMinute.size, "caveats" to partialDayCaveats(device, steps, end)))
+        upsert(day, "steps_total", steps.value, steps.flags + json("sample_minutes" to perMinute.size, "caveats" to partialDayCaveats(counter, steps, end)))
     }
     val prof = loadProfile(day)
     val strideM = prof?.let { STRIDE_HEIGHT_FRACTION * it.heightCm / 100.0 }
-    selectDistance(device, steps, if (counted) strideM else null)?.let { upsert(day, "distance_m_daily", it.value, it.flags) }
+    selectDistance(counter, steps, if (counted) strideM else null)?.let { upsert(day, "distance_m_daily", it.value, it.flags) }
     if (prof != null && strideM != null) calories(day, prof, start, end, strideM)
 }
 

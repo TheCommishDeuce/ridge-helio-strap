@@ -69,8 +69,28 @@ public object AlarmZones {
     }
 }
 
-/** The standard Current Time characteristic `2a2b`: year u16, month, day, hour, minute, second, … */
+/**
+ * The standard Current Time characteristic `2a2b`: year u16, month, day, hour, minute, second,
+ * weekday (Monday 1), fractions of a second (/256), adjust reason, and the UTC offset in quarter
+ * hours, signed (spec/01 §3). The strap reads back what it was last set to, in that layout.
+ */
 public object CurrentTime {
+    /** The reading for [now]: the strap's clock and zone set to it (D50). */
+    public fun encode(now: ZonedDateTime): ByteArray {
+        val out = ByteArray(11)
+        Bytes.putU16(out, 0, now.year)
+        out[2] = now.monthValue.toByte()
+        out[3] = now.dayOfMonth.toByte()
+        out[4] = now.hour.toByte()
+        out[5] = now.minute.toByte()
+        out[6] = now.second.toByte()
+        out[7] = now.dayOfWeek.value.toByte()
+        out[8] = (now.nano / 1_000_000 * 256 / 1000).toByte()
+        out[9] = 0 // adjust reason: none named
+        out[10] = (now.offset.totalSeconds / 900).toByte()
+        return out
+    }
+
     public fun parse(b: ByteArray): LocalDateTime? {
         if (b.size < 7) return null
         return runCatching {

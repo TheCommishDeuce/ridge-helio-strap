@@ -105,7 +105,9 @@ cardio load → sleep need/debt → recovery. Nights are always derived before d
 ### 2.1 Steps and distance
 
 - `steps_total` = strap daily counter (§01-5) if it reported for that day, else Σ
-  per-minute steps (`< 250`). Stored with `source`, the other number, `sample_minutes`,
+  per-minute steps (`< 250`). Of a day's counter readings, the one `CounterDays` picks
+  (D50: not one taken after the strap's own midnight); a counter under half the per-minute
+  sum is set aside for the sum, and its distance with it. Stored with `source`, the other number, `sample_minutes`,
   and a caveat when the counter was read mid-day or read time unknown.
 - No counter and zero per-minute rows → **no row** (unworn ≠ 0 steps).
 - `distance_m_daily` = device metres, else `steps × 0.414 × height_m`.

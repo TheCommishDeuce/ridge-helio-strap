@@ -10,6 +10,7 @@ import kotlinx.coroutines.withContext
 import strap.science.MemoryData
 import strap.science.Science
 import strap.science.Zones
+import strap.science.possibleWorkouts
 import strap.science.rawFrom
 import strap.science.rederive
 import java.time.Instant
@@ -50,6 +51,19 @@ class PhoneScience(private val store: LocalStore, private val server: () -> Back
 
     /** The science over the raw data of [first] through [last] only (a chart's range, its workouts). */
     suspend fun over(first: LocalDate, last: LocalDate): Science = window(last) { it.start(first) }
+
+    /**
+     * The day's stretches of raised heart rate the strap opened no workout for (D51). An openGym
+     * session or a workout the owner hid already says what that time was, so neither is offered.
+     */
+    suspend fun possibleWorkouts(day: LocalDate): List<strap.science.PossibleWorkout> = withContext(Dispatchers.IO) {
+        val s = over(day.minusDays(1), day)
+        val zones = owner.zones() ?: return@withContext emptyList()
+        val (start, end) = zones.bounds(day)
+        val logged = store.gymSessions(start, end).map { it.start to it.end } +
+            owner.sessions(start, end).filter { it.action == strap.science.SessionOverlay.Action.HIDE }.map { it.start to it.end }
+        s.possibleWorkouts(day, logged)
+    }
 
     /** Waits for the first catch-up, so the stored rows are current. */
     suspend fun ready() {
@@ -130,8 +144,8 @@ class PhoneScience(private val store: LocalStore, private val server: () -> Back
         /** The old app synced until the day after this phone's first sync (P7). */
         const val ERA_MARGIN_DAYS = 2L
         private const val INPUTS = "science_inputs"
-        /** Bump when a derive pass's rule changes, so stored rows are worked out again (D37: the load split; D46: short walks are no workouts). */
-        private const val RULES = "D46"
+        /** Bump when a derive pass's rule changes, so stored rows are worked out again (D37: the load split; D46: short walks are no workouts; D50: the counter reading that holds a day). */
+        private const val RULES = "D50.2"
         private const val DERIVED_AT = "science_derived_at"
 
         /** Every metric the derive passes write (spec/02). */

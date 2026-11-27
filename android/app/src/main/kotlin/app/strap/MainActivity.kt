@@ -235,6 +235,7 @@ private fun AppShell(app: StrapApp, requestedTab: MutableState<Tab?>, requestedW
             // An edit to its own sport and window: the owner says it was a workout, and the strap's figures stay.
             keep = { w -> changed(app.owner.editWorkout(w, w.sport, w.start, w.end), "Kept as a workout") },
             heartRate = { from, to -> api.heartRate(from, to) },
+            possible = { day -> app.science.possibleWorkouts(day) },
         )
     }
 

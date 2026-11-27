@@ -88,6 +88,17 @@ class AlarmZonesTest {
         // 2026-07-01 14:00:41, then day of week, fractions, adjust reason (ignored).
         assertEquals(LocalDateTime.parse("2026-07-01T14:00:41"), CurrentTime.parse("ea0707010e0029030000".unhex()))
         assertNull(CurrentTime.parse("ea0707".unhex()))
+    }
+
+    @Test
+    fun `the clock is written in the layout the strap reads back`() {
+        // Read from the strap on 2026-11-27: Friday 02:00:25, +01:00.
+        val at = java.time.ZonedDateTime.of(2026, 11, 27, 2, 0, 25, 0, java.time.ZoneId.of("Europe/Amsterdam"))
+        assertEquals("ea070b1b020019050000" + "04", CurrentTime.encode(at).joinToString("") { "%02x".format(it) })
+        val canary = java.time.ZonedDateTime.of(2026, 11, 25, 23, 0, 0, 500_000_000, java.time.ZoneId.of("Atlantic/Canary"))
+        assertEquals("ea070b19170000038000" + "00", CurrentTime.encode(canary).joinToString("") { "%02x".format(it) })
+        val west = java.time.ZonedDateTime.of(2026, 1, 1, 12, 0, 0, 0, java.time.ZoneId.of("America/New_York"))
+        assertEquals("ec", "%02x".format(CurrentTime.encode(west)[10])) // −5 h = −20 quarters
         assertNull(CurrentTime.parse("ea070d010e0029".unhex())) // month 13
     }
 }

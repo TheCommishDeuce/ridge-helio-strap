@@ -159,7 +159,7 @@ private fun GaugesCard(data: TodayData, nav: TodayNav) {
                 is Reading.Withheld -> Subtle(rec.message, Modifier.weight(1f))
                 is Reading.Value -> {
                     Box(Modifier.size(10.dp).clip(CircleShape).background(r.zone(rec.value)))
-                    Text(zoneName(rec.value) + (data.load?.let { " · load ${it.words.lowercase()}" } ?: ""), style = RidgeType.rowTitle,
+                    Text(zoneName(rec.value) + (data.load?.let { " · " + it.words.lowercase().let { w -> if (w.startsWith("load")) w else "load $w" } } ?: ""), style = RidgeType.rowTitle,
                         modifier = Modifier.weight(1f).padding(start = 10.dp))
                 }
             }

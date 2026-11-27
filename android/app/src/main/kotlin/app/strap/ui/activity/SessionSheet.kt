@@ -70,13 +70,16 @@ class SessionActions(
     /** The strap workouts on a day that Ridge left out as short walks (D46), and keeping one as a workout after all. */
     val walks: suspend (LocalDate) -> List<Workout>,
     val keep: (w: Workout) -> Unit,
+    /** Stretches of raised heart rate on a day the strap opened no workout for (D51). */
+    val possible: suspend (LocalDate) -> List<strap.science.PossibleWorkout> = { emptyList() },
     /** The per-minute heart rate over a window, for the sheet's graph (issue #4). */
     val heartRate: suspend (start: Instant, end: Instant) -> List<TimedValue> = { _, _ -> emptyList() },
 )
 
 /** Where the sheet is: adding a session on [day], or editing [workout]. */
 sealed interface SessionEdit {
-    data class Add(val day: LocalDate) : SessionEdit
+    /** [from] and [to] fill the window in, for a stretch Ridge offers (D51). */
+    data class Add(val day: LocalDate, val from: Instant? = null, val to: Instant? = null) : SessionEdit
     data class Edit(val workout: Workout) : SessionEdit
 }
 
@@ -92,8 +95,9 @@ fun SessionSheet(edit: SessionEdit, onDismiss: () -> Unit, heartRate: (suspend (
     val w = (edit as? SessionEdit.Edit)?.workout
     val day = w?.start?.atZone(zone)?.toLocalDate() ?: (edit as SessionEdit.Add).day
     var sport by remember { mutableStateOf(w?.sport ?: Sports.UNKNOWN) }
-    val shownFrom = remember { w?.start?.atZone(zone)?.toLocalTime()?.withSecond(0)?.withNano(0) ?: defaultStart(day) }
-    val shownTo = remember { w?.end?.atZone(zone)?.toLocalTime()?.withSecond(0)?.withNano(0) ?: shownFrom.plusHours(1) }
+    val offered = edit as? SessionEdit.Add
+    val shownFrom = remember { (w?.start ?: offered?.from)?.atZone(zone)?.toLocalTime()?.withSecond(0)?.withNano(0) ?: defaultStart(day) }
+    val shownTo = remember { (w?.end ?: offered?.to)?.atZone(zone)?.toLocalTime()?.withSecond(0)?.withNano(0) ?: shownFrom.plusHours(1) }
     var from by remember { mutableStateOf(shownFrom) }
     var to by remember { mutableStateOf(shownTo) }
     var picking by remember { mutableStateOf<String?>(null) } // "sport", "from", "to"

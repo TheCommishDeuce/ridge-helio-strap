@@ -202,7 +202,9 @@ capabilities gets the same reply).
 since 2026-10-06, D30): `year u16 · month · day · hour · minute · second · weekday · fractions ·
 adjust reason · tz` with tz = offset / 15 min, signed. Seen: `ea07 0a 06 0a 15 36 02 00 00 08` =
 2026-10-06 10:21:54, Tuesday, **+02:00** — with the phone on a +04:00 zone. So the strap's
-clock keeps the zone the Zepp app last set; nothing in Ridge sets it. Its local reading minus the
+clock keeps the zone it was last given. Since 0.9.4 Ridge sets it (D50): a write of the same
+11-byte layout (weekday Monday = 1, fractions 0, adjust reason 0, tz from the phone's zone),
+with response, then a read-back; verified on the strap 2026-11-27 (drift corrected, zone kept). Its local reading minus the
 true UTC time, rounded to 15 min, is the offset alarms are converted against.
 
 Battery `0029`: `03` → 21 bytes `04 · 0f · level · charging · 2 × (u16 year, month, day,
@@ -268,7 +270,7 @@ Request `[0x03]`, **sent first** in every sync. Reply:
 | off | size | field |
 |---|---|---|
 | 0–2 | 3 | `04 01 0c` |
-| 3 | 4 | steps since strap-local midnight |
+| 3 | 4 | steps since strap-local midnight (the strap's clock's zone: D50) |
 | 7 | 4 | distance, metres |
 | 11 | 4 | calories (device's figure) |
 
